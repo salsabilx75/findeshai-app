@@ -1256,58 +1256,296 @@ function SanchayapatraPage() {
 }
 
 /* ============================================================
-   COMPARISON HUB — coming-soon stubs (full build is a future sprint).
-   Pattern: Paisabazaar-style card grid + multi-select "Compare".
+   COMPARISON HUB — Credit Cards · Savings · Loans.
+   Data sourced June 2026 from each bank's own official rate sheets
+   (Declared Lending Rate PDFs, deposit sheets, card schedule-of-charges).
+   "Contact bank" = figure genuinely not published online. Pattern:
+   Paisabazaar-style card grid + multi-select compare; NerdWallet table.
    ============================================================ */
-const WHATSAPP_LINK = "https://wa.me/8801720408431?text=" + encodeURIComponent("Hi FinDesh — please notify me when the comparison tool launches.");
-const COMPARE_META = {
-  "credit-cards": { icon: "💳", h1: "Compare Credit Cards in Bangladesh", what: "Annual fees, interest rates, lounge access, cashback and the best card for how you actually spend — side by side, no sales calls.", filters: ["No Annual Fee", "Best for Online Shopping", "Cashback", "Lifetime Free", "Travel"] },
-  "savings": { icon: "🏦", h1: "Compare Savings Accounts in Bangladesh", what: "Interest rates, minimum balances, fees and digital features across banks — so you can see at a glance where your money works hardest.", filters: ["Highest Rate", "Zero Balance", "Best Digital App", "Best for DPS Holders", "Islamic"] },
-  "loans": { icon: "🤝", h1: "Compare Loans in Bangladesh", what: "Personal, home and car loan rates, processing fees and tenures across strong lenders — the full picture before you ever walk into a branch.", filters: ["Lowest Rate", "Personal", "Home", "Car", "Islamic"] },
-};
+const CMP_UPDATED = "June 2026";
 
-function ComingSoonPage({ kind }) {
-  const nav = useNav();
-  const m = COMPARE_META[kind] || COMPARE_META["credit-cards"];
+/* Loans — reducing-balance bands from official Declared Lending Rate sheets */
+const CMP_LOANS = [
+  { bank: "Eastern Bank (EBL)", personal: "10.0% (9–11)", pmid: 10.0, home: "10.0% (9–11)", hmid: 10.0, car: "11.0% (10–12)", cmid: 11.0, src: "EBL · Jun 2026" },
+  { bank: "Mutual Trust Bank (MTB)", personal: "13.0–14.5%", pmid: 13.75, home: "10.5–11.5%", hmid: 11.0, car: "10.5–11.5%", cmid: 11.0, src: "MTB · May 2026", note: "Personal ৳50K–৳40L, 6–60 mo; optional loan-shield insurance." },
+  { bank: "Prime Bank", personal: "11.0–13.0%", pmid: 12.0, home: "10.5–12.5%", hmid: 11.5, car: "11.0–13.0%", cmid: 12.0, src: "Prime · Oct 2024" },
+  { bank: "Dutch-Bangla (DBBL)", personal: "11.0–13.0%", pmid: 13.0, home: "11.5%", hmid: 11.5, car: "13.0%", cmid: 13.0, src: "DBBL · Jan 2025", note: "⚠ Rate sheet ~17 months old — confirm current rate." },
+  { bank: "City Bank", personal: "16–18% (unsecured)", pmid: 17.0, home: "11.0% (10–12)", hmid: 11.0, car: "12.0% (11–13)", cmid: 12.0, src: "City · Dec 2025", note: "⚠ Unsecured personal is high; a secured salary loan is ~9%. Verify your rate." },
+  { bank: "UCB", personal: "14.0% (13–15)", pmid: 14.0, home: "11.25% (11–11.5)", hmid: 11.25, car: "12.5% (12–13)", cmid: 12.5, src: "UCB · Jun 2026" },
+  { bank: "Bank Asia", personal: "14.5%", pmid: 14.5, home: "13.5%", hmid: 13.5, car: "13.5% (auto)", cmid: 13.5, src: "Bank Asia · 2026" },
+  { bank: "Premier Bank", personal: "14.0% (13–15)", pmid: 14.0, home: "14.0% (13–15)", hmid: 14.0, car: "14.0% (13–15)", cmid: 14.0, src: "Premier · Jun 2026", note: "⚠ Higher-end pricing across products. Verify current rate." },
+  { bank: "SouthEast Bank", personal: "~13–14% (indicative)", pmid: 13.5, home: "~13% (indicative)", hmid: 13.0, car: "৳60L / 60% of value, 1–5 yr", cmid: 13.0, src: "SEBL", note: "Personal/home indicative (image-only sheet) — confirm with bank." },
+  { bank: "BRAC Bank", personal: "Variable (base + margin)", pmid: 12.0, home: "Variable (base + margin)", hmid: 12.0, car: "Variable (base + margin)", cmid: 12.0, src: "BRAC · Feb 2026", note: "Base = avg 6-month FDR rate of private banks + margin; indicative ~10.5–12.75%." },
+];
+
+/* Savings — regular savings account rate (tiered) from official deposit sheets */
+const CMP_SAVINGS = [
+  { bank: "Premier Bank", rate: "3.00–4.00%", rmid: 4.0, islamic: true, note: "⚠ Tiered; unusually high vs peers — verify it's current. (May 2025 sheet)", src: "Premier" },
+  { bank: "Bank Asia", rate: "2.00–3.00%", rmid: 3.0, islamic: true, note: "Tiered; 3% above ৳1 Cr.", src: "Bank Asia · 2026" },
+  { bank: "BRAC Bank", rate: "0.50–2.50%", rmid: 2.5, islamic: false, note: "Tiered; AAA-rated bank.", src: "BRAC · Jan 2026" },
+  { bank: "Prime Bank", rate: "0–2.50%", rmid: 2.5, islamic: true, note: "0% up to ৳10K, 2.50% above.", src: "Prime · Mar 2025" },
+  { bank: "UCB", rate: "1.00–2.25%", rmid: 2.25, islamic: true, note: "From 1% on low balances, up to 2.25%.", src: "UCB · Apr 2026" },
+  { bank: "Eastern Bank (EBL)", rate: "0–2.00%", rmid: 2.0, islamic: false, note: "0% under ৳50K, up to 2% above ৳25L.", src: "EBL · May 2026" },
+  { bank: "City Bank", rate: "0–0.25%", rmid: 0.25, islamic: true, note: "General Savings; lowest in the set.", src: "City · 2026" },
+  { bank: "Dutch-Bangla (DBBL)", rate: "Contact bank", rmid: -1, islamic: false, note: "Regular-savings rate not published online.", src: "—" },
+  { bank: "Mutual Trust Bank (MTB)", rate: "Contact bank", rmid: -1, islamic: false, note: "Regular-savings rate not published online.", src: "—" },
+  { bank: "SouthEast Bank", rate: "Contact bank", rmid: -1, islamic: true, note: "Regular-savings rate not published online.", src: "—" },
+];
+
+/* Credit cards — flagship cards. Fee/APR from official sheets where posted;
+   reward structures are not publicly disclosed → "contact bank". */
+const CMP_CARDS = [
+  { id: "seb-world", bank: "SouthEast Bank", name: "World Card", network: "Visa / Mastercard", fee: "৳6,500/yr", apr: "25%", benefit: "Airport lounge access; premium tier", tags: ["travel"] },
+  { id: "seb-classic", bank: "SouthEast Bank", name: "Classic", network: "Visa / Mastercard", fee: "৳1,200/yr", apr: "25%", benefit: "Lowest annual fee; entry-level", tags: ["lowfee"] },
+  { id: "seb-tijarah", bank: "SouthEast Bank", name: "Tijarah (Islamic)", network: "Visa / Mastercard", fee: "৳6,000/yr", apr: "Profit-based", benefit: "Shariah-compliant credit card", tags: ["islamic"] },
+  { id: "dbbl", bank: "Dutch-Bangla (DBBL)", name: "Credit Card", network: "Visa / Mastercard / Nexus", fee: "Contact bank", apr: "18%", benefit: "Lowest card APR in this set (18%)", tags: ["lowapr"] },
+  { id: "city-amex", bank: "City Bank", name: "American Express", network: "American Express", fee: "Contact bank", apr: "24%", benefit: "Sole Amex issuer in BD; Membership Rewards", tags: ["rewards"] },
+  { id: "ebl", bank: "Eastern Bank (EBL)", name: "Credit Card", network: "Visa / Mastercard", fee: "Contact bank", apr: "25%", benefit: "Skybanking app; EBL rewards", tags: ["rewards"] },
+  { id: "ucb", bank: "UCB", name: "Credit Card", network: "Visa / Mastercard", fee: "Contact bank", apr: "25%", benefit: "Wide acceptance; UCB privileges", tags: [] },
+  { id: "premier", bank: "Premier Bank", name: "Credit Card", network: "Visa / Mastercard", fee: "Contact bank", apr: "25%", benefit: "Premier card privileges", tags: [] },
+];
+const CARD_FILTERS = [["all", "All"], ["lowapr", "Lowest APR"], ["travel", "Travel / Lounge"], ["lowfee", "Low fee"], ["rewards", "Rewards"], ["islamic", "Islamic"]];
+
+/* ---------- shared: comparison FAQ (expandable, SEO-friendly) ---------- */
+function FAQ({ items }) {
+  const [open, setOpen] = useState(0);
   return (
-    <>
-      <div style={{ textAlign: "center", padding: "44px 0 18px" }}>
-        <div className="fd-up" style={pill}>{m.icon} Coming soon</div>
-        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>{m.h1}</h1>
-        <p className="fd-up fd-up-2" style={sub}>{m.what}</p>
-      </div>
-
-      {/* interest capture — audience ownership, no email */}
-      <div className="fd-up" style={{ ...card, textAlign: "center", padding: "26px 22px", marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 800, color: "#fff" }}>Want first access?</h3>
-        <p style={{ margin: "0 auto 16px", fontSize: 13.5, color: T.muted, lineHeight: 1.65, maxWidth: 420 }}>We're building this now. Tap below and we'll message you on WhatsApp the moment it's live — no email, no spam, just a one-time heads-up.</p>
-        <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="fd-cta" style={{ ...cta, display: "inline-block", width: "auto", padding: "14px 26px", textDecoration: "none", background: "linear-gradient(135deg,#25D366,#128C7E)" }}>💬 Notify me on WhatsApp</a>
-      </div>
-
-      {/* a peek at the planned layout (Paisabazaar-style card grid + compare) */}
-      <SectionHead title="What it'll look like" hint="Preview · card grid + compare" />
-      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-        {m.filters.map(f => <span key={f} className="fd-chip" style={{ ...chip(false), cursor: "default", opacity: 0.7 }}>{f}</span>)}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, opacity: 0.55, pointerEvents: "none" }}>
-        {[1, 2].map(n => (
-          <div key={n} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "16px 17px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ width: 90, height: 13, borderRadius: 5, background: "rgba(148,180,255,0.18)" }} />
-              <span style={{ fontSize: 11.5, color: T.muted }}>☐ Compare</span>
+    <div style={{ marginTop: 30 }}>
+      <SectionHead title="Frequently asked" hint="Tap to expand" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {items.map((it, i) => (
+          <div key={i} className="fd-item" onClick={() => setOpen(open === i ? -1 : i)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", cursor: "pointer", backdropFilter: "blur(12px)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{it.q}</span>
+              <span style={{ color: T.accent, fontSize: 18, fontWeight: 700, flexShrink: 0 }}>{open === i ? "−" : "+"}</span>
             </div>
-            <div style={{ width: "70%", height: 10, borderRadius: 5, background: "rgba(148,180,255,0.12)", marginBottom: 8 }} />
-            <div style={{ width: "55%", height: 10, borderRadius: 5, background: "rgba(148,180,255,0.10)", marginBottom: 14 }} />
-            <div style={{ height: 34, borderRadius: 9, background: T.accentSoft, border: `1px solid ${T.accentBorder}` }} />
+            {open === i && <p className="fd-up" style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>{it.a}</p>}
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 12.5, color: T.faint, lineHeight: 1.7, margin: "16px 4px 0" }}>You'll filter by what matters to you, tick a few products, and see them side-by-side in a clean table — with a plain-English “why we'd pick this” note. Free, like every FinDesh tool.</p>
+    </div>
+  );
+}
 
-      <div style={{ textAlign: "center", marginTop: 24 }}>
-        <button className="fd-chip" onClick={() => nav("/invest")} style={{ ...chip(false), padding: "11px 20px", fontSize: 13 }}>← Back to the free tools</button>
+function CompareDisclaimer() {
+  return (
+    <p style={{ fontSize: 11.5, color: T.faint, lineHeight: 1.65, margin: "26px 6px 0", textAlign: "center" }}>
+      Rates &amp; fees compiled {CMP_UPDATED} from each bank's official rate sheets and change often — always confirm directly with the bank before applying. "Contact bank" means the figure is not published publicly online. Educational information only, not financial advice.
+    </p>
+  );
+}
+
+/* ---------- LOAN COMPARISON ---------- */
+function LoanComparePage() {
+  const nav = useNav();
+  const [type, setType] = useState("personal");
+  const midKey = { personal: "pmid", home: "hmid", car: "cmid" }[type];
+  const rows = [...CMP_LOANS].sort((a, b) => a[midKey] - b[midKey]);
+  const types = [["personal", "Personal"], ["home", "Home"], ["car", "Car"]];
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
+        <div className="fd-up" style={pill}>🤝 Compare Loans · ঋণ তুলনা</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare loans in <span style={gradText}>Bangladesh</span></h1>
+        <p className="fd-up fd-up-2" style={sub}>Personal, home and car loan rates from 10 strong banks — side by side, with the real EMI before you ever walk into a branch.</p>
       </div>
-      <TabDisclaimer />
+      <UpdatedBadge />
+
+      <EMICalculator />
+
+      <div style={{ marginTop: 30 }}>
+        <SectionHead title="Compare rates by loan type" hint="Lowest rate first · reducing balance" />
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          {types.map(([k, label]) => (
+            <button key={k} className="fd-chip" onClick={() => setType(k)} style={{ ...chip(type === k), flex: 1, minWidth: 90, padding: "11px 6px", fontSize: 13 }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
+          <table className="fd-tbl">
+            <thead><tr><th>Bank</th><th>Rate (p.a.)</th><th>Source</th></tr></thead>
+            <tbody>
+              {rows.map((l, i) => (
+                <tr key={l.bank}>
+                  <td style={{ fontWeight: 600, color: "#EAF1FC" }}>{l.bank}{i === 0 && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: T.green }}>★ lowest</span>}</td>
+                  <td style={{ color: "#fff", fontWeight: 700 }}>{l[type]}{l.note && <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 2 }}>{l.note}</div>}</td>
+                  <td style={{ color: T.faint, fontSize: 11.5 }}>{l.src}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={inflationNote}>💡 Rates are bands — your actual offer depends on income, employer and credit profile, and most are reducing-balance. A 1% lower rate on a 20-year home loan saves several lakh taka, so always negotiate and get a formal rate letter.</div>
+      </div>
+
+      <FAQ items={[
+        { q: "Flat rate vs reducing-balance — what's the difference?", a: "On a reducing-balance loan, interest is charged only on the outstanding balance, which falls every month — so the true cost is much lower than the same headline number quoted 'flat'. Bangladeshi banks quote these consumer loans on a reducing-balance basis. Always ask which method applies." },
+        { q: "Why is one bank's personal-loan rate so much higher?", a: "Unsecured personal loans are priced for risk and vary widely (here, roughly 10% to 18%). A loan secured against your salary, FDR or DPS is usually far cheaper. The rate you're offered also depends on your income, employer and credit history." },
+        { q: "How is my monthly EMI calculated?", a: "EMI = P × r × (1+r)ⁿ ÷ ((1+r)ⁿ − 1), where P is the loan amount, r the monthly rate and n the number of months. Use the calculator above to see your EMI, total interest and a year-by-year breakdown." },
+        { q: "Are these rates final?", a: "No — they're the banks' published bands as of " + CMP_UPDATED + ". Banks reprice periodically and your personal offer may differ. Confirm directly before applying." },
+      ]} />
+
+      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Run your exact loan first</h3>
+        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>See the full EMI, total interest and whether it's worth it in the Borrow tool.</p>
+        <button className="fd-cta" onClick={() => nav("/borrow")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>Open the Borrow planner →</button>
+      </div>
+      <RelatedLinks links={[
+        { label: "Borrow · EMI planner", path: "/borrow" },
+        { label: "Compare savings accounts", path: "/compare/savings" },
+        { label: "Compare credit cards", path: "/compare/credit-cards" },
+        { label: "Where to invest", path: "/invest" },
+      ]} />
+      <CompareDisclaimer />
+    </>
+  );
+}
+
+/* ---------- SAVINGS COMPARISON ---------- */
+function SavingsComparePage() {
+  const nav = useNav();
+  const [islamicOnly, setIslamicOnly] = useState(false);
+  const rows = CMP_SAVINGS.filter(s => !islamicOnly || s.islamic).sort((a, b) => b.rmid - a.rmid);
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
+        <div className="fd-up" style={pill}>🏦 Compare Savings · সঞ্চয় হিসাব</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare savings accounts in <span style={gradText}>Bangladesh</span></h1>
+        <p className="fd-up fd-up-2" style={sub}>Regular savings-account interest rates across 10 banks — see at a glance where your everyday money works hardest.</p>
+      </div>
+      <UpdatedBadge />
+
+      <div style={{ ...card, padding: "20px 18px" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 16 }}>
+          <input type="checkbox" checked={islamicOnly} onChange={e => setIslamicOnly(e.target.checked)} style={{ width: 17, height: 17, accentColor: T.accent }} />
+          <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>Show only banks with a Shariah-compliant (Islamic) option 🕌</span>
+        </label>
+        <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
+          <table className="fd-tbl">
+            <thead><tr><th>Bank</th><th>Savings rate</th><th>Islamic</th><th>Source</th></tr></thead>
+            <tbody>
+              {rows.map((s, i) => (
+                <tr key={s.bank}>
+                  <td style={{ fontWeight: 600, color: "#EAF1FC" }}>{s.bank}{i === 0 && s.rmid > 0 && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: T.green }}>★ highest</span>}</td>
+                  <td style={{ color: s.rmid < 0 ? T.faint : "#fff", fontWeight: 700 }}>{s.rate}<div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 2 }}>{s.note}</div></td>
+                  <td>{s.islamic ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>}</td>
+                  <td style={{ color: T.faint, fontSize: 11.5 }}>{s.src}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ ...card, padding: "22px 20px", marginTop: 16 }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>How BD savings interest works</h3>
+        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+          Bangladeshi savings accounts pay interest on a <b style={{ color: "#fff" }}>tiered, daily-balance</b> basis and usually credit it twice a year. Rates are low by design (0–4%) — well below the ~8.6% inflation rate — so a savings account is for liquidity and your emergency fund, <i>not</i> for growing wealth. For that, a DPS, FDR or Sanchayapatra pays far more. Banks marked "Islamic" run a separate Shariah (Mudaraba profit-sharing) savings product alongside the conventional one.
+        </p>
+      </div>
+
+      <FAQ items={[
+        { q: "Which bank has the highest savings rate?", a: "On the regular savings accounts published here, Premier Bank (~3–4%) and Bank Asia (2–3%) are at the top, while City Bank's general savings is the lowest (0–0.25%). Rates are tiered by balance, so your effective rate depends on how much you keep." },
+        { q: "Is a savings account a good place to grow money?", a: "No. At 0–4%, a savings account loses purchasing power against ~8.6% inflation. Keep your emergency fund and short-term cash here, but move longer-term money to a DPS, FDR or Sanchayapatra — use the Save and Invest tools to see the difference." },
+        { q: "Why do some banks show 'contact bank'?", a: "A few banks (DBBL, MTB, SouthEast) don't publish their regular-savings rate online — only their lending rates. Rather than guess, we show 'contact bank' so you can confirm the exact figure with them." },
+      ]} />
+
+      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Make your savings actually grow</h3>
+        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>A DPS auto-deducts monthly and pays up to ~11%. See what yours grows to in the Save tool.</p>
+        <button className="fd-cta" onClick={() => nav("/save")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>Open the Save planner →</button>
+      </div>
+      <RelatedLinks links={[
+        { label: "Save · DPS planner", path: "/save" },
+        { label: "Sanchayapatra rates", path: "/sanchayapatra" },
+        { label: "Compare loans", path: "/compare/loans" },
+        { label: "Compare credit cards", path: "/compare/credit-cards" },
+      ]} />
+      <CompareDisclaimer />
+    </>
+  );
+}
+
+/* ---------- CREDIT CARD COMPARISON (card grid + multi-select compare) ---------- */
+function CreditCardComparePage() {
+  const nav = useNav();
+  const [filter, setFilter] = useState("all");
+  const [sel, setSel] = useState([]);
+  const toggle = id => setSel(s => s.includes(id) ? s.filter(x => x !== id) : (s.length < 3 ? [...s, id] : s));
+  const cards = CMP_CARDS.filter(c => filter === "all" || c.tags.includes(filter));
+  const selCards = CMP_CARDS.filter(c => sel.includes(c.id));
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
+        <div className="fd-up" style={pill}>💳 Compare Credit Cards · ক্রেডিট কার্ড</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare credit cards in <span style={gradText}>Bangladesh</span></h1>
+        <p className="fd-up fd-up-2" style={sub}>Annual fees, interest rates and headline benefits across flagship cards — tick up to 3 to compare side by side. No sales calls.</p>
+      </div>
+      <UpdatedBadge />
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {CARD_FILTERS.map(([k, label]) => (
+          <button key={k} className="fd-chip" onClick={() => setFilter(k)} style={{ ...chip(filter === k), flex: "0 1 auto", padding: "9px 14px", fontSize: 12.5 }}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+        {cards.map((c, idx) => {
+          const on = sel.includes(c.id);
+          return (
+            <div key={c.id} className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} onClick={() => toggle(c.id)} style={{ background: T.glass, border: `1px solid ${on ? T.accentBorder : T.border}`, borderRadius: 16, padding: "16px 17px", cursor: "pointer", backdropFilter: "blur(14px)", boxShadow: on ? `0 0 0 1px ${T.accentBorder}, 0 10px 30px rgba(79,158,255,0.15)` : "none" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: "#fff" }}>{c.name}</div>
+                  <div style={{ fontSize: 12, color: T.muted }}>{c.bank}</div>
+                </div>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: on ? T.accent : T.faint, whiteSpace: "nowrap" }}>{on ? "☑" : "☐"} Compare</span>
+              </div>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 10 }}>
+                <MetaPill>💳 {c.network}</MetaPill>
+                <MetaPill>🧾 {c.fee}</MetaPill>
+                <MetaPill>📈 APR {c.apr}</MetaPill>
+              </div>
+              <div style={{ fontSize: 12.5, color: "#C9D8F0", lineHeight: 1.5 }}>✦ {c.benefit}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {selCards.length >= 2 && (
+        <div className="fd-up" style={{ marginTop: 20 }}>
+          <SectionHead title={`Comparing ${selCards.length} cards`} hint="Side by side" />
+          <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
+            <table className="fd-tbl">
+              <thead><tr><th>Feature</th>{selCards.map(c => <th key={c.id}>{c.name}</th>)}</tr></thead>
+              <tbody>
+                <tr><td>Bank</td>{selCards.map(c => <td key={c.id}>{c.bank}</td>)}</tr>
+                <tr><td>Network</td>{selCards.map(c => <td key={c.id}>{c.network}</td>)}</tr>
+                <tr><td>Annual fee</td>{selCards.map(c => <td key={c.id} style={{ color: "#fff", fontWeight: 700 }}>{c.fee}</td>)}</tr>
+                <tr><td>Interest (APR)</td>{selCards.map(c => <td key={c.id} style={{ color: "#fff", fontWeight: 700 }}>{c.apr}</td>)}</tr>
+                <tr><td>Headline benefit</td>{selCards.map(c => <td key={c.id} style={{ fontSize: 11.5 }}>{c.benefit}</td>)}</tr>
+                <tr><td>Rewards</td>{selCards.map(c => <td key={c.id} style={{ color: T.faint, fontSize: 11.5 }}>Contact bank</td>)}</tr>
+              </tbody>
+            </table>
+          </div>
+          <button className="fd-chip" onClick={() => setSel([])} style={{ ...chip(false), marginTop: 12, padding: "9px 16px", fontSize: 12.5 }}>Clear selection</button>
+        </div>
+      )}
+      {selCards.length < 2 && <p style={{ fontSize: 12.5, color: T.faint, textAlign: "center", margin: "16px 0 0" }}>Tick 2–3 cards above to see them side by side.</p>}
+
+      <FAQ items={[
+        { q: "How do credit cards charge interest in Bangladesh?", a: "If you pay your full statement balance by the due date, most cards charge no interest (interest-free grace period). Carry a balance and interest applies — here roughly 18–25% per year, charged monthly on the outstanding amount. DBBL is the lowest in this set at 18%." },
+        { q: "What is a fuel surcharge waiver?", a: "Card networks normally add a small surcharge (≈2%) on fuel-station transactions. A 'fuel surcharge waiver' means the bank refunds that surcharge, so filling up doesn't cost extra on the card. Availability varies by card — confirm with the bank." },
+        { q: "Why don't you show cashback / reward rates?", a: "Bangladeshi banks publish card annual fees and interest rates, but generally do NOT publish their reward/cashback rates online — those depend on ongoing campaigns. We show fee, APR and network (which are official) and mark rewards 'contact bank' rather than guess." },
+        { q: "Which card has the lowest cost?", a: "It depends on how you use it. If you sometimes carry a balance, the lowest APR matters most (DBBL, 18%). If you always pay in full, focus on the lowest annual fee and the perks you'll actually use (e.g. SouthEast Classic at ৳1,200)." },
+      ]} />
+
+      <RelatedLinks links={[
+        { label: "Compare loans", path: "/compare/loans" },
+        { label: "Compare savings accounts", path: "/compare/savings" },
+        { label: "Money Blueprint", path: "/blueprint" },
+        { label: "Where to invest", path: "/invest" },
+      ]} />
+      <CompareDisclaimer />
     </>
   );
 }
@@ -1330,8 +1568,7 @@ const ROUTES = {
     tab: "invest",
     title: "Where to Invest in Bangladesh (2026) — AI Investment Planner | FinDesh AI",
     desc: "Get a personalised Bangladesh investment plan in seconds — Sanchayapatra, FDR, mutual funds, DSE blue-chips and gold, with verified 2026 rates and your risk level.",
-    h1: "Where to invest in Bangladesh",
-    sub: "Tell us how much you have and your risk comfort. Get a clear, Bangladesh-specific investment plan in seconds — with 2026 rates.",
+    /* keep the branded hero ("You've earned it. Now make it grow.") — unique <title>/meta still set per route for SEO */
   },
   "/save": {
     tab: "save",
@@ -1354,19 +1591,19 @@ const ROUTES = {
     desc: "Current Sanchayapatra rates (11.82–11.98%), individual vs joint investment limits, the combined-purchase rule and a free profit calculator for Bangladesh.",
   },
   "/compare/credit-cards": {
-    tab: null, view: "compare", kind: "credit-cards", noindex: true,
-    title: "Compare Credit Cards in Bangladesh (Coming Soon) | FinDesh AI",
-    desc: "A free, side-by-side credit card comparison for Bangladesh is coming to FinDesh AI — fees, rates and the best card for your spending. Get notified.",
+    tab: null, view: "cmp-cards",
+    title: "Compare Credit Cards in Bangladesh 2026 — Fees, APR & Benefits | FinDesh AI",
+    desc: "Free side-by-side credit card comparison for Bangladesh — annual fees, interest rates (APR) and benefits across flagship cards. Tick up to 3 to compare.",
   },
   "/compare/savings": {
-    tab: null, view: "compare", kind: "savings", noindex: true,
-    title: "Compare Savings Accounts in Bangladesh (Coming Soon) | FinDesh AI",
-    desc: "A free, side-by-side savings account comparison for Bangladesh is coming to FinDesh AI — rates, fees and the best account for you. Get notified.",
+    tab: null, view: "cmp-savings",
+    title: "Compare Savings Account Rates in Bangladesh 2026 | FinDesh AI",
+    desc: "Free comparison of regular savings-account interest rates across 10 Bangladeshi banks — see where your everyday money earns the most, with Islamic options flagged.",
   },
   "/compare/loans": {
-    tab: null, view: "compare", kind: "loans", noindex: true,
-    title: "Compare Loans in Bangladesh (Coming Soon) | FinDesh AI",
-    desc: "A free, side-by-side loan comparison for Bangladesh is coming to FinDesh AI — personal, home and car loan rates and terms in one place. Get notified.",
+    tab: null, view: "cmp-loans",
+    title: "Compare Loan Rates in Bangladesh 2026 — Personal, Home & Car | FinDesh AI",
+    desc: "Free side-by-side comparison of personal, home and car loan rates across 10 strong Bangladeshi banks, plus a built-in EMI calculator.",
   },
 };
 
@@ -1467,10 +1704,10 @@ export default function App() {
       { label: "Blueprint", icon: "🗺️", path: "/blueprint" },
       { label: "Sanchayapatra", icon: "🏛️", path: "/sanchayapatra" },
     ] },
-    { heading: "Compare · coming soon", items: [
-      { label: "Compare Credit Cards", icon: "💳", path: "/compare/credit-cards", soon: true },
-      { label: "Compare Savings Accounts", icon: "🏦", path: "/compare/savings", soon: true },
-      { label: "Compare Loans", icon: "🤝", path: "/compare/loans", soon: true },
+    { heading: "Compare", items: [
+      { label: "Compare Credit Cards", icon: "💳", path: "/compare/credit-cards" },
+      { label: "Compare Savings Accounts", icon: "🏦", path: "/compare/savings" },
+      { label: "Compare Loans", icon: "🤝", path: "/compare/loans" },
     ] },
   ];
 
@@ -1536,7 +1773,9 @@ export default function App() {
 
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 40px", position: "relative", zIndex: 1 }}>
         {route.view === "sanchayapatra" ? <SanchayapatraPage />
-          : route.view === "compare" ? <ComingSoonPage kind={route.kind} />
+          : route.view === "cmp-loans" ? <LoanComparePage />
+          : route.view === "cmp-savings" ? <SavingsComparePage />
+          : route.view === "cmp-cards" ? <CreditCardComparePage />
           : page === "invest" ? <InvestPage seoHead={route.h1 ? { h1: route.h1, sub: route.sub } : null} />
           : page === "save" ? <SavingsPage seoHead={route.h1 ? { h1: route.h1, sub: route.sub } : null} />
           : page === "borrow" ? <BorrowPage initialType={route.preset?.type} />
