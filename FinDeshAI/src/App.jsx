@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, createContext, useContext } from "react";
 
 /* ============================================================
    FinDesh AI v4 — Dark Premium
@@ -17,10 +17,10 @@ const LAST_UPDATED = "June 2026";
 
 /* ---------------- INVEST INSTRUMENTS (verified Jun 2026) ---------------- */
 const INSTRUMENTS = [
-  { id: "sanchayapatra", name: "Sanchayapatra (5-Year)", bn: "সঞ্চয়পত্র", icon: "🏛️", min: 10000, max: 3000000, risk: ["low"], rate: 11.83, rateLabel: "11.83%", liquidity: "Low", horizon: "5 years", taxNote: "5–10% source tax · 11.80% above ৳7.5L", blurb: "Government-guaranteed, highest safe return in Bangladesh. Rate revised January 2026: 11.83% up to ৳7.5 Lakh, 11.80% above. Locked at purchase for the full term.", why: "Beats inflation comfortably with zero capital risk — the anchor of any conservative portfolio.", tags: ["Govt. guaranteed", "Beats inflation"], link: "https://nationalsavings.gov.bd" },
-  { id: "pensioner", name: "Pensioner Sanchayapatra", bn: "পেনশনার সঞ্চয়পত্র", icon: "🧓", min: 50000, max: 5000000, risk: ["low"], rate: 11.98, rateLabel: "11.98%", liquidity: "Low", horizon: "5 yrs (quarterly payout)", taxNote: "5–10% source tax · 11.80% above ৳7.5L", blurb: "The highest NSC rate in the country — for retired government/semi-government employees and their families. Quarterly profit payout.", why: "If you or a parent is a retired govt employee, nothing safe pays more in Bangladesh right now.", tags: ["Highest NSC rate", "Quarterly income"], link: "https://nationalsavings.gov.bd" },
-  { id: "paribar", name: "Paribar Sanchayapatra", bn: "পরিবার সঞ্চয়পত্র", icon: "👨‍👩‍👧", min: 10000, max: 4500000, risk: ["low"], rate: 11.93, rateLabel: "11.93%", liquidity: "Low", horizon: "5 yrs (monthly payout)", taxNote: "5–10% source tax · 11.80% above ৳7.5L", blurb: "Monthly profit payout. For women, seniors 65+, and the disabled. Rate revised January 2026.", why: "If you want regular monthly income rather than lump-sum growth, this pays out monthly at a top rate.", tags: ["Monthly income", "For women & 65+"], link: "https://nationalsavings.gov.bd" },
-  { id: "sp3m", name: "3-Month Profit Sanchayapatra", bn: "৩ মাস অন্তর মুনাফা", icon: "🗓️", min: 100000, max: 3000000, risk: ["low"], rate: 11.82, rateLabel: "11.82%", liquidity: "Low", horizon: "3 yrs (quarterly payout)", taxNote: "5–10% source tax · 11.77% above ৳7.5L", blurb: "Three-year certificate paying profit every three months — shorter lock-in than the 5-year, nearly the same rate.", why: "Want govt-guaranteed income without committing five years? This is the shortest NSC with a near-top rate.", tags: ["Shorter lock-in", "Quarterly income"], link: "https://nationalsavings.gov.bd" },
+  { id: "sanchayapatra", name: "Sanchayapatra (5-Year)", bn: "সঞ্চয়পত্র", icon: "🏛️", min: 10000, max: 3000000, maxJoint: 6000000, joint: true, risk: ["low"], rate: 11.83, rateLabel: "11.83%", liquidity: "Low", horizon: "5 years", taxNote: "5–10% source tax · 11.80% above ৳7.5L", blurb: "Government-guaranteed, highest safe return in Bangladesh. Rate revised January 2026: 11.83% up to ৳7.5 Lakh, 11.80% above. Locked at purchase for the full term. Individual cap ৳30 Lakh, or ৳60 Lakh held jointly.", why: "Beats inflation comfortably with zero capital risk — the anchor of any conservative portfolio.", tags: ["Govt. guaranteed", "Beats inflation"], link: "https://nationalsavings.gov.bd" },
+  { id: "pensioner", name: "Pensioner Sanchayapatra", bn: "পেনশনার সঞ্চয়পত্র", icon: "🧓", min: 50000, max: 5000000, maxJoint: null, joint: false, risk: ["low"], rate: 11.98, rateLabel: "11.98%", liquidity: "Low", horizon: "5 yrs (quarterly payout)", taxNote: "5–10% source tax · 11.80% above ৳7.5L", blurb: "The highest NSC rate in the country — for retired government/semi-government employees and their families. Quarterly profit payout. Minimum ৳50,000, individual cap ৳50 Lakh (single-name only).", why: "If you or a parent is a retired govt employee, nothing safe pays more in Bangladesh right now.", tags: ["Highest NSC rate", "Quarterly income"], link: "https://nationalsavings.gov.bd" },
+  { id: "paribar", name: "Paribar Sanchayapatra", bn: "পরিবার সঞ্চয়পত্র", icon: "👨‍👩‍👧", min: 10000, max: 4500000, maxJoint: null, joint: false, risk: ["low"], rate: 11.93, rateLabel: "11.93%", liquidity: "Low", horizon: "5 yrs (monthly payout)", taxNote: "5–10% source tax · 11.80% above ৳7.5L", blurb: "Monthly profit payout. For women, seniors 65+, and the disabled. Rate revised January 2026. Individual cap ৳45 Lakh (single-name only).", why: "If you want regular monthly income rather than lump-sum growth, this pays out monthly at a top rate.", tags: ["Monthly income", "For women & 65+"], link: "https://nationalsavings.gov.bd" },
+  { id: "sp3m", name: "3-Month Profit Sanchayapatra", bn: "৩ মাস অন্তর মুনাফা", icon: "🗓️", min: 100000, max: 3000000, maxJoint: 6000000, joint: true, risk: ["low"], rate: 11.82, rateLabel: "11.82%", liquidity: "Low", horizon: "3 yrs (quarterly payout)", taxNote: "5–10% source tax · 11.77% above ৳7.5L", blurb: "Three-year certificate paying profit every three months — shorter lock-in than the 5-year, nearly the same rate. Minimum ৳1 Lakh; individual cap ৳30 Lakh, or ৳60 Lakh held jointly.", why: "Want govt-guaranteed income without committing five years? This is the shortest NSC with a near-top rate.", tags: ["Shorter lock-in", "Quarterly income"], link: "https://nationalsavings.gov.bd" },
   { id: "wedb", name: "Wage Earner Dev. Bond", bn: "ওয়েজ আর্নার বন্ড", icon: "✈️", min: 25000, max: null, risk: ["low"], rate: 12, rateLabel: "9–12%", liquidity: "Low", horizon: "5 years", taxNote: "Fully tax-exempt", blurb: "For Bangladeshis earning abroad: buy in BDT against remittance. Tiered 12% down to 9% by amount — and completely tax-free.", why: "If you (or your spouse/parents on your behalf) earn abroad, this is the best tax-free safe return available.", tags: ["Remitters only", "Tax-free", "Up to 12%"], link: "https://www.bb.org.bd/en/index.php/investfacility/wedbond" },
   { id: "fdr", name: "Fixed Deposit (FDR)", bn: "ফিক্সড ডিপোজিট", icon: "🏦", min: 10000, max: null, risk: ["low"], rate: 10, rateLabel: "9–11.5%", liquidity: "Medium", horizon: "3 mo – 3 yrs", taxNote: "10–15% source tax", blurb: "Banks are competing hard for deposits with the policy rate at 10%. Strong banks (BRAC, EBL, DBBL, City, Prime, MTB) pay 9–11.5% on 1-year FDRs. Avoid weak banks chasing you with 12%+.", why: "More flexible tenure than Sanchayapatra. Good for money you may need within a few years — stick to well-capitalised banks.", tags: ["Flexible tenure", "Near-record rates"], link: null },
   { id: "ifarmer", name: "iFarmer (Agri Funding)", bn: "আইফার্মার", icon: "🌾", min: 40000, max: 1000000, risk: ["low", "medium"], rate: 12, rateLabel: "8–15%", liquidity: "Low", horizon: "3–9 months", taxNote: "TIN required", blurb: "Fund verified farm projects via profit-sharing with insurance backing. ⚠️ iFarmer now works mainly with institutional financiers — retail lots open intermittently, so confirm availability in their app before planning around it.", why: "Above any bank deposit on short cycles when lots are open, with insurance reducing downside. Start small.", tags: ["Short cycle", "Insured", "Check availability"], link: "https://ifarmer.asia" },
@@ -31,6 +31,15 @@ const INSTRUMENTS = [
   { id: "gold", name: "Gold", bn: "সোনা", icon: "🪙", min: 50000, max: null, risk: ["medium"], rate: 13, rateLabel: "10–15% (long-run)", liquidity: "High", horizon: "3–10 years", taxNote: "VAT on purchase", blurb: "22k gold is ~৳2.2 Lakh/bhori (June 2026) — up roughly 28% in 12 months. Long-run returns are lower; don't chase last year's spike. Buy BAJUS-hallmarked only.", why: "When the taka weakens or inflation bites, gold holds purchasing power. A stabiliser, not a growth engine.", tags: ["Inflation hedge", "+28% last yr"], link: null },
   { id: "realestate", name: "Land / Real Estate", bn: "জমি / ফ্ল্যাট", icon: "🏠", min: 1000000, max: null, risk: ["medium", "high"], rate: 15, rateLabel: "10–20% p.a.", liquidity: "Very Low", horizon: "5–20 years", taxNote: "Registration + gain tax", blurb: "Peri-urban Dhaka land has historically appreciated strongly. Large ticket, illiquid.", why: "Long-horizon inflation hedge if you have large capital you won't touch for years.", tags: ["Inflation hedge", "High ticket"], link: null },
   { id: "startup", name: "Startup / Angel", bn: "স্টার্টআপ", icon: "💡", min: 1000000, max: null, risk: ["high"], rate: 30, rateLabel: "0–100x", liquidity: "Very Low", horizon: "5–10 years", taxNote: "Varies", blurb: "Back early-stage BD companies. Most fail; a few return many times over.", why: "Highest upside and risk here. Only a small slice of capital you can fully afford to lose.", tags: ["Huge upside", "Mostly fail"], link: null },
+];
+
+/* ---------------- SANCHAYAPATRA LIMITS (verified Jun 2026 ·
+     National Savings Dept · individual vs joint caps & combined rule) ---------------- */
+const SANCHAYAPATRA_LIMITS = [
+  { id: "sanchayapatra", name: "5-Year Bangladesh", bn: "সঞ্চয়পত্র", min: 10000, indiv: 3000000, joint: 6000000 },
+  { id: "sp3m", name: "3-Monthly Profit", bn: "৩ মাস অন্তর", min: 100000, indiv: 3000000, joint: 6000000 },
+  { id: "paribar", name: "Poribar", bn: "পরিবার", min: 10000, indiv: 4500000, joint: null },
+  { id: "pensioner", name: "Pensioner", bn: "পেনশনার", min: 50000, indiv: 5000000, joint: null },
 ];
 
 /* ---------------- SAVINGS PRODUCTS (verified Jun 2026 · Nagad removed ·
@@ -52,7 +61,7 @@ const LENDERS = [
   { id: "brac_l", name: "BRAC Bank", icon: "🏦", islamic: false, fee: "0.5–1% processing", elig: "Salaried, business owners & professionals; strong SME arm", note: "Fast processing, large retail loan book, special women-entrepreneur windows.", link: "https://www.bracbank.com", products: { personal: { label: "12–14%", mid: 13, max: "up to ৳20 Lakh", tenure: "1–5 yrs" }, home: { label: "11–13%", mid: 12, max: "up to ৳2 Cr", tenure: "up to 25 yrs" }, car: { label: "12–14%", mid: 13, max: "50% of car value", tenure: "up to 6 yrs" } } },
   { id: "ebl_l", name: "Eastern Bank (EBL)", icon: "🏛️", islamic: false, fee: "0.5–1% processing", elig: "Salaried / professional, min. income ~৳40K/mo", note: "Strong service quality; competitive home loan pricing.", link: "https://www.ebl.com.bd", products: { personal: { label: "12–14%", mid: 13, max: "up to ৳20 Lakh", tenure: "1–5 yrs" }, home: { label: "10.5–12.5%", mid: 11.5, max: "up to ৳2 Cr", tenure: "up to 25 yrs" }, car: { label: "12–13.5%", mid: 12.7, max: "50% of car value", tenure: "up to 6 yrs" } } },
   { id: "city_l", name: "City Bank", icon: "🌆", islamic: false, fee: "0.5–1% processing", elig: "Salaried / professional; Amex card holders get perks", note: "Big retail lender; also runs City Islamic for Shariah products.", link: "https://www.citybankplc.com", products: { personal: { label: "12–14.5%", mid: 13.2, max: "up to ৳20 Lakh", tenure: "1–5 yrs" }, home: { label: "11–13%", mid: 12, max: "up to ৳2 Cr", tenure: "up to 25 yrs" }, car: { label: "12–14%", mid: 13, max: "50% of car value", tenure: "up to 6 yrs" } } },
-  { id: "hsbc_l", name: "HSBC Bangladesh", icon: "🌐", islamic: false, fee: "~1% processing", elig: "Salaried at approved employers, min. income ~৳80K/mo", note: "Lowest personal rates if you qualify — strict eligibility.", link: "https://www.hsbc.com.bd", products: { personal: { label: "11–13%", mid: 12, max: "up to ৳20 Lakh", tenure: "1–5 yrs" }, home: { label: "10–12%", mid: 11, max: "up to ৳2 Cr", tenure: "up to 25 yrs" } } },
+  { id: "mtb_l", name: "Mutual Trust Bank (MTB)", icon: "🤝", islamic: false, fee: "0.5–1% processing", elig: "Salaried / self-employed / business; min. income ~৳30K/mo (salaried)", note: "Strong, well-run private bank with some of the most competitive consumer rates in the market and an easy online apply form. Personal loan ৳50K–৳40 Lakh over 6–60 months; optional loan-shield insurance settles the balance on death or total disability. Rates per MTB's declared lending rate sheet (May 2026).", link: "https://www.mutualtrustbank.com/retail/retail-loan/", products: { personal: { label: "13–14.5%", mid: 13.5, max: "up to ৳40 Lakh", tenure: "6 mo – 5 yrs" }, home: { label: "10.5–11.5%", mid: 11, max: "up to ৳4 Cr", tenure: "up to 25 yrs" }, car: { label: "10.5–11.5%", mid: 11, max: "50% of car value (BB cap)", tenure: "up to 6 yrs" } } },
   { id: "dbh_l", name: "DBH Finance", icon: "🏠", islamic: false, fee: "0.5–1.5% processing", elig: "Anyone with verifiable income; home-loan specialist", note: "BD's dedicated housing-finance institution — deepest home loan expertise, flexible documentation.", link: "https://www.deltabrac.com", products: { home: { label: "10.5–13%", mid: 11.7, max: "up to ৳2 Cr", tenure: "up to 25 yrs" } } },
   { id: "prime_l", name: "Prime Bank", icon: "🏢", islamic: false, fee: "0.5–1% processing", elig: "Salaried / professional, min. income ~৳35K/mo", note: "Competitive across personal and home; good corporate-salary tie-ups.", link: "https://www.primebank.com.bd", products: { personal: { label: "12–14%", mid: 13, max: "up to ৳20 Lakh", tenure: "1–5 yrs" }, home: { label: "11–13%", mid: 12, max: "up to ৳2 Cr", tenure: "up to 25 yrs" }, car: { label: "12–14%", mid: 13, max: "50% of car value", tenure: "up to 6 yrs" } } },
   { id: "shahjalal_l", name: "Shahjalal Islami Bank", icon: "🕌", islamic: true, fee: "0.5–1% processing", elig: "Salaried / business; Shariah-based contracts", note: "Full-Shariah bank with clean governance (no S Alam ties). Murabaha (cost-plus) & HPSM/Ijarah (lease-to-own) instead of interest.", link: "https://www.sjiblbd.com", products: { personal: { label: "12–14% (Murabaha)", mid: 13, max: "up to ৳20 Lakh", tenure: "1–5 yrs" }, home: { label: "11–13.5% (HPSM)", mid: 12.2, max: "up to ৳2 Cr", tenure: "up to 20 yrs" }, car: { label: "12–14% (Ijarah)", mid: 13, max: "50% of car value", tenure: "up to 6 yrs" } } },
@@ -146,6 +155,7 @@ body { margin: 0; }
 ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #04080F; }
 ::-webkit-scrollbar-thumb { background: #1B2B45; border-radius: 6px; }
 @media (prefers-reduced-motion: reduce) { .fd-up, .fd-donut-seg { animation: none; } }
+@media (max-width: 520px) { .fd-hide-sm { display: none !important; } }
 `;
 
 /* ---------- Logo ---------- */
@@ -260,6 +270,47 @@ function SectionHead({ title, hint }) {
   );
 }
 
+/* ---------- Sanchayapatra limits (individual ↔ joint toggle) ---------- */
+function SanchayapatraLimits() {
+  const [joint, setJoint] = useState(false);
+  return (
+    <div className="fd-up" style={{ ...card, marginBottom: 24, padding: "22px 20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#fff" }}>🏛️ Sanchayapatra investment limits</h3>
+        <div style={{ display: "flex", background: "rgba(8,18,36,0.7)", border: `1px solid ${T.borderSoft}`, borderRadius: 10, padding: 3 }}>
+          {[["Individual", false], ["Joint", true]].map(([label, v]) => (
+            <button key={label} className="fd-tab" onClick={() => setJoint(v)} style={{ padding: "7px 16px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 700, fontFamily: "inherit", background: joint === v ? "linear-gradient(135deg, rgba(79,158,255,0.28), rgba(79,158,255,0.12))" : "transparent", color: joint === v ? "#fff" : T.muted, boxShadow: joint === v ? "inset 0 0 0 1px rgba(79,158,255,0.45)" : "none" }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "6px 10px" }}>
+        <table className="fd-tbl">
+          <thead><tr><th>Certificate</th><th>Minimum</th><th>{joint ? "Joint cap" : "Individual cap"}</th></tr></thead>
+          <tbody>
+            {SANCHAYAPATRA_LIMITS.map(s => {
+              const cap = joint ? s.joint : s.indiv;
+              return (
+                <tr key={s.id}>
+                  <td>{s.name} <span style={{ color: T.faint }}>· {s.bn}</span></td>
+                  <td>{fmt(s.min)}</td>
+                  <td style={{ color: cap ? "#fff" : T.faint, fontWeight: 700 }}>{cap ? fmt(cap) : "Single-name only"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ background: T.accentSoft, border: `1px solid ${T.accentBorder}`, borderRadius: 12, padding: "12px 14px", marginTop: 14 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 800, color: T.accent, letterSpacing: ".09em", marginBottom: 5 }}>COMBINED-PURCHASE RULE</div>
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#C9D8F0" }}>Buying more than one type? Your combined ceiling is the <b style={{ color: "#fff" }}>highest single limit</b> among the certificates you hold — not the sum. Example: 5-Year (৳30 Lakh) + Poribar (৳45 Lakh) together is capped at <b style={{ color: "#fff" }}>৳45 Lakh</b>, not ৳75 Lakh.</p>
+      </div>
+      <p style={{ margin: "10px 2px 0", fontSize: 11.5, color: T.faint, lineHeight: 1.6 }}>
+        💡 Joint limits apply only to the 5-Year and 3-Monthly certificates; Poribar and Pensioner are single-name only. There is <b style={{ color: T.muted }}>no upper limit</b> for institutions, provident funds and approved superannuation/gratuity funds.
+      </p>
+    </div>
+  );
+}
+
 /* ---------- Invest card ---------- */
 function InvestCard({ inst, amount, idx }) {
   const [open, setOpen] = useState(false);
@@ -300,6 +351,8 @@ function InvestCard({ inst, amount, idx }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, fontSize: 12.5, color: T.muted }}>
             <span>💵 Min: <b style={{ color: "#EAF1FC" }}>{fmt(inst.min)}</b></span>
             <span>📉 Real: <b style={{ color: real > 0 ? T.green : T.red }}>{real > 0 ? "+" : ""}{real}%</b> after inflation</span>
+            {inst.max && <span>🔒 Max (individual): <b style={{ color: "#EAF1FC" }}>{fmt(inst.max)}</b></span>}
+            {inst.maxJoint && <span>👥 Max (joint): <b style={{ color: "#EAF1FC" }}>{fmt(inst.maxJoint)}</b></span>}
             <span>🧾 {inst.taxNote}</span>
           </div>
           {inst.link && <a className="fd-link" href={inst.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-block", marginTop: 13, fontSize: 13, color: r.color, fontWeight: 700, textDecoration: "none" }}>Learn more →</a>}
@@ -390,7 +443,7 @@ function StatStrip() {
 /* ============================================================
    INVEST PAGE
    ============================================================ */
-function InvestPage() {
+function InvestPage({ seoHead, focus }) {
   const [amount, setAmount] = useState("");
   const [risk, setRisk] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -412,8 +465,10 @@ function InvestPage() {
       {!submitted && (
         <div style={{ textAlign: "center", padding: "52px 0 26px" }}>
           <div className="fd-up" style={pill}>🇧🇩 Bangladesh's First AI Personal Finance Platform</div>
-          <h1 className="fd-up fd-up-1" style={h1}>You've earned it.<br />Now make it <span style={gradText}>grow</span>.</h1>
-          <p className="fd-up fd-up-2" style={sub}>Tell us how much you have and your risk comfort. Get a clear, Bangladesh-specific investment plan in seconds.</p>
+          {seoHead
+            ? <h1 className="fd-up fd-up-1" style={h1}>{seoHead.h1}</h1>
+            : <h1 className="fd-up fd-up-1" style={h1}>You've earned it.<br />Now make it <span style={gradText}>grow</span>.</h1>}
+          <p className="fd-up fd-up-2" style={sub}>{seoHead ? seoHead.sub : "Tell us how much you have and your risk comfort. Get a clear, Bangladesh-specific investment plan in seconds."}</p>
           <StatStrip />
         </div>
       )}
@@ -449,6 +504,7 @@ function InvestPage() {
             <h3 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>Suggested allocation</h3>
             <Donut data={ALLOCATION[risk]} amount={num} />
           </div>
+          {matched.some(i => SANCHAYAPATRA_LIMITS.some(s => s.id === i.id)) && <SanchayapatraLimits />}
           <SectionHead title={`${matched.length} options for you`} hint="Low → high risk · tap for detail" />
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {matched.map((i, idx) => <InvestCard key={i.id} inst={i} amount={num} idx={idx} />)}
@@ -456,6 +512,12 @@ function InvestPage() {
           <div style={inflationNote}>💡 BD inflation is ~{INFLATION}% (early 2026). Anything returning less is quietly losing you purchasing power — which is why a savings account (3–5%) hurts.</div>
         </div>
       )}
+      <RelatedLinks links={[
+        { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
+        { label: "Savings & DPS planner", path: "/save" },
+        { label: "Loan EMI calculator", path: "/borrow" },
+        { label: "Money Blueprint", path: "/blueprint" },
+      ]} />
       <TabDisclaimer />
     </>
   );
@@ -464,7 +526,7 @@ function InvestPage() {
 /* ============================================================
    SAVINGS PLANNER PAGE
    ============================================================ */
-function SavingsPage() {
+function SavingsPage({ seoHead, focus }) {
   const [mode, setMode] = useState("monthly");
   const [monthly, setMonthly] = useState("");
   const [goal, setGoal] = useState("");
@@ -498,8 +560,10 @@ function SavingsPage() {
       {!submitted && (
         <div style={{ textAlign: "center", padding: "52px 0 26px" }}>
           <div className="fd-up" style={pill}>💰 Savings Planner</div>
-          <h1 className="fd-up fd-up-1" style={h1}>Build the habit.<br />Reach the <span style={gradText}>goal</span>.</h1>
-          <p className="fd-up fd-up-2" style={sub}>Tell us what you can save monthly — or what you're saving toward — and see exactly where to put it and what it'll grow to.</p>
+          {seoHead
+            ? <h1 className="fd-up fd-up-1" style={h1}>{seoHead.h1}</h1>
+            : <h1 className="fd-up fd-up-1" style={h1}>Build the habit.<br />Reach the <span style={gradText}>goal</span>.</h1>}
+          <p className="fd-up fd-up-2" style={sub}>{seoHead ? seoHead.sub : "Tell us what you can save monthly — or what you're saving toward — and see exactly where to put it and what it'll grow to."}</p>
         </div>
       )}
       {submitted && <div style={{ height: 22 }} />}
@@ -582,6 +646,12 @@ function SavingsPage() {
           </div>
         </div>
       )}
+      <RelatedLinks links={[
+        { label: "Where to invest a lump sum", path: "/invest" },
+        { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
+        { label: "Loan EMI calculator", path: "/borrow" },
+        { label: "Money Blueprint", path: "/blueprint" },
+      ]} />
       <TabDisclaimer />
     </>
   );
@@ -784,8 +854,9 @@ function LenderCard({ l, type, idx }) {
   );
 }
 
-function BorrowPage() {
-  const [type, setType] = useState("personal");
+function BorrowPage({ initialType }) {
+  const [type, setType] = useState(initialType || "personal");
+  useEffect(() => { if (initialType) setType(initialType); }, [initialType]);
   const types = [["personal", "Personal"], ["home", "Home"], ["car", "Car"], ["islamic", "Islamic ☪"]];
   const effType = l => (type === "islamic" ? (l.products.personal ? "personal" : "home") : type);
   const list = LENDERS
@@ -815,6 +886,12 @@ function BorrowPage() {
         </div>
         <div style={inflationNote}>💡 Bangladesh Bank caps car loans at 50% of vehicle value, and most banks cap unsecured personal loans at ৳20 Lakh. A 1% lower rate on a 20-year home loan saves several lakh taka — always negotiate.</div>
       </div>
+      <RelatedLinks links={[
+        { label: "Where to invest instead", path: "/invest" },
+        { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
+        { label: "Savings & DPS planner", path: "/save" },
+        { label: "Money Blueprint", path: "/blueprint" },
+      ]} />
       <TabDisclaimer />
     </>
   );
@@ -823,17 +900,6 @@ function BorrowPage() {
 /* ============================================================
    BLUEPRINT PAGE — the BD Money System (guide, not a tool)
    ============================================================ */
-function Step({ n, title, children }) {
-  return (
-    <div className="fd-up" style={{ display: "flex", gap: 16, marginBottom: 26 }}>
-      <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: "linear-gradient(135deg,#4F9EFF,#2563EB)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, color: "#fff", boxShadow: "0 6px 18px rgba(79,158,255,0.35)" }}>{n}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <h3 style={{ margin: "6px 0 8px", fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>{title}</h3>
-        <div style={{ fontSize: 14, lineHeight: 1.75, color: "#B8C7E0" }}>{children}</div>
-      </div>
-    </div>
-  );
-}
 function Callout({ icon = "💡", children, color = T.accent }) {
   return (
     <div style={{ background: `${color}14`, border: `1px solid ${color}40`, borderRadius: 13, padding: "12px 15px", margin: "12px 0", fontSize: 13.5, lineHeight: 1.65, color: "#D6E2F5" }}>
@@ -939,68 +1005,104 @@ function InflationCheck() {
   );
 }
 
-const MISTAKES = [
-  { icon: "🏦", t: "Keeping everything in a savings account", s: `3–5% return vs ~${INFLATION}% inflation = guaranteed loss. Your "safe" money quietly shrinks every year.` },
-  { icon: "🛟", t: "No emergency fund", s: "One medical bill or job loss forces you to sell investments at the worst time or take a 14% personal loan." },
-  { icon: "🎰", t: "Investing in DSE without understanding it", s: "Buying shares on a cousin's tip is gambling. Learn, start with blue-chips or mutual funds, think in years." },
-  { icon: "📱", t: "Consumer loans for depreciating assets", s: "A 13% loan for a phone that loses half its value in a year is a wealth destroyer. EMI culture is not your friend." },
-  { icon: "🏛️", t: "Not using Sanchayapatra", s: "The single best risk-free deal in BD (~11.8–11.98%) and many people never fill in the form." },
-  { icon: "🧾", t: "Ignoring NSC tax benefits", s: "Sanchayapatra investments qualify for tax rebate — you earn the rate AND cut your tax bill." },
-  { icon: "🤖", t: "Not automating savings", s: "Willpower fails by the 20th of the month. A DPS auto-deduction on salary day never does." },
-  { icon: "📈", t: "Lifestyle inflation with every raise", s: "Salary up 20%, spending up 25%. Bank the raise: push half of every increment straight into investments." },
-  { icon: "🛡️", t: "No insurance before investing", s: "Without health/life cover, one accident wipes out years of returns. Protect the downside first." },
-  { icon: "⏰", t: "Trying to time the market", s: "Waiting for the 'perfect' DSEX dip usually means never investing. Time in the market beats timing it." },
-];
+/* ---------- The guide offer (bKash · "buy me a coffee" tone) ----------
+   Pure client-side. The transaction-ID field is intentionally NOT logged,
+   stored or sent anywhere — it only makes the flow feel complete. The
+   founder spot-checks payments by hand in the bKash app. */
+const GUIDE_LINK = "https://drive.google.com/file/d/10R2fGzsL4_ExlG3Odh5tjpOsnOvXzkoQ/view?usp=sharing";
+const BKASH_NUMBER = "01720408431";
+const GUIDE_GREEN = "#4ADE80";
+
+function GuideOffer() {
+  const [amount, setAmount] = useState("50");
+  const [txn, setTxn] = useState("");
+  const [done, setDone] = useState(false);
+  const amt = Number(String(amount).replace(/[^0-9]/g, ""));
+  const quick = [50, 100, 200, 500];
+
+  const getGuide = () => { if (!txn.trim()) return; setDone(true); /* no logging / no storage — intentional */ };
+
+  if (done) {
+    return (
+      <div className="fd-up" style={{ ...card, padding: "32px 24px", marginBottom: 30, textAlign: "center", border: "1px solid rgba(0,214,143,0.35)", background: "linear-gradient(135deg, rgba(0,214,143,0.10), rgba(8,18,36,0.92))" }}>
+        <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
+        <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Thank you — you're in 💚</h2>
+        <p style={{ margin: "0 auto 20px", fontSize: 14.5, color: "#C9D8F0", lineHeight: 1.65, maxWidth: 420 }}>
+          That genuinely means a lot. Your copy of the FinDesh Money Guide is ready — open it, save it, and most importantly, <b style={{ color: "#fff" }}>use it</b>. Even one habit from it can put lakhs back in your pocket over the years.
+        </p>
+        <a href={GUIDE_LINK} target="_blank" rel="noreferrer" className="fd-cta" style={{ ...cta, display: "inline-block", width: "auto", padding: "16px 30px", textDecoration: "none" }}>
+          📖 Open your FinDesh Money Guide →
+        </a>
+        <p style={{ margin: "16px auto 0", fontSize: 12, color: T.faint, lineHeight: 1.6, maxWidth: 380 }}>
+          Trouble opening it? The link is also here:{" "}
+          <a href={GUIDE_LINK} target="_blank" rel="noreferrer" style={{ color: T.accent, wordBreak: "break-all" }}>{GUIDE_LINK}</a>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fd-up" style={{ ...card, padding: "26px 22px", marginBottom: 30, overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(180deg, ${T.accent}, ${GUIDE_GREEN})`, opacity: 0.9 }} />
+      <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>☕ Buy me a coffee, get the guide</div>
+      <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.12 }}>Stop guessing with <span style={gradText}>your money</span>.</h2>
+      <p style={{ margin: "0 0 18px", fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+        One clear, do-it-this-weekend playbook for growing what you earn in Bangladesh — the smart moves, in the right order, minus the noise and the jargon. It's the stuff most people learn the slow, expensive way. Apply it and it can quietly put <b style={{ color: "#fff" }}>thousands — even lakhs</b> — back in your pocket over the years.
+      </p>
+
+      <label style={lbl}>Pay what feels right — ৳50 is plenty 💙</label>
+      <div style={{ position: "relative", marginBottom: 10 }}>
+        <span style={taka}>৳</span>
+        <input className="fd-input" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="50" style={{ ...bigInput, fontSize: 22, padding: "14px 16px 14px 42px" }} />
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 22, flexWrap: "wrap" }}>
+        {quick.map(q => <button key={q} className="fd-chip" onClick={() => setAmount(String(q))} style={chip(amt === q)}>৳{q}</button>)}
+      </div>
+
+      {/* bKash payment panel — FinDesh palette (navy/blue + green accents) */}
+      <div style={{ background: "rgba(79,158,255,0.06)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 18px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: "#8AC2FF", letterSpacing: ".03em" }}>bKash · Send Money (Personal)</span>
+          <span style={{ fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "0.04em", fontVariantNumeric: "tabular-nums" }}>{BKASH_NUMBER}</span>
+        </div>
+        <div style={{ display: "flex", gap: 11, marginBottom: 9 }}>
+          <span style={stepDot}>1</span>
+          <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>Open your <b style={{ color: "#fff" }}>bKash</b> app and choose <b style={{ color: "#fff" }}>"Send Money"</b> to the number above.</span>
+        </div>
+        <div style={{ display: "flex", gap: 11 }}>
+          <span style={stepDot}>2</span>
+          <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>In the <b style={{ color: "#fff" }}>Reference</b> field, simply write <b style={{ color: "#fff" }}>your name</b>.</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 18 }}>
+        <label style={lbl}>Enter the last 3 digits of the Transaction ID (or the number you sent from)</label>
+        <input className="fd-input" value={txn} onChange={e => setTxn(e.target.value)} onKeyDown={e => e.key === "Enter" && getGuide()} inputMode="text" placeholder="e.g. 7X9 or your number" style={{ ...bigInput, fontSize: 18, padding: "14px 16px", letterSpacing: "0.06em" }} />
+      </div>
+
+      <button className="fd-cta" onClick={getGuide} disabled={!txn.trim()} style={{ ...cta, marginTop: 16, opacity: txn.trim() ? 1 : 0.55, cursor: txn.trim() ? "pointer" : "not-allowed" }}>
+        Get the Guide →
+      </button>
+      <p style={{ margin: "14px 2px 0", fontSize: 12, color: T.faint, lineHeight: 1.6, textAlign: "center" }}>
+        ✨ Instant access — the guide opens right after you tap. No waiting, no account, no spam. Thank you for supporting a one-person project. 🙏
+      </p>
+    </div>
+  );
+}
 
 function BlueprintPage() {
   return (
     <>
-      <div style={{ textAlign: "center", padding: "52px 0 10px" }}>
+      <div style={{ textAlign: "center", padding: "34px 0 18px" }}>
         <div className="fd-up" style={pill}>🗺️ BD Money Blueprint · মানি ব্লুপ্রিন্ট</div>
-        <h1 className="fd-up fd-up-1" style={h1}>Your money,<br />on <span style={gradText}>autopilot</span>.</h1>
-        <p className="fd-up fd-up-2" style={sub}>A step-by-step system for Bangladeshi earners — inspired by the world's best personal-finance frameworks, rebuilt for BD banks, BD instruments, and Dhaka's cost of living.</p>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Your money,<br />on <span style={gradText}>autopilot</span>.</h1>
+        <p className="fd-up fd-up-2" style={sub}>A conscious spending plan and money guide for Bangladeshi earners — rebuilt for BD banks, BD instruments, and Dhaka's cost of living.</p>
       </div>
 
-      <GuideHead kicker="Part 1 · The system" title="The BD Money System — 6 steps" />
-      <div style={{ ...card, padding: "26px 22px" }}>
-        <Step n={1} title="Know your numbers">
-          You can't fix what you don't see. Write down three numbers: monthly take-home income, monthly expenses, and the gap. Track one full month — bKash statement + bank statement + cash. Most people find ৳3,000–8,000/month of leaks (subscriptions, delivery fees, "small" rides) the very first month.
-        </Step>
-        <Step n={2} title="Build your emergency fund first">
-          Before any investing: 3–6 months of expenses in a separate account you never touch. This is what stops a job loss or a hospital bill from becoming a 14% personal loan. Keep it liquid — high-rate savings account or a 3-month auto-renewing FDR.
-          <EmergencyCalc />
-        </Step>
-        <Step n={3} title="Set up salary automation">
-          The core trick: money moves <i>before</i> you can spend it. On salary day, standing instructions should auto-split your pay. Most major banks (BRAC, EBL, City, DBBL, MTB) support standing instructions from their app or one branch visit — and a bKash DPS auto-deducts on a fixed date with zero paperwork. Set it once; your savings rate stops depending on willpower.
-          <Callout icon="⚙️">Order of automation: salary account → DPS auto-deduction (same day) → bills → what's left is yours to spend, guilt-free.</Callout>
-        </Step>
-        <Step n={4} title="Kill high-interest debt first">
-          Personal loans and credit cards in BD run 12–20%+. No investment reliably beats that — paying off a 15% loan IS a guaranteed 15% return. List every debt by interest rate, pay minimums on all, and throw every spare taka at the highest rate first. Credit card balances are the emergency: BD card rates can exceed 20%.
-        </Step>
-        <Step n={5} title="Invest in this order">
-          Once steps 1–4 are done, climb this ladder — each rung adds risk, so fill the safer one first:
-          <div style={{ margin: "14px 0" }}>
-            {[
-              ["1. Sanchayapatra / NSC", "~11.8–11.98% govt-guaranteed + tax rebate. Fill your quota first — nothing safe beats it."],
-              ["2. FDR / DPS at strong banks", "9–11.5% with flexibility Sanchayapatra lacks. Your medium-term money."],
-              ["3. iFarmer & alternatives", "8–15% on short agri cycles when lots are open — small amounts only."],
-              ["4. Mutual funds", "Professional DSE exposure without picking stocks. Check weekly NAV history."],
-              ["5. Blue-chip & growth stocks", "Highest potential, real risk. Only money you can lock away for years."],
-            ].map(([t, s], i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: i < 4 ? `1px solid ${T.borderSoft}` : "none" }}>
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: T.accent, flexShrink: 0, minWidth: 200 }}>{t}</div>
-                <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.55 }}>{s}</div>
-              </div>
-            ))}
-          </div>
-          <Callout icon="🪜">Why this order? Bangladesh is unusual: the government pays ~12% risk-free. Until you've maxed that, taking stock-market risk for a hoped-for 15% makes little sense.</Callout>
-        </Step>
-        <Step n={6} title="Grow your income">
-          Cutting tea from your budget saves ৳900/month; a better income saves your future. The big wins in BD right now: freelancing for foreign clients (earning in dollars while spending in taka is the ultimate inflation hedge), a side business via Facebook/Instagram commerce, and certifications that move salary brackets (cloud, data, project management, CA/ACCA). One ৳20K/month income jump out-earns years of frugality — and remitters get the tax-free 12% Wage Earner Bond.
-        </Step>
-      </div>
+      {/* Guide offer — above the fold on mobile & desktop */}
+      <GuideOffer />
 
-      <GuideHead kicker="Part 2 · Spending" title="The BD Conscious Spending Plan" />
+      <GuideHead kicker="The plan" title="The BD Conscious Spending Plan" />
       <div style={{ ...card, padding: "26px 22px" }}>
         <p style={{ margin: "0 0 6px", fontSize: 14, lineHeight: 1.75, color: "#B8C7E0" }}>
           Budgets fail because they're all restriction. A conscious spending plan flips it: decide your splits once, automate them, then spend the rest <b style={{ color: "#fff" }}>without guilt</b>. For a Dhaka salaried professional, start here and tune:
@@ -1011,23 +1113,199 @@ function BlueprintPage() {
         </p>
       </div>
 
-      <GuideHead kicker="Part 3 · Avoid these" title="10 BD Money Mistakes" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
-        {MISTAKES.map((m, i) => (
-          <div key={i} className={`fd-item fd-up fd-up-${Math.min(i % 4, 3)}`} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "16px 17px", backdropFilter: "blur(14px)" }}>
-            <div style={{ fontSize: 22, marginBottom: 8 }}>{m.icon}</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 5, lineHeight: 1.35 }}>{i + 1}. {m.t}</div>
-            <div style={{ fontSize: 12.5, color: T.muted, lineHeight: 1.6 }}>{m.s}</div>
-          </div>
-        ))}
+      <GuideHead kicker="Safety net first" title="How big should your emergency fund be?" />
+      <div style={{ ...card, padding: "24px 22px" }}>
+        <p style={{ margin: "0 0 4px", fontSize: 14, lineHeight: 1.75, color: "#B8C7E0" }}>
+          Before any investing, park 3–6 months of expenses somewhere liquid you never touch — a high-rate savings account or a 3-month auto-renewing FDR at a strong bank. This is what stops a job loss or hospital bill from becoming a 14% personal loan.
+        </p>
+        <EmergencyCalc />
       </div>
 
-      <GuideHead kicker="Part 4 · Check yourself" title="Is your money actually growing?" />
+      <GuideHead kicker="Check yourself" title="Is your money actually growing?" />
       <InflationCheck />
 
       <div className="fd-up" style={{ marginTop: 24, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "26px 22px", textAlign: "center" }}>
         <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 900, color: "#fff" }}>Ready to put it to work?</h3>
-        <p style={{ margin: "0 0 4px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Step 2 → use the <b style={{ color: T.accent }}>Save</b> tab to set up your DPS. Step 5 → use the <b style={{ color: T.accent }}>Invest</b> tab for your lump sum. Thinking about a loan? Run it through <b style={{ color: T.accent }}>Borrow</b> first.</p>
+        <p style={{ margin: "0 0 4px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Use the <b style={{ color: T.accent }}>Save</b> tab to set up your DPS, the <b style={{ color: T.accent }}>Invest</b> tab for a lump sum, and run any loan through <b style={{ color: T.accent }}>Borrow</b> before you sign.</p>
+      </div>
+      <RelatedLinks links={[
+        { label: "Where to invest", path: "/invest" },
+        { label: "Savings & DPS planner", path: "/save" },
+        { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
+        { label: "Loan EMI calculator", path: "/borrow" },
+      ]} />
+      <TabDisclaimer />
+    </>
+  );
+}
+
+/* ============================================================
+   SANCHAYAPATRA — standalone, in-depth SEO page (its own URL).
+   High-search term, so it gets a dedicated page on top of being a
+   selectable option inside the Invest tool.
+   ============================================================ */
+const SANCHAYA_IDS = ["sanchayapatra", "sp3m", "paribar", "pensioner"];
+
+function SanchayapatraCalc() {
+  const [amount, setAmount] = useState("500000");
+  const [certId, setCertId] = useState("sanchayapatra");
+  const list = INSTRUMENTS.filter(i => SANCHAYA_IDS.includes(i.id));
+  const cert = list.find(i => i.id === certId) || list[0];
+  const num = Number(String(amount).replace(/[^0-9]/g, ""));
+  const annual = num * cert.rate / 100;
+  const real = (cert.rate - INFLATION).toFixed(1);
+  return (
+    <div style={{ ...card, padding: "24px 22px", margin: "0 0 24px" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: ".09em", marginBottom: 12 }}>🧮 SANCHAYAPATRA PROFIT CALCULATOR</div>
+      <label style={lbl}>Which certificate?</label>
+      <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+        {list.map(c => (
+          <button key={c.id} className="fd-chip" onClick={() => setCertId(c.id)} style={{ ...chip(certId === c.id), flex: "1 1 46%", fontSize: 12 }}>
+            {c.name.replace(" Sanchayapatra", "")} · {c.rateLabel}
+          </button>
+        ))}
+      </div>
+      <label style={lbl}>How much are you investing?</label>
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <span style={taka}>৳</span>
+        <input className="fd-input" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="5,00,000" style={bigInput} />
+        {num > 0 && <span style={inputHint}>{fmt(num)}</span>}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {[100000, 500000, 1000000, 3000000].map(q => <button key={q} className="fd-chip" onClick={() => setAmount(String(q))} style={chip(num === q)}>{fmt(q)}</button>)}
+      </div>
+      {num > 0 && (
+        <div className="fd-up">
+          <div style={{ background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "20px", textAlign: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: T.accent, fontWeight: 800, letterSpacing: ".09em", marginBottom: 7 }}>EST. PROFIT · ~1 YEAR AT {cert.rateLabel}</div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: T.green }}>+<Counter value={annual} /></div>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <StatBox label="Min to invest" value={fmt(cert.min)} />
+            <StatBox label="Real return (after inflation)" value={`${real > 0 ? "+" : ""}${real}%`} color={real > 0 ? T.green : T.red} />
+            <StatBox label="Individual cap" value={cert.max ? fmt(cert.max) : "—"} />
+          </div>
+          <p style={{ margin: "12px 2px 0", fontSize: 11.5, color: T.faint, lineHeight: 1.6 }}>Gross estimate. A 5–10% source tax applies (the higher tier above ৳7.5 Lakh); payout frequency varies by certificate. Rate is locked at purchase for the full term.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SanchayapatraPage() {
+  const nav = useNav();
+  const list = INSTRUMENTS.filter(i => SANCHAYA_IDS.includes(i.id));
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "44px 0 20px" }}>
+        <div className="fd-up" style={pill}>🏛️ Sanchayapatra · সঞ্চয়পত্র</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(28px,6vw,44px)" }}>Sanchayapatra: rates, limits &amp; <span style={gradText}>profit</span></h1>
+        <p className="fd-up fd-up-2" style={sub}>Bangladesh's best risk-free return — government-guaranteed, ~11.8–11.98% (Jan 2026). Here are the current rates, the real investment limits (individual vs joint), and a free profit calculator.</p>
+      </div>
+      <UpdatedBadge />
+
+      <SanchayapatraCalc />
+
+      <SectionHead title="The four certificates" hint="Rate · minimum · payout" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8 }}>
+        {list.map((c, idx) => (
+          <div key={c.id} className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: T.green, opacity: 0.85 }} />
+            <div style={{ display: "flex", gap: 13, alignItems: "flex-start" }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(0,214,143,0.10)", border: "1px solid rgba(0,214,143,0.30)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{c.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>{c.name}</span>
+                  <span style={{ fontSize: 12, color: T.faint }}>{c.bn}</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: T.muted, marginTop: 5, lineHeight: 1.6 }}>Min {fmt(c.min)} · {c.horizon} · cap {c.max ? fmt(c.max) : "—"}{c.maxJoint ? ` (৳${c.maxJoint / 100000} Lakh joint)` : ""}</div>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: T.green, flexShrink: 0 }}>{c.rateLabel}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <SanchayapatraLimits />
+
+      <div style={{ ...card, padding: "24px 22px", marginBottom: 24 }}>
+        <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 800, color: "#fff" }}>Investing jointly</h3>
+        <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+          For the <b style={{ color: "#fff" }}>5-Year Bangladesh</b> and <b style={{ color: "#fff" }}>3-Monthly Profit</b> certificates, two people can invest jointly — and the ceiling doubles to <b style={{ color: "#fff" }}>৳60 Lakh</b> versus ৳30 Lakh individually. It's a common way for couples or a parent and adult child to park more in the safest instrument in the country.
+        </p>
+        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: T.muted }}>
+          <b style={{ color: "#C9D8F0" }}>Poribar</b> and <b style={{ color: "#C9D8F0" }}>Pensioner</b> are single-name only — no joint option. And if you buy more than one type, your combined ceiling is the <b style={{ color: "#C9D8F0" }}>highest single limit</b> among them, not the sum. Institutions, provident funds and approved gratuity/superannuation funds have no upper limit at all.
+        </p>
+      </div>
+
+      <div className="fd-up" style={{ marginTop: 4, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Want it weighed against everything else?</h3>
+        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Sanchayapatra is the anchor — but the right mix depends on your amount and risk. Build a full plan in the Invest tool.</p>
+        <button className="fd-cta" onClick={() => nav("/invest")} style={{ ...cta, width: "auto", padding: "14px 28px" }}>Open the Invest planner →</button>
+      </div>
+
+      <RelatedLinks links={[
+        { label: "Where to invest", path: "/invest" },
+        { label: "Savings & DPS planner", path: "/save" },
+        { label: "Loan EMI calculator", path: "/borrow" },
+        { label: "Money Blueprint", path: "/blueprint" },
+      ]} />
+      <TabDisclaimer />
+    </>
+  );
+}
+
+/* ============================================================
+   COMPARISON HUB — coming-soon stubs (full build is a future sprint).
+   Pattern: Paisabazaar-style card grid + multi-select "Compare".
+   ============================================================ */
+const WHATSAPP_LINK = "https://wa.me/8801720408431?text=" + encodeURIComponent("Hi FinDesh — please notify me when the comparison tool launches.");
+const COMPARE_META = {
+  "credit-cards": { icon: "💳", h1: "Compare Credit Cards in Bangladesh", what: "Annual fees, interest rates, lounge access, cashback and the best card for how you actually spend — side by side, no sales calls.", filters: ["No Annual Fee", "Best for Online Shopping", "Cashback", "Lifetime Free", "Travel"] },
+  "savings": { icon: "🏦", h1: "Compare Savings Accounts in Bangladesh", what: "Interest rates, minimum balances, fees and digital features across banks — so you can see at a glance where your money works hardest.", filters: ["Highest Rate", "Zero Balance", "Best Digital App", "Best for DPS Holders", "Islamic"] },
+  "loans": { icon: "🤝", h1: "Compare Loans in Bangladesh", what: "Personal, home and car loan rates, processing fees and tenures across strong lenders — the full picture before you ever walk into a branch.", filters: ["Lowest Rate", "Personal", "Home", "Car", "Islamic"] },
+};
+
+function ComingSoonPage({ kind }) {
+  const nav = useNav();
+  const m = COMPARE_META[kind] || COMPARE_META["credit-cards"];
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "44px 0 18px" }}>
+        <div className="fd-up" style={pill}>{m.icon} Coming soon</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>{m.h1}</h1>
+        <p className="fd-up fd-up-2" style={sub}>{m.what}</p>
+      </div>
+
+      {/* interest capture — audience ownership, no email */}
+      <div className="fd-up" style={{ ...card, textAlign: "center", padding: "26px 22px", marginBottom: 20 }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 800, color: "#fff" }}>Want first access?</h3>
+        <p style={{ margin: "0 auto 16px", fontSize: 13.5, color: T.muted, lineHeight: 1.65, maxWidth: 420 }}>We're building this now. Tap below and we'll message you on WhatsApp the moment it's live — no email, no spam, just a one-time heads-up.</p>
+        <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="fd-cta" style={{ ...cta, display: "inline-block", width: "auto", padding: "14px 26px", textDecoration: "none", background: "linear-gradient(135deg,#25D366,#128C7E)" }}>💬 Notify me on WhatsApp</a>
+      </div>
+
+      {/* a peek at the planned layout (Paisabazaar-style card grid + compare) */}
+      <SectionHead title="What it'll look like" hint="Preview · card grid + compare" />
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        {m.filters.map(f => <span key={f} className="fd-chip" style={{ ...chip(false), cursor: "default", opacity: 0.7 }}>{f}</span>)}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, opacity: 0.55, pointerEvents: "none" }}>
+        {[1, 2].map(n => (
+          <div key={n} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "16px 17px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ width: 90, height: 13, borderRadius: 5, background: "rgba(148,180,255,0.18)" }} />
+              <span style={{ fontSize: 11.5, color: T.muted }}>☐ Compare</span>
+            </div>
+            <div style={{ width: "70%", height: 10, borderRadius: 5, background: "rgba(148,180,255,0.12)", marginBottom: 8 }} />
+            <div style={{ width: "55%", height: 10, borderRadius: 5, background: "rgba(148,180,255,0.10)", marginBottom: 14 }} />
+            <div style={{ height: 34, borderRadius: 9, background: T.accentSoft, border: `1px solid ${T.accentBorder}` }} />
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 12.5, color: T.faint, lineHeight: 1.7, margin: "16px 4px 0" }}>You'll filter by what matters to you, tick a few products, and see them side-by-side in a clean table — with a plain-English “why we'd pick this” note. Free, like every FinDesh tool.</p>
+
+      <div style={{ textAlign: "center", marginTop: 24 }}>
+        <button className="fd-chip" onClick={() => nav("/invest")} style={{ ...chip(false), padding: "11px 20px", fontSize: 13 }}>← Back to the free tools</button>
       </div>
       <TabDisclaimer />
     </>
@@ -1035,33 +1313,214 @@ function BlueprintPage() {
 }
 
 /* ============================================================
-   ROOT — navigation shell
+   ROUTING + SEO — main tabs + the standalone Sanchayapatra page.
+   Native History API (no router dep). Netlify rewrites /* → index.html,
+   so deep links resolve; this layer sets active tab + per-page metadata.
+   ============================================================ */
+const SITE = "https://findeshai.com";
+const DEFAULT_DESC = "Free AI-powered investment advice, Sanchayapatra & FDR rates, DPS savings plans and loan EMI calculator for Bangladesh. Grow your money with FinDesh AI.";
+
+const ROUTES = {
+  "/": {
+    tab: "invest",
+    title: "FinDesh AI — Bangladesh's First AI Personal Finance & Investment Platform",
+    desc: DEFAULT_DESC,
+  },
+  "/invest": {
+    tab: "invest",
+    title: "Where to Invest in Bangladesh (2026) — AI Investment Planner | FinDesh AI",
+    desc: "Get a personalised Bangladesh investment plan in seconds — Sanchayapatra, FDR, mutual funds, DSE blue-chips and gold, with verified 2026 rates and your risk level.",
+    h1: "Where to invest in Bangladesh",
+    sub: "Tell us how much you have and your risk comfort. Get a clear, Bangladesh-specific investment plan in seconds — with 2026 rates.",
+  },
+  "/save": {
+    tab: "save",
+    title: "DPS Calculator Bangladesh 2026 — Monthly Savings Planner | FinDesh AI",
+    desc: "Plan your monthly savings and compare the best DPS rates in Bangladesh (up to ~11%). See exactly what your DPS grows to at maturity with FinDesh AI.",
+  },
+  "/borrow": {
+    tab: "borrow",
+    title: "Loan EMI Calculator Bangladesh 2026 — Compare Bank Rates | FinDesh AI",
+    desc: "Free loan EMI calculator for Bangladesh plus a side-by-side comparison of personal, home and car loan rates from strong banks (2026).",
+  },
+  "/blueprint": {
+    tab: "blueprint",
+    title: "BD Money Blueprint — A Bangladesh Personal Finance Guide | FinDesh AI",
+    desc: "A conscious spending plan and money guide for Bangladeshi earners, rebuilt for BD banks, BD instruments and Dhaka's cost of living — plus free planning tools.",
+  },
+  "/sanchayapatra": {
+    tab: "invest", view: "sanchayapatra",
+    title: "Sanchayapatra Rate 2026, Limits & Profit Calculator | FinDesh AI",
+    desc: "Current Sanchayapatra rates (11.82–11.98%), individual vs joint investment limits, the combined-purchase rule and a free profit calculator for Bangladesh.",
+  },
+  "/compare/credit-cards": {
+    tab: null, view: "compare", kind: "credit-cards", noindex: true,
+    title: "Compare Credit Cards in Bangladesh (Coming Soon) | FinDesh AI",
+    desc: "A free, side-by-side credit card comparison for Bangladesh is coming to FinDesh AI — fees, rates and the best card for your spending. Get notified.",
+  },
+  "/compare/savings": {
+    tab: null, view: "compare", kind: "savings", noindex: true,
+    title: "Compare Savings Accounts in Bangladesh (Coming Soon) | FinDesh AI",
+    desc: "A free, side-by-side savings account comparison for Bangladesh is coming to FinDesh AI — rates, fees and the best account for you. Get notified.",
+  },
+  "/compare/loans": {
+    tab: null, view: "compare", kind: "loans", noindex: true,
+    title: "Compare Loans in Bangladesh (Coming Soon) | FinDesh AI",
+    desc: "A free, side-by-side loan comparison for Bangladesh is coming to FinDesh AI — personal, home and car loan rates and terms in one place. Get notified.",
+  },
+};
+
+const TAB_PATH = { invest: "/invest", save: "/save", borrow: "/borrow", blueprint: "/blueprint" };
+
+function resolveRoute(pathname) {
+  const clean = (pathname || "/").replace(/\/+$/, "") || "/";
+  return ROUTES[clean] ? clean : (ROUTES[clean.toLowerCase()] ? clean.toLowerCase() : "/");
+}
+
+const NavCtx = createContext(() => {});
+function useNav() { return useContext(NavCtx); }
+
+/* set/replace a <meta> or <link> attribute by selector */
+function setTag(selector, attr, value) {
+  const el = document.head.querySelector(selector);
+  if (el) el.setAttribute(attr, value);
+}
+
+let seoInitialized = false;
+function applySEO(routeKey) {
+  const r = ROUTES[routeKey] || ROUTES["/"];
+  const url = SITE + (routeKey === "/" ? "/" : routeKey);
+  document.title = r.title;
+  setTag('meta[name="description"]', "content", r.desc);
+  setTag('link[rel="canonical"]', "href", url);
+  setTag('meta[property="og:url"]', "content", url);
+  setTag('meta[property="og:title"]', "content", r.title);
+  setTag('meta[property="og:description"]', "content", r.desc);
+  setTag('meta[name="twitter:title"]', "content", r.title);
+  setTag('meta[name="twitter:description"]', "content", r.desc);
+  setTag('meta[name="robots"]', "content", r.noindex ? "noindex, follow" : "index, follow");
+  /* Skip the first call (GA4 config + GTM already fire a page_view on load);
+     fire on every subsequent SPA route change so per-page tracking still works. */
+  if (seoInitialized) {
+    if (window.dataLayer) window.dataLayer.push({ event: "page_view", page_path: routeKey, page_title: r.title, page_location: url });
+    if (typeof window.gtag === "function") window.gtag("event", "page_view", { page_path: routeKey, page_title: r.title, page_location: url });
+  }
+  seoInitialized = true;
+}
+
+/* Internal SEO links between related tools */
+function RelatedLinks({ links }) {
+  const nav = useNav();
+  if (!links || !links.length) return null;
+  return (
+    <div style={{ marginTop: 26, paddingTop: 18, borderTop: `1px solid ${T.borderSoft}`, position: "relative", zIndex: 1 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 10 }}>Related tools</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {links.map(l => (
+          <a key={l.path} href={l.path} className="fd-chip" onClick={e => { e.preventDefault(); nav(l.path); }}
+            style={{ textDecoration: "none", padding: "9px 14px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF" }}>
+            {l.label} →
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ROOT — navigation shell + router
    ============================================================ */
 export default function App() {
-  const [page, setPage] = useState("invest");
+  const [routeKey, setRouteKey] = useState(() => (typeof window !== "undefined" ? resolveRoute(window.location.pathname) : "/"));
+  const route = ROUTES[routeKey] || ROUTES["/"];
+  const page = route.tab;
+
+  const navigate = (path) => {
+    const key = resolveRoute(path);
+    if (key !== window.location.pathname) window.history.pushState({}, "", key === "/" ? "/" : key);
+    setRouteKey(key);
+    window.scrollTo({ top: 0 });
+  };
+
+  useEffect(() => {
+    const onPop = () => setRouteKey(resolveRoute(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => { applySEO(routeKey); }, [routeKey]);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const go = (path) => { setMenuOpen(false); navigate(path); };
+
   const tabs = [
     { id: "invest", label: "Invest", icon: "📈" },
     { id: "save", label: "Save", icon: "💰" },
     { id: "borrow", label: "Borrow", icon: "🏦" },
     { id: "blueprint", label: "Blueprint", icon: "🗺️" },
   ];
+  const menuGroups = [
+    { heading: "Tools", items: [
+      { label: "Invest", icon: "📈", path: "/invest" },
+      { label: "Save", icon: "💰", path: "/save" },
+      { label: "Borrow", icon: "🏦", path: "/borrow" },
+      { label: "Blueprint", icon: "🗺️", path: "/blueprint" },
+      { label: "Sanchayapatra", icon: "🏛️", path: "/sanchayapatra" },
+    ] },
+    { heading: "Compare · coming soon", items: [
+      { label: "Compare Credit Cards", icon: "💳", path: "/compare/credit-cards", soon: true },
+      { label: "Compare Savings Accounts", icon: "🏦", path: "/compare/savings", soon: true },
+      { label: "Compare Loans", icon: "🤝", path: "/compare/loans", soon: true },
+    ] },
+  ];
 
   return (
+    <NavCtx.Provider value={navigate}>
     <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse 80% 50% at 50% -10%, #0B1E3D 0%, ${T.bg} 55%)`, fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", color: T.text, position: "relative" }}>
       <style>{GLOBAL_CSS}</style>
       <Orbs />
 
-      <nav style={{ background: "rgba(4,8,15,0.75)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", height: 62, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 22px", position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${T.borderSoft}` }}>
-        <Logo size={30} />
-        <span style={{ color: T.muted, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 7 }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, animation: "fdPulse 2.2s ease-in-out infinite" }} /> Live BD rates · {LAST_UPDATED}
-        </span>
+      <nav style={{ background: "rgba(4,8,15,0.75)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", height: 62, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px 0 22px", position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${T.borderSoft}` }}>
+        <a href="/" onClick={e => { e.preventDefault(); go("/"); }} style={{ textDecoration: "none" }}><Logo size={30} /></a>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span className="fd-hide-sm" style={{ color: T.muted, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, animation: "fdPulse 2.2s ease-in-out infinite" }} /> Live BD rates · {LAST_UPDATED}
+          </span>
+          <button aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)} style={{ width: 40, height: 40, borderRadius: 11, cursor: "pointer", border: `1px solid ${menuOpen ? T.accentBorder : T.borderSoft}`, background: menuOpen ? T.accentSoft : "rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit" }}>
+            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "#C9D8F0", transition: "transform .2s", transform: menuOpen ? "translateY(6px) rotate(45deg)" : "none" }} />
+            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "#C9D8F0", opacity: menuOpen ? 0 : 1, transition: "opacity .15s" }} />
+            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "#C9D8F0", transition: "transform .2s", transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none" }} />
+          </button>
+        </div>
       </nav>
+
+      {menuOpen && (
+        <>
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(2,5,11,0.5)", backdropFilter: "blur(2px)" }} />
+          <div className="fd-up" style={{ position: "fixed", top: 70, right: 14, zIndex: 60, width: 268, maxWidth: "calc(100vw - 28px)", background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 16, padding: "10px", boxShadow: "0 24px 70px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)" }}>
+            {menuGroups.map((grp, gi) => (
+              <div key={gi} style={{ marginTop: gi ? 8 : 0 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", padding: "8px 10px 6px" }}>{grp.heading}</div>
+                {grp.items.map(it => {
+                  const active = resolveRoute(it.path) === routeKey;
+                  return (
+                    <a key={it.path} href={it.path} onClick={e => { e.preventDefault(); go(it.path); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 10px", borderRadius: 10, textDecoration: "none", background: active ? T.accentSoft : "transparent", color: active ? "#fff" : "#C9D8F0", fontSize: 14, fontWeight: 600 }}>
+                      <span style={{ fontSize: 16 }}>{it.icon}</span>
+                      <span style={{ flex: 1 }}>{it.label}</span>
+                      {it.soon && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, background: "rgba(255,180,84,0.12)", border: "1px solid rgba(255,180,84,0.3)", borderRadius: 20, padding: "2px 7px", letterSpacing: ".04em" }}>SOON</span>}
+                    </a>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <div style={{ position: "sticky", top: 62, zIndex: 40, background: "rgba(4,8,15,0.7)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${T.borderSoft}`, padding: "10px 12px" }}>
         <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: 4 }}>
           {tabs.map(t => (
-            <button key={t.id} className="fd-tab" onClick={() => { setPage(t.id); window.scrollTo({ top: 0 }); }} style={{
+            <button key={t.id} className="fd-tab" onClick={() => navigate(TAB_PATH[t.id])} style={{
               flex: 1, padding: "9px 4px", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
               background: page === t.id ? "linear-gradient(135deg, rgba(79,158,255,0.28), rgba(79,158,255,0.12))" : "transparent",
               color: page === t.id ? "#fff" : T.muted, fontWeight: page === t.id ? 800 : 600, fontSize: 12.5,
@@ -1076,10 +1535,13 @@ export default function App() {
       </div>
 
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 40px", position: "relative", zIndex: 1 }}>
-        {page === "invest" && <InvestPage />}
-        {page === "save" && <SavingsPage />}
-        {page === "borrow" && <BorrowPage />}
-        {page === "blueprint" && <BlueprintPage />}
+        {route.view === "sanchayapatra" ? <SanchayapatraPage />
+          : route.view === "compare" ? <ComingSoonPage kind={route.kind} />
+          : page === "invest" ? <InvestPage seoHead={route.h1 ? { h1: route.h1, sub: route.sub } : null} />
+          : page === "save" ? <SavingsPage seoHead={route.h1 ? { h1: route.h1, sub: route.sub } : null} />
+          : page === "borrow" ? <BorrowPage initialType={route.preset?.type} />
+          : page === "blueprint" ? <BlueprintPage />
+          : <InvestPage seoHead={null} />}
       </div>
 
       <footer style={{ borderTop: `1px solid ${T.borderSoft}`, marginTop: 60, padding: "32px 20px 40px", textAlign: "center", position: "relative", zIndex: 1 }}>
@@ -1092,6 +1554,7 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </NavCtx.Provider>
   );
 }
 
@@ -1108,5 +1571,6 @@ const inputHint = { position: "absolute", right: 16, top: "50%", transform: "tra
 const errStyle = { color: "#FF6B6B", fontSize: 13, margin: "0 0 14px", fontWeight: 600 };
 const cta = { width: "100%", padding: "17px", fontSize: 16, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, #4F9EFF, #2563EB)", border: "none", borderRadius: 14, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em", boxShadow: "0 8px 28px rgba(79,158,255,0.3)" };
 const inflationNote = { marginTop: 20, background: "rgba(255,180,84,0.07)", border: "1px solid rgba(255,180,84,0.22)", borderRadius: 13, padding: "13px 15px", fontSize: 12.5, color: "#FFCE8A", lineHeight: 1.6, position: "relative", zIndex: 1 };
+const stepDot = { width: 24, height: 24, flexShrink: 0, borderRadius: "50%", background: "rgba(79,158,255,0.16)", border: "1px solid rgba(79,158,255,0.42)", color: "#8AC2FF", fontSize: 12.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" };
 function chip(active) { return { flex: 1, minWidth: 64, padding: "10px 6px", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", border: `1px solid ${active ? "rgba(79,158,255,0.6)" : "rgba(148,180,255,0.14)"}`, background: active ? "rgba(79,158,255,0.16)" : "rgba(255,255,255,0.025)", color: active ? "#8AC2FF" : "#8A9BB8", borderRadius: 10, cursor: "pointer" }; }
 function riskBtn(active, c) { return { flex: 1, padding: "15px 6px", borderRadius: 14, cursor: "pointer", textAlign: "center", fontFamily: "inherit", border: active ? `1.5px solid ${c.border}` : "1.5px solid rgba(148,180,255,0.14)", background: active ? c.bg : "rgba(255,255,255,0.025)", boxShadow: active ? `0 0 24px ${c.color}22` : "none" }; }
