@@ -117,7 +117,6 @@ function calcEMI(P, annualPct, years) {
 
 /* ---------- Global CSS ---------- */
 const GLOBAL_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 ::selection { background: rgba(79,158,255,0.35); }
 body { margin: 0; }
@@ -130,8 +129,8 @@ body { margin: 0; }
 @keyframes fdSpin { to { transform: rotate(360deg); } }
 .fd-up { animation: fdUp .55s cubic-bezier(.21,.8,.35,1) both; }
 .fd-up-1 { animation-delay: .06s; } .fd-up-2 { animation-delay: .12s; } .fd-up-3 { animation-delay: .18s; }
-.fd-item { transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease; }
-.fd-item:hover { transform: translateY(-3px); border-color: rgba(79,158,255,0.35) !important; box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(79,158,255,0.1); }
+.fd-item { transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease; touch-action: manipulation; }
+@media (hover: hover) { .fd-item:hover { transform: translateY(-3px); border-color: rgba(79,158,255,0.35) !important; box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(79,158,255,0.1); } }
 .fd-cta { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
 .fd-cta:hover { filter: brightness(1.12); transform: translateY(-2px); box-shadow: 0 12px 36px rgba(79,158,255,0.42); }
 .fd-cta:active { transform: translateY(0) scale(.985); }
@@ -140,8 +139,8 @@ body { margin: 0; }
 .fd-input { transition: border-color .2s ease, box-shadow .2s ease; }
 .fd-input:focus { border-color: rgba(79,158,255,0.65) !important; box-shadow: 0 0 0 4px rgba(79,158,255,0.14); }
 .fd-input::placeholder { color: #3D4D68; }
-.fd-tab { transition: color .18s ease, background .18s ease; }
-.fd-tab:hover { color: #C9D8F0 !important; }
+.fd-tab { transition: color .18s ease, background .18s ease; touch-action: manipulation; }
+@media (hover: hover) { .fd-tab:hover { color: #C9D8F0 !important; } }
 .fd-link { transition: opacity .15s ease; }
 .fd-link:hover { opacity: .75; }
 .fd-risk { transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
@@ -1315,11 +1314,11 @@ function FAQ({ items }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {items.map((it, i) => (
           <div key={i} className="fd-item" onClick={() => setOpen(open === i ? -1 : i)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", cursor: "pointer", backdropFilter: "blur(12px)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, pointerEvents: "none" }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{it.q}</span>
               <span style={{ color: T.accent, fontSize: 18, fontWeight: 700, flexShrink: 0 }}>{open === i ? "−" : "+"}</span>
             </div>
-            {open === i && <p className="fd-up" style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>{it.a}</p>}
+            {open === i && <p className="fd-up" style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0", pointerEvents: "none" }}>{it.a}</p>}
           </div>
         ))}
       </div>
@@ -1741,10 +1740,10 @@ export default function App() {
                 {grp.items.map(it => {
                   const active = resolveRoute(it.path) === routeKey;
                   return (
-                    <a key={it.path} href={it.path} onClick={e => { e.preventDefault(); go(it.path); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 10px", borderRadius: 10, textDecoration: "none", background: active ? T.accentSoft : "transparent", color: active ? "#fff" : "#C9D8F0", fontSize: 14, fontWeight: 600 }}>
-                      <span style={{ fontSize: 16 }}>{it.icon}</span>
-                      <span style={{ flex: 1 }}>{it.label}</span>
-                      {it.soon && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, background: "rgba(255,180,84,0.12)", border: "1px solid rgba(255,180,84,0.3)", borderRadius: 20, padding: "2px 7px", letterSpacing: ".04em" }}>SOON</span>}
+                    <a key={it.path} href={it.path} onClick={e => { e.preventDefault(); go(it.path); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 10px", borderRadius: 10, textDecoration: "none", background: active ? T.accentSoft : "transparent", color: active ? "#fff" : "#C9D8F0", fontSize: 14, fontWeight: 600, touchAction: "manipulation" }}>
+                      <span style={{ fontSize: 16, pointerEvents: "none" }}>{it.icon}</span>
+                      <span style={{ flex: 1, pointerEvents: "none" }}>{it.label}</span>
+                      {it.soon && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, background: "rgba(255,180,84,0.12)", border: "1px solid rgba(255,180,84,0.3)", borderRadius: 20, padding: "2px 7px", letterSpacing: ".04em", pointerEvents: "none" }}>SOON</span>}
                     </a>
                   );
                 })}
@@ -1763,9 +1762,10 @@ export default function App() {
               color: page === t.id ? "#fff" : T.muted, fontWeight: page === t.id ? 800 : 600, fontSize: 12.5,
               boxShadow: page === t.id ? "inset 0 0 0 1px rgba(79,158,255,0.45), 0 4px 16px rgba(79,158,255,0.15)" : "none",
               display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+              touchAction: "manipulation",
             }}>
-              <span style={{ fontSize: 16 }}>{t.icon}</span>
-              <span>{t.label}</span>
+              <span style={{ fontSize: 16, pointerEvents: "none" }}>{t.icon}</span>
+              <span style={{ pointerEvents: "none" }}>{t.label}</span>
             </button>
           ))}
         </div>
