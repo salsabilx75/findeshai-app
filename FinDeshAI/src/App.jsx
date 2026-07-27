@@ -450,6 +450,8 @@ function InvestPage({ seoHead, focus }) {
   const ref = useRef(null);
   const num = Number(String(amount).replace(/[^0-9]/g, ""));
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+
   const run = () => {
     if (!num || num < 500) return setErr("Please enter at least ৳500.");
     if (!risk) return setErr("Please choose your risk level.");
@@ -457,6 +459,59 @@ function InvestPage({ seoHead, focus }) {
     setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
   const matched = submitted && risk ? INSTRUMENTS.filter(i => i.risk.includes(risk) && i.min <= num).sort((a, b) => a.rate - b.rate) : [];
+
+  const riskLabel = { low: "Conservative", medium: "Balanced", high: "Aggressive" }[risk] || "";
+  const downloadPlanPDF = async () => {
+    taxTrack("invest_pdf_download_started", { risk });
+    setPdfLoading(true);
+    try {
+      const alloc = ALLOCATION[risk] || [];
+      const { doc, y: y0 } = await newPdfDoc("Personal Investment Plan", riskLabel + " profile   ·   Investable amount: " + bdt(num));
+      let y = y0;
+
+      y = pdfSection(doc, y, "1.  SUGGESTED ASSET ALLOCATION");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(120, 134, 156);
+      doc.text("ASSET CLASS", PDF.L + 8, y); doc.text("WEIGHT", 360, y, { align: "right" }); doc.text("AMOUNT", PDF.R - 8, y, { align: "right" });
+      y += 6; y = pdfRule(doc, y);
+      alloc.forEach(a => {
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(70, 84, 106);
+        doc.text(a.cat, PDF.L + 8, y);
+        doc.text(a.pct + "%", 360, y, { align: "right" });
+        doc.text(bdt(num * a.pct / 100), PDF.R - 8, y, { align: "right" });
+        y += 15.5;
+      });
+      y = pdfRule(doc, y);
+      y = pdfTotal(doc, y, "Total to Invest", bdt(num));
+
+      y = pdfBreak(doc, y, 200);
+      y = pdfSection(doc, y, "2.  MATCHED INSTRUMENTS (LOW TO HIGH RISK)");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(120, 134, 156);
+      doc.text("INSTRUMENT", PDF.L + 8, y); doc.text("RETURN", 330, y, { align: "right" });
+      doc.text("HORIZON", 430, y, { align: "right" }); doc.text("VALUE IN 5 YRS*", PDF.R - 8, y, { align: "right" });
+      y += 6; y = pdfRule(doc, y);
+      matched.slice(0, 12).forEach(i => {
+        y = pdfBreak(doc, y, 40);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(70, 84, 106);
+        doc.text(doc.splitTextToSize(i.name, 250)[0], PDF.L + 8, y);
+        doc.text(i.rateLabel, 330, y, { align: "right" });
+        doc.text(i.horizon, 430, y, { align: "right" });
+        doc.text(bdt(num * Math.pow(1 + i.rate / 100, 5)), PDF.R - 8, y, { align: "right" });
+        y += 15.5;
+      });
+      y += 2;
+      y = pdfNote(doc, y, "*Illustrative value if the entire amount were placed in that single instrument and returns held steady for five years, compounded annually. Actual returns vary; rates are not guaranteed except where explicitly government-backed.");
+
+      y = pdfBreak(doc, y, 110);
+      y = pdfSection(doc, y, "3.  WHY THIS MATTERS");
+      y = pdfNote(doc, y, "Bangladesh inflation is running at approximately " + INFLATION + "% (early 2026). Any instrument returning less than that is quietly reducing your purchasing power — a standard savings account paying 3-5% loses you real money every year. Every option listed above is shown with its published rate so you can compare against that " + INFLATION + "% benchmark.", [20, 120, 90]);
+      y = pdfRow(doc, y, "Inflation benchmark to beat", INFLATION + "%", { bold: true });
+
+      pdfFooter(doc, "Prepared by FinDesh AI (findeshai.com) for personal planning purposes only. Rates shown are those published by issuers and were current at the time of generation; they change and should be reconfirmed with the bank, broker or National Savings office before you invest. This is not investment advice and FinDesh AI is not a licensed investment adviser. Consider your own circumstances, or consult a qualified professional, before making any investment.");
+      doc.save("FinDesh-Investment-Plan-" + riskLabel + ".pdf");
+      taxTrack("invest_pdf_downloaded", { risk });
+    } catch (e) { setErr("Couldn't generate the PDF just now — please try again."); }
+    finally { setPdfLoading(false); }
+  };
   const quick = [50000, 100000, 500000, 1000000];
 
   return (
@@ -509,6 +564,11 @@ function InvestPage({ seoHead, focus }) {
             {matched.map((i, idx) => <InvestCard key={i.id} inst={i} amount={num} idx={idx} />)}
           </div>
           <div style={inflationNote}>💡 BD inflation is ~{INFLATION}% (early 2026). Anything returning less is quietly losing you purchasing power — which is why a savings account (3–5%) hurts.</div>
+
+          <div style={{ marginTop: 18 }}>
+            <button className="fd-cta" onClick={downloadPlanPDF} disabled={pdfLoading} style={{ ...cta, opacity: pdfLoading ? 0.7 : 1, touchAction: "manipulation" }}>{pdfLoading ? <>Preparing <span className="fd-spin" /></> : "📄 Download my investment plan (PDF)"}</button>
+            <p style={{ margin: "8px 0 0", fontSize: 11.5, color: T.faint }}>Your allocation, matched instruments and 5-year projections — one page you can save or share with your bank.</p>
+          </div>
         </div>
       )}
       <RelatedLinks links={[
@@ -712,6 +772,61 @@ function EMICalculator() {
     return lines.join(" ");
   };
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const downloadLoanPDF = async () => {
+    taxTrack("borrow_pdf_download_started");
+    setPdfLoading(true);
+    try {
+      const { doc, y: y0 } = await newPdfDoc("Loan Repayment Plan", bdt(P) + "  ·  " + R + "% p.a.  ·  " + years + " year" + (years > 1 ? "s" : ""));
+      let y = y0;
+
+      y = pdfSection(doc, y, "1.  LOAN SUMMARY");
+      y = pdfRow(doc, y, "Loan amount (principal)", bdt(P));
+      y = pdfRow(doc, y, "Annual interest rate", R + "%");
+      y = pdfRow(doc, y, "Tenure", years + " years  (" + years * 12 + " instalments)");
+      y = pdfRule(doc, y);
+      y = pdfTotal(doc, y, "Monthly EMI", bdt(emiV));
+
+      y = pdfSection(doc, y, "2.  TOTAL COST OF THIS LOAN");
+      y = pdfRow(doc, y, "Total principal repaid", bdt(P));
+      y = pdfRow(doc, y, "Total interest paid", bdt(totalInterest), { note: interestPct.toFixed(0) + "% of the amount borrowed", color: [176, 116, 20] });
+      y = pdfRule(doc, y);
+      y = pdfTotal(doc, y, "Total Amount Repayable", bdt(totalPaid), [253, 238, 226]);
+
+      if (schedule.length) {
+        y = pdfBreak(doc, y, 200);
+        y = pdfSection(doc, y, "3.  YEAR-BY-YEAR AMORTISATION SCHEDULE");
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(120, 134, 156);
+        doc.text("YEAR", PDF.L + 8, y); doc.text("PRINCIPAL PAID", 300, y, { align: "right" });
+        doc.text("INTEREST PAID", 420, y, { align: "right" }); doc.text("BALANCE", PDF.R - 8, y, { align: "right" });
+        y += 6; y = pdfRule(doc, y);
+        schedule.forEach(s => {
+          y = pdfBreak(doc, y, 40);
+          doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(70, 84, 106);
+          doc.text("Year " + s.y, PDF.L + 8, y);
+          doc.text(bdt(s.pPaid), 300, y, { align: "right" });
+          doc.text(bdt(s.iPaid), 420, y, { align: "right" });
+          doc.text(bdt(s.bal), PDF.R - 8, y, { align: "right" });
+          y += 15.5;
+        });
+        y = pdfRule(doc, y);
+        y = pdfRow(doc, y, "Totals", bdt(totalPaid), { bold: true });
+      }
+
+      y = pdfBreak(doc, y, 120);
+      y = pdfSection(doc, y, "4.  AFFORDABILITY CHECK");
+      y = pdfRow(doc, y, "Monthly EMI", bdt(emiV));
+      y = pdfRow(doc, y, "Suggested minimum monthly income", bdt(emiV / 0.4), { note: "all EMIs under 40%", bold: true });
+      y += 4;
+      y = pdfNote(doc, y, localInsight());
+
+      pdfFooter(doc, "Prepared by FinDesh AI (findeshai.com) for personal planning purposes only. EMI is calculated on a standard reducing-balance basis using the rate and tenure entered by the user. Your bank's actual offer will differ: processing fees, insurance, stamp duty, early-settlement charges and variable-rate resets are not included here, and the rate you are quoted depends on your credit assessment. Confirm all figures with the lender before signing. This is not financial advice.");
+      doc.save("FinDesh-Loan-Plan-" + Math.round(P / 1000) + "k-" + years + "yr.pdf");
+      taxTrack("borrow_pdf_downloaded");
+    } catch (e) { /* silent — button re-enables */ }
+    finally { setPdfLoading(false); }
+  };
+
   const askAI = async () => {
     setAiLoading(true); setAi("");
     try {
@@ -798,6 +913,11 @@ function EMICalculator() {
               </table>
             </div>
           )}
+
+          <button className="fd-cta" onClick={downloadLoanPDF} disabled={pdfLoading} style={{ ...cta, marginBottom: 10, opacity: pdfLoading ? 0.7 : 1, touchAction: "manipulation" }}>
+            {pdfLoading ? <>Preparing <span className="fd-spin" /></> : "📄 Download my loan plan (PDF)"}
+          </button>
+          <p style={{ margin: "0 0 16px", fontSize: 11.5, color: T.faint }}>EMI, total interest and the full year-by-year repayment schedule — useful to compare against what a bank quotes you.</p>
 
           <button className="fd-cta" onClick={askAI} disabled={aiLoading} style={{ ...cta, background: "linear-gradient(135deg,#7C3AED,#4F9EFF)", opacity: aiLoading ? 0.7 : 1 }}>
             {aiLoading ? <>Thinking <span className="fd-spin" /></> : "🤖 Is this loan worth it? — Ask FinDesh AI"}
@@ -1268,22 +1388,53 @@ function SanchayapatraPage() {
    the ⅓ salary exemption drops taxable income below the threshold. Only someone
    whose total income is within the tax-free limit pays ৳0.
 
-   Verified test cases (§13) — all pass with the rule above:
+   Verified test cases (§13) — all pass with the rule above (FY 2026-27):
      1. General, salary ৳5,00,000 ............................ net ৳5,000  (floor)
      2. General, salary ৳12,00,000 .......................... net ৳45,000
      3. Woman, ৳10L + ৳1L invest + ৳20k TDS .. net ৳11,667, refund ৳8,333
      4. General, ৳30L + ৳8L invest + ৳2.5L TDS . net ৳3,40,000, balance ৳90k
      5. First-time filer, salary ৳4,20,000 .................. net ৳1,000  (floor)
+
+   TWO FISCAL YEARS (added Jul 2026, founder request): people file FY 2025-26
+   during Jul–Nov 2026, so that is the DEFAULT. The rule sets differ in three
+   ways that matter — threshold ৳3.75L vs ৳4L, rebate 15% vs 10%, ceiling ৳10L
+   vs ৳7.5L. FY 2025-26 is cross-checked against a real corporate payroll
+   computation sheet (APM Global Logistics, Jun 2026) and reproduces its
+   ৳60,933.27 gross tax on ৳8,81,221.81 taxable income exactly.
    ============================================================ */
 const NBR_ERETURN_URL = "https://etaxnbr.gov.bd/";
 
+/* FY 2025-26 (AY 2026-27) — the year being FILED in Jul–Nov 2026. Verified Jul 2026
+   against Rashel's Law Desk, Prothom Alo (budget report), PwC and a real corporate
+   payroll computation sheet (APM Global Logistics, Jun 2026), which reproduces the
+   ৳3,75,000 threshold and 10/15/20/25/30 slabs exactly. Rebate here is 15% of
+   investment (capped 3% of taxable income, ৳1,00,00,000 investment ceiling) — the
+   rate was CUT to 10% only from FY 2026-27, which is the single biggest reason a
+   FY 2025-26 payslip won't match a FY 2026-27 calculation.
+   Minimum tax ৳5,000 = Dhaka North/South + Chattogram city corporations (this app's
+   core audience). Outside those it is ৳4,000 (other city corps) / ৳3,000. */
+const FY_2025_26 = {
+  label: "FY 2025-26", ay: "Assessment Year 2026-27", filedIn: "Filed July–November 2026",
+  thresholds: { general: 375000, woman: 425000, senior_65plus: 425000, disability: 500000, third_gender: 500000, freedom_fighter: 525000 },
+  slabs: [[300000, 0.10], [400000, 0.15], [500000, 0.20], [2000000, 0.25], [Infinity, 0.30]],
+  salary_deduction: { rate: 1 / 3, cap: 500000 },
+  rebate: { rate: 0.15, income_cap_rate: 0.03, absolute_cap: 1000000 },
+  minimum_tax: { regular: 5000, first_time_under_450k: 1000 },
+  earlyFilingRebate: false,
+};
 const FY_2026_27 = {
+  label: "FY 2026-27", ay: "Assessment Year 2027-28", filedIn: "Filed July–November 2027",
   thresholds: { general: 400000, woman: 450000, senior_65plus: 450000, disability: 525000, third_gender: 525000, freedom_fighter: 550000 },
   slabs: [[300000, 0.10], [400000, 0.15], [500000, 0.20], [2000000, 0.25], [Infinity, 0.30]],
   salary_deduction: { rate: 1 / 3, cap: 500000 },
   rebate: { rate: 0.10, income_cap_rate: 0.03, absolute_cap: 750000 },
   minimum_tax: { regular: 5000, first_time_under_450k: 1000 },
+  earlyFilingRebate: true,
 };
+const FY_RULES = { "2025-26": FY_2025_26, "2026-27": FY_2026_27 };
+const FY_LIST = ["2025-26", "2026-27"];
+const DEFAULT_FY = "2025-26"; // the return people are actually filing right now
+const rulesFor = fy => FY_RULES[fy] || FY_RULES[DEFAULT_FY];
 const TAX_CATEGORIES = [
   { id: "general", label: "General" },
   { id: "woman", label: "Woman" },
@@ -1292,32 +1443,54 @@ const TAX_CATEGORIES = [
   { id: "third_gender", label: "Third gender" },
   { id: "freedom_fighter", label: "Freedom fighter" },
 ];
-const digits = v => Number(String(v).replace(/[^0-9]/g, "")) || 0;
+/* Strips commas/৳/spaces but PRESERVES the decimal point — payslips quote paisa
+   ("1,321,832.72") and dropping the dot silently multiplied the figure by 100. */
+const digits = v => {
+  if (typeof v === "number") return isFinite(v) && v > 0 ? v : 0;
+  const cleaned = String(v).replace(/[^0-9.]/g, "");
+  const parts = cleaned.split(".");
+  const n = Number(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : cleaned);
+  return isFinite(n) && n > 0 ? n : 0;
+};
 
-function calcIncomeTax({ gross, other, investment, tds, category, firstTime }) {
+function calcIncomeTax({ gross, other, investment, tds, category, firstTime, fy = DEFAULT_FY }) {
+  const R = rulesFor(fy);
   gross = digits(gross); other = digits(other); investment = digits(investment); tds = digits(tds);
-  const cat = FY_2026_27.thresholds[category] != null ? category : "general";
-  const threshold = FY_2026_27.thresholds[cat];
-  const std = Math.min(gross * FY_2026_27.salary_deduction.rate, FY_2026_27.salary_deduction.cap);
+  const cat = R.thresholds[category] != null ? category : "general";
+  const threshold = R.thresholds[cat];
+  const std = Math.min(gross * R.salary_deduction.rate, R.salary_deduction.cap);
   const taxableSalary = Math.max(gross - std, 0);
   const taxable = taxableSalary + other;
   const grossTotal = gross + other; // total income before the ⅓ salary exemption — the "are you a taxpayer / filer?" test
-  const maxRebate = Math.min(FY_2026_27.rebate.income_cap_rate * taxable, FY_2026_27.rebate.absolute_cap);
-  const optimumInvestment = maxRebate / FY_2026_27.rebate.rate; // min(30% taxable, ৳75L)
+  const maxRebate = Math.min(R.rebate.income_cap_rate * taxable, R.rebate.absolute_cap);
+  const optimumInvestment = maxRebate / R.rebate.rate; // FY26-27: 30% of taxable; FY25-26: 20%
+  // Rebate is the LOWEST of these three — shown individually so the PDF can prove the working,
+  // the way a corporate payroll computation sheet does.
+  const rebateCandidates = [
+    { label: (R.rebate.rate * 100) + "% of actual investment", value: R.rebate.rate * investment },
+    { label: (R.rebate.income_cap_rate * 100) + "% of total taxable income", value: R.rebate.income_cap_rate * taxable },
+    { label: "Statutory ceiling", value: R.rebate.absolute_cap },
+  ];
 
   // Total income within the tax-free limit → genuinely no tax and no minimum tax.
   if (grossTotal <= threshold) {
-    return { gross, std, taxableSalary, other, taxable, threshold, belowThreshold: true, slabTax: 0, rebate: 0,
+    return { fy, rules: R, gross, std, taxableSalary, other, taxable, grossTotal, threshold, belowThreshold: true, slabTax: 0, rebate: 0, rebateCandidates, slabDetail: [],
       taxAfterRebate: 0, minTax: 0, minTaxApplied: false, rebateUseless: true, net: 0, tds, balance: 0, refund: tds, investment,
       optimumInvestment: 0, additionalTaxSaved: 0, investmentGap: 0, rebateState: "B" };
   }
   // Above the tax-free limit → a filer. Slab tax applies to income over the threshold (which can be ৳0 once the ⅓
   // salary exemption drops taxable income below the threshold), but the minimum-tax floor for filers still applies.
-  let rem = Math.max(taxable - threshold, 0), slabTax = 0;
-  for (const [width, rate] of FY_2026_27.slabs) { const amt = Math.min(rem, width); slabTax += amt * rate; rem -= amt; if (rem <= 0) break; }
-  const rebate = Math.min(FY_2026_27.rebate.rate * investment, maxRebate);
+  let rem = Math.max(taxable - threshold, 0), slabTax = 0, lo = threshold;
+  const slabDetail = [{ from: 0, to: threshold, width: threshold, rate: 0, tax: 0 }];
+  for (const [width, rate] of R.slabs) {
+    const amt = Math.min(rem, width); const t = amt * rate;
+    slabDetail.push({ from: lo, to: width === Infinity ? Infinity : lo + width, width, rate, tax: t, applied: amt });
+    slabTax += t; rem -= amt; lo = width === Infinity ? Infinity : lo + width;
+    if (rem <= 0) break;
+  }
+  const rebate = Math.min(R.rebate.rate * investment, maxRebate);
   const taxAfterRebate = Math.max(slabTax - rebate, 0);
-  const minTax = (firstTime && taxable < 450000) ? FY_2026_27.minimum_tax.first_time_under_450k : FY_2026_27.minimum_tax.regular;
+  const minTax = (firstTime && taxable < 450000) ? R.minimum_tax.first_time_under_450k : R.minimum_tax.regular;
   const net = Math.max(taxAfterRebate, minTax);
   const rebateUseless = slabTax <= minTax; // a rebate can't reduce net below the minimum-tax floor
   const balance = Math.max(net - tds, 0);
@@ -1329,15 +1502,115 @@ function calcIncomeTax({ gross, other, investment, tds, category, firstTime }) {
   if (investment > optimumInvestment + 1) rebateState = "C";
   else if (additionalTaxSaved < 1 || investment >= optimumInvestment * 0.95) rebateState = "B";
   else rebateState = "A";
-  return { gross, std, taxableSalary, other, taxable, threshold, belowThreshold: false, slabTax, rebate,
+  return { fy, rules: R, gross, std, taxableSalary, other, taxable, grossTotal, threshold, belowThreshold: false, slabTax, rebate, rebateCandidates, slabDetail,
     taxAfterRebate, minTax, minTaxApplied: taxAfterRebate < minTax, rebateUseless, net, tds, balance, refund, investment,
     optimumInvestment, additionalTaxSaved, investmentGap, rebateState };
 }
-function slabRows(threshold) {
+function slabRows(threshold, fy = DEFAULT_FY) {
   const rows = [{ from: 0, to: threshold, rate: 0 }]; let lo = threshold;
-  for (const [width, rate] of FY_2026_27.slabs) { const hi = width === Infinity ? Infinity : lo + width; rows.push({ from: lo, to: hi, rate }); lo = hi; }
+  for (const [width, rate] of rulesFor(fy).slabs) { const hi = width === Infinity ? Infinity : lo + width; rows.push({ from: lo, to: hi, rate }); lo = hi; }
   return rows;
 }
+/* ============================================================
+   SHARED PDF KIT — used by the Income Tax, Invest and Borrow pages.
+   jsPDF's built-in Helvetica has no ৳ glyph (it renders as a blank box), so
+   every money figure goes out as "BDT 1,23,456" — the same convention a
+   Bangladeshi corporate computation sheet uses. Loaded via dynamic import()
+   so jsPDF stays out of the main bundle.
+   ============================================================ */
+const PDF = { L: 48, R: 547, W: 499 };
+const bdt = n => "BDT " + Number(Math.round(n || 0)).toLocaleString("en-IN");
+const bdt2 = n => "BDT " + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pdfDate = () => new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+async function newPdfDoc(title, subtitle) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const { L, R } = PDF;
+  doc.setFillColor(10, 22, 40); doc.rect(0, 0, 595, 74, "F");           // navy brand band
+  doc.setFont("helvetica", "bold"); doc.setFontSize(17); doc.setTextColor(255, 255, 255);
+  doc.text("FinDesh", L, 34);
+  const w = doc.getTextWidth("FinDesh");
+  doc.setTextColor(79, 158, 255); doc.text(" AI", L + w, 34);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(150, 170, 200);
+  doc.text("Bangladesh's AI-powered personal finance platform", L, 48);
+  doc.setFontSize(8.5); doc.setTextColor(150, 170, 200);
+  doc.text("Generated " + pdfDate(), R, 34, { align: "right" });
+  doc.text("findeshai.com", R, 48, { align: "right" });
+  let y = 104;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(16, 28, 48);
+  doc.text(title, 297.5, y, { align: "center" }); y += 17;
+  if (subtitle) { doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(90, 110, 140); doc.text(subtitle, 297.5, y, { align: "center" }); y += 14; }
+  return { doc, y: y + 10 };
+}
+/* Grey section heading bar, like the "Pay Description" band on a payroll sheet. */
+function pdfSection(doc, y, label) {
+  const { L, R } = PDF;
+  doc.setFillColor(238, 242, 248); doc.rect(L, y - 11, R - L, 20, "F");
+  doc.setDrawColor(205, 214, 228); doc.rect(L, y - 11, R - L, 20, "S");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(30, 45, 70);
+  doc.text(label, L + 8, y + 3);
+  return y + 26;
+}
+/* One label/value line. opts: bold, indent, note (small grey middle column), color */
+function pdfRow(doc, y, label, value, opts = {}) {
+  const { L, R } = PDF;
+  doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+  doc.setFontSize(opts.bold ? 10.5 : 10);
+  const c = opts.color || (opts.bold ? [16, 28, 48] : [70, 84, 106]);
+  doc.setTextColor(c[0], c[1], c[2]);
+  doc.text(label, L + 8 + (opts.indent || 0), y);
+  // Note sits in its own column, right-aligned so it can never run into the amount.
+  if (opts.note) {
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    doc.setTextColor(146, 158, 178);
+    doc.text(String(opts.note), 430, y, { align: "right" });
+  }
+  doc.setFont("helvetica", opts.bold ? "bold" : "normal"); doc.setFontSize(opts.bold ? 10.5 : 10);
+  doc.setTextColor(c[0], c[1], c[2]);
+  if (value != null) doc.text(String(value), R - 8, y, { align: "right" });
+  return y + (opts.bold ? 18 : 15.5);
+}
+function pdfRule(doc, y) { const { L, R } = PDF; doc.setDrawColor(205, 214, 228); doc.line(L, y - 4, R, y - 4); return y + 8; }
+/* Emphasised total row with a tinted background. */
+function pdfTotal(doc, y, label, value, tint) {
+  const { L, R } = PDF; const t = tint || [232, 240, 252];
+  doc.setFillColor(t[0], t[1], t[2]); doc.rect(L, y - 12, R - L, 22, "F");
+  doc.setDrawColor(180, 198, 226); doc.rect(L, y - 12, R - L, 22, "S");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(12, 28, 56);
+  doc.text(label, L + 8, y + 3); doc.text(String(value), R - 8, y + 3, { align: "right" });
+  return y + 30;
+}
+function pdfNote(doc, y, text, color) {
+  const c = color || [110, 122, 142];
+  doc.setFont("helvetica", "italic"); doc.setFontSize(8.8); doc.setTextColor(c[0], c[1], c[2]);
+  const lines = doc.splitTextToSize(text, PDF.W - 16);
+  doc.text(lines, PDF.L + 8, y);
+  return y + lines.length * 11 + 6;
+}
+/* Disclaimer + page number, drawn at the very bottom of the last page. */
+function pdfFooter(doc, disclaimer) {
+  const { L, R } = PDF;
+  doc.setDrawColor(215, 222, 234); doc.line(L, 778, R, 778);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.6); doc.setTextColor(130, 142, 162);
+  // Reserve the right-hand strip for the wordmark so the disclaimer can never run into it.
+  const lines = doc.splitTextToSize(disclaimer, PDF.W - 78);
+  doc.text(lines, L, 789);
+  doc.setTextColor(79, 158, 255); doc.setFontSize(7.6);
+  doc.text("findeshai.com", R, 789, { align: "right" });
+}
+/* Start a fresh page when content would run past the footer. */
+function pdfBreak(doc, y, needed = 60) {
+  if (y + needed < 770) return y;
+  doc.addPage();
+  doc.setFillColor(10, 22, 40); doc.rect(0, 0, 595, 40, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(255, 255, 255);
+  doc.text("FinDesh AI", PDF.L, 25);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(150, 170, 200);
+  doc.text("findeshai.com", PDF.R, 25, { align: "right" });
+  return 74;
+}
+
 function taxTrack(event, params = {}) {
   try { if (window.dataLayer) window.dataLayer.push({ event, ...params }); if (typeof window.gtag === "function") window.gtag("event", event, params); } catch (e) { /* no-op */ }
 }
@@ -1354,7 +1627,8 @@ function TaxLine({ label, value, sign = "", strong, color, note }) {
 
 function IncomeTaxPage() {
   const nav = useNav();
-  const calcRef = useRef(null), resultRef = useRef(null), shareRef = useRef(null), startedRef = useRef(false);
+  const calcRef = useRef(null), resultRef = useRef(null), startedRef = useRef(false);
+  const [fy, setFy] = useState(DEFAULT_FY);
   const [category, setCategory] = useState("general");
   const [salary, setSalary] = useState("");
   const [other, setOther] = useState("");
@@ -1364,14 +1638,16 @@ function IncomeTaxPage() {
   const [submitted, setSubmitted] = useState(false);
   const [err, setErr] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [shareLoading, setShareLoading] = useState(false);
   const [ai, setAi] = useState(""); const [aiLoading, setAiLoading] = useState(false);
 
   const P = digits(salary);
-  const r = useMemo(() => calcIncomeTax({ gross: salary, other, investment, tds, category, firstTime }), [salary, other, investment, tds, category, firstTime]);
+  const RULES = rulesFor(fy);
+  const r = useMemo(() => calcIncomeTax({ gross: salary, other, investment, tds, category, firstTime, fy }), [salary, other, investment, tds, category, firstTime, fy]);
   const catLabel = (TAX_CATEGORIES.find(c => c.id === category) || {}).label || "General";
 
-  const onSalary = e => { setSalary(e.target.value.replace(/[^0-9]/g, "")); if (!startedRef.current) { startedRef.current = true; taxTrack("tax_calc_started"); } };
+  // Allow one decimal point — payslips quote paisa.
+  const clean = s => { const c = String(s).replace(/[^0-9.]/g, ""); const p = c.split("."); return p.length > 2 ? p[0] + "." + p.slice(1).join("") : c; };
+  const onSalary = e => { setSalary(clean(e.target.value)); if (!startedRef.current) { startedRef.current = true; taxTrack("tax_calc_started"); } };
   const run = () => {
     if (!P || P < 1) { setErr("Please enter your annual salary to calculate."); return; }
     setErr(""); setSubmitted(true);
@@ -1385,46 +1661,114 @@ function IncomeTaxPage() {
   const downloadPDF = async () => {
     taxTrack("tax_pdf_download_started"); setPdfLoading(true); setErr("");
     try {
-      const { jsPDF } = await import("jspdf");
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
-      const pk = n => "Tk " + Number(Math.round(n)).toLocaleString("en-IN");
-      let y = 56; const L = 48;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(20, 30, 50);
-      doc.text("FinDesh AI — Income Tax Summary", L, y); y += 22;
-      doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.setTextColor(90, 110, 140);
-      doc.text("FY 2026-27 (Assessment Year 2026-27) · Category: " + catLabel, L, y); y += 26;
-      doc.setDrawColor(210, 216, 226); doc.line(L, y, 547, y); y += 22;
-      const row = (label, val, bold) => { doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setTextColor(bold ? 20 : 70, bold ? 30 : 80, bold ? 50 : 100); doc.setFontSize(bold ? 13 : 11.5); doc.text(label, L, y); doc.text(val, 547, y, { align: "right" }); y += bold ? 20 : 17; };
-      row("Gross income", pk(r.gross)); row("Standard deduction", "- " + pk(r.std)); row("Taxable income", pk(r.taxable), true);
-      if (!r.belowThreshold) { row("Slab tax", pk(r.slabTax)); if (r.rebate > 0) row("Investment rebate", "- " + pk(r.rebate)); if (r.minTaxApplied) row("Minimum tax floor", pk(r.minTax)); }
-      row("Net tax payable", pk(r.net), true); if (r.tds > 0) row("Less: TDS already paid", "- " + pk(r.tds));
-      row(r.refund > 0 ? "Refund / adjustable" : "Balance to pay", pk(r.refund > 0 ? r.refund : r.balance), true); y += 12;
-      if (!r.belowThreshold && r.rebateState === "A" && r.additionalTaxSaved > 0) { doc.setFont("helvetica", "italic"); doc.setFontSize(11); doc.setTextColor(20, 120, 90); doc.text("Tip: invest " + pk(r.investmentGap) + " more in eligible instruments to save up to " + pk(r.additionalTaxSaved) + " more in tax.", L, y, { maxWidth: 499 }); y += 26; }
-      doc.setDrawColor(210, 216, 226); doc.line(L, y, 547, y); y += 20;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(20, 30, 50); doc.text("FY 2026-27 tax slabs (" + catLabel + ")", L, y); y += 18;
-      doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(70, 80, 100);
-      slabRows(r.threshold).forEach(s => { const range = s.to === Infinity ? "Above " + pk(s.from) : pk(s.from) + " – " + pk(s.to); doc.text(range, L, y); doc.text(s.rate === 0 ? "Tax-free" : (s.rate * 100) + "%", 547, y, { align: "right" }); y += 15; });
-      y += 14; doc.setFontSize(9); doc.setTextColor(120, 130, 150);
-      doc.text("Based on Finance Act 2026 (AY 2026-27). Educational planning only — not a substitute for a certified tax adviser. File on the official NBR e-Return portal.", L, y, { maxWidth: 499 }); y += 30;
-      doc.setTextColor(79, 158, 255); doc.text("findeshai.com/income-tax", L, y);
-      doc.save("findeshai-income-tax-summary-FY2026-27.pdf");
-      taxTrack("tax_pdf_downloaded");
+      const R = r.rules;
+      const { doc, y: y0 } = await newPdfDoc(
+        "Computation of Income Tax",
+        R.label + "  (" + R.ay + ")   ·   Category: " + catLabel
+      );
+      let y = y0;
+
+      /* --- 1. Income --- */
+      y = pdfSection(doc, y, "1.  PARTICULARS OF INCOME");
+      y = pdfRow(doc, y, "Income from salary (gross)", bdt2(r.gross));
+      y = pdfRow(doc, y, "Income from other sources", bdt2(r.other));
+      y = pdfRule(doc, y);
+      y = pdfRow(doc, y, "Total Income", bdt2(r.grossTotal), { bold: true });
+      y += 6;
+
+      /* --- 2. Exemption --- */
+      y = pdfSection(doc, y, "2.  EXEMPTION & TOTAL TAXABLE INCOME");
+      y = pdfRow(doc, y, "Less: Exemption on salary income", "- " + bdt2(r.std), { note: "lower of 1/3rd or BDT 5,00,000" });
+      y = pdfRule(doc, y);
+      y = pdfTotal(doc, y, "Total Taxable Income", bdt2(r.taxable));
+
+      /* --- 3. Slab-by-slab, the way a payroll sheet shows it --- */
+      y = pdfBreak(doc, y, 190);
+      y = pdfSection(doc, y, "3.  TAX COMPUTATION ON TAXABLE INCOME");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(120, 134, 156);
+      doc.text("SLAB", PDF.L + 8, y); doc.text("AMOUNT", 300, y, { align: "right" });
+      doc.text("RATE", 372, y, { align: "right" }); doc.text("TAX", PDF.R - 8, y, { align: "right" });
+      y += 6; y = pdfRule(doc, y);
+      const applied = r.belowThreshold ? [] : r.slabDetail.filter(s => s.rate === 0 || s.applied > 0);
+      applied.forEach((s, i) => {
+        const amt = s.rate === 0 ? r.threshold : s.applied;
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(70, 84, 106);
+        doc.text(i === 0 ? "On first" : "On next", PDF.L + 8, y);
+        doc.text(Number(Math.round(amt)).toLocaleString("en-IN"), 300, y, { align: "right" });
+        doc.text(s.rate === 0 ? "0%" : (s.rate * 100) + "%", 372, y, { align: "right" });
+        doc.text(s.rate === 0 ? "Nil" : bdt2(s.tax), PDF.R - 8, y, { align: "right" });
+        y += 15.5;
+      });
+      if (r.belowThreshold) y = pdfRow(doc, y, "Total income is within the tax-free limit of " + bdt(r.threshold), "Nil");
+      y = pdfRule(doc, y);
+      y = pdfTotal(doc, y, "Gross Tax Liability", bdt2(r.slabTax));
+
+      /* --- 4. Rebate: show all three candidates and which one binds --- */
+      if (!r.belowThreshold) {
+        y = pdfBreak(doc, y, 150);
+        y = pdfSection(doc, y, "4.  INVESTMENT REBATE CALCULATION");
+        y = pdfRow(doc, y, "Actual eligible investment declared", bdt2(r.investment));
+        y += 4;
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8.8); doc.setTextColor(120, 134, 156);
+        doc.text("Rebate allowed is the LOWEST of the following three:", PDF.L + 8, y); y += 14;
+        const lowest = Math.min(...r.rebateCandidates.map(c => c.value));
+        r.rebateCandidates.forEach(c => {
+          const binds = Math.abs(c.value - lowest) < 0.5;
+          y = pdfRow(doc, y, (binds ? ">  " : "    ") + c.label, bdt2(c.value), {
+            indent: 6, color: binds ? [20, 120, 90] : [140, 152, 172], bold: binds,
+          });
+        });
+        y = pdfRule(doc, y);
+        y = pdfRow(doc, y, "Rebate on Investment (allowed)", "- " + bdt2(r.rebate), { bold: true, color: [20, 120, 90] });
+        y += 6;
+      }
+
+      /* --- 5. Net liability --- */
+      y = pdfBreak(doc, y, 170);
+      y = pdfSection(doc, y, (r.belowThreshold ? "4" : "5") + ".  NET TAX LIABILITY");
+      y = pdfRow(doc, y, "Gross tax liability", bdt2(r.slabTax));
+      if (!r.belowThreshold && r.rebate > 0) y = pdfRow(doc, y, "Less: Investment rebate", "- " + bdt2(r.rebate));
+      if (!r.belowThreshold) y = pdfRow(doc, y, "Tax after rebate", bdt2(r.taxAfterRebate));
+      if (r.minTaxApplied) y = pdfRow(doc, y, "Minimum tax applicable", bdt2(r.minTax), { note: "rebate cannot reduce tax below this floor", color: [176, 116, 20] });
+      y = pdfRule(doc, y);
+      y = pdfTotal(doc, y, "Net Tax Liability After Investment & Others", bdt2(r.net));
+      y = pdfRow(doc, y, "Less: Tax deducted at source / advance tax paid", "- " + bdt2(r.tds));
+      y = pdfRule(doc, y);
+      y = r.refund > 0
+        ? pdfTotal(doc, y, "Refundable / Adjustable", bdt2(r.refund), [225, 246, 238])
+        : pdfTotal(doc, y, "Balance Tax Payable", bdt2(r.balance), [253, 238, 226]);
+
+      /* --- 6. Planning note --- */
+      if (!r.belowThreshold && r.rebateState === "A" && r.additionalTaxSaved > 0) {
+        y = pdfBreak(doc, y, 70);
+        y = pdfSection(doc, y, (r.belowThreshold ? "5" : "6") + ".  TAX PLANNING OBSERVATION");
+        y = pdfNote(doc, y, "Investing a further " + bdt(r.investmentGap) + " in rebate-eligible instruments (Sanchayapatra, DPS, listed mutual funds or approved life insurance) before 30 June would raise the allowable rebate to its ceiling and reduce this liability by up to " + bdt(r.additionalTaxSaved) + ".", [20, 120, 90]);
+      } else if (r.rebateUseless && !r.belowThreshold) {
+        y = pdfBreak(doc, y, 70);
+        y = pdfSection(doc, y, "6.  TAX PLANNING OBSERVATION");
+        y = pdfNote(doc, y, "The minimum tax of " + bdt(r.minTax) + " applies to this taxpayer, and an investment rebate cannot reduce the liability below that floor for this year.");
+      }
+
+      /* --- Reference slab table --- */
+      y = pdfBreak(doc, y, 150);
+      y = pdfSection(doc, y, "REFERENCE:  " + R.label + " TAX SLABS (" + catLabel.toUpperCase() + ")");
+      slabRows(r.threshold, r.fy).forEach(s => {
+        const range = s.to === Infinity ? "Above " + bdt(s.from) : bdt(s.from) + "  -  " + bdt(s.to);
+        y = pdfRow(doc, y, range, s.rate === 0 ? "Tax-free" : (s.rate * 100) + "%");
+      });
+      y += 4;
+      y = pdfNote(doc, y, "Tax-free threshold " + bdt(r.threshold) + " · Investment rebate " + (R.rebate.rate * 100) + "% of investment, capped at " + (R.rebate.income_cap_rate * 100) + "% of taxable income and " + bdt(R.rebate.absolute_cap) + " · Minimum tax " + bdt(R.minimum_tax.regular) + " (Dhaka & Chattogram city corporations).");
+
+      pdfFooter(doc, "Prepared by FinDesh AI (findeshai.com) for personal planning purposes only. This is a computer-generated estimate based on published " + R.label + " rates and the figures entered by the user. It is not a certified tax computation and is not a substitute for advice from a licensed tax practitioner. Returns must be filed through the official NBR e-Return portal at etaxnbr.gov.bd.");
+      doc.save("FinDesh-Income-Tax-Computation-" + R.label.replace(/\s/g, "") + ".pdf");
+      taxTrack("tax_pdf_downloaded", { fy: r.fy });
     } catch (e) { setErr("Couldn't generate the PDF just now — please try again."); }
     finally { setPdfLoading(false); }
-  };
-  const sharePNG = async () => {
-    taxTrack("tax_share_clicked"); setShareLoading(true); setErr("");
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(shareRef.current, { backgroundColor: "#04080F", width: 1080, height: 1080, scale: 1, windowWidth: 1080 });
-      const a = document.createElement("a"); a.download = "findeshai-tax-fy2026-27.png"; a.href = canvas.toDataURL("image/png"); a.click();
-    } catch (e) { setErr("Couldn't create the image just now — please try again."); }
-    finally { setShareLoading(false); }
   };
 
   const localInsight = () => {
     if (r.belowThreshold) return `Your taxable income (${fmt(r.taxable)}) is below the ৳${(r.threshold / 100000).toFixed(2).replace(/\.00$/, "")} Lakh tax-free limit for the ${catLabel.toLowerCase()} category, so you owe no income tax this year — nice. Keep your TIN active and file a zero return if any mandatory-filing rule applies to you.`;
-    let s = `Your income tax for FY 2026-27 comes to ${fmt(r.net)}${r.balance > 0 ? `, with ${fmt(r.balance)} still to pay after TDS` : r.refund > 0 ? `, and ${fmt(r.refund)} is refundable/adjustable against your TDS` : ``}. `;
+    let s = `Your income tax for ${RULES.label} comes to ${fmt(r.net)}${r.balance > 0 ? `, with ${fmt(r.balance)} still to pay after TDS` : r.refund > 0 ? `, and ${fmt(r.refund)} is refundable/adjustable against your TDS` : ``}. `;
     if (r.rebateState === "A") s += `Boro sujog ache — invest about ${fmt(r.investmentGap)} more in Sanchayapatra, DPS or a listed fund before 30 June and you could cut up to ${fmt(r.additionalTaxSaved)} more off your bill. `;
     else if (r.rebateState === "C") s += `You've already invested more than needed for the rebate — extra is fine for your goals but won't cut more tax. `;
     else s += `You're getting essentially the full rebate you're eligible for — bhalো korechen. `;
@@ -1435,7 +1779,7 @@ function IncomeTaxPage() {
     setAiLoading(true); setAi("");
     try {
       const key = import.meta.env.VITE_GEMINI_KEY; if (!key) throw new Error("no-key");
-      const prompt = `You are a Bangladeshi personal finance expert. A user just calculated their FY 2026-27 income tax: gross income ৳${r.gross}, taxable income ৳${r.taxable}, slab tax ৳${Math.round(r.slabTax)}, investment rebate ৳${Math.round(r.rebate)}, net tax ৳${r.net}, balance to pay ৳${r.balance}. They invested ৳${r.investment} in eligible instruments this year — the optimum for their income was ৳${Math.round(r.optimumInvestment)}. In 3-4 short sentences, tell them in Bangla-English mix (natural code-switching): what they owe, whether they used their rebate well, and one concrete next step. No new numbers, no legal or filing advice. Plain language, no markdown headers.`;
+      const prompt = `You are a Bangladeshi personal finance expert. A user just calculated their ${RULES.label} Bangladesh income tax: gross income ৳${r.gross}, taxable income ৳${r.taxable}, slab tax ৳${Math.round(r.slabTax)}, investment rebate ৳${Math.round(r.rebate)}, net tax ৳${r.net}, balance to pay ৳${r.balance}. They invested ৳${r.investment} in eligible instruments this year — the optimum for their income was ৳${Math.round(r.optimumInvestment)}. In 3-4 short sentences, tell them in Bangla-English mix (natural code-switching): what they owe, whether they used their rebate well, and one concrete next step. No new numbers, no legal or filing advice. Plain language, no markdown headers.`;
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
       const data = await res.json(); const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error("empty"); setAi(text.trim());
@@ -1445,23 +1789,25 @@ function IncomeTaxPage() {
   const eduChip = <button className="fd-chip" onClick={scrollToCalc} style={{ ...chip(false), marginTop: 12, padding: "8px 14px", fontSize: 12.5 }}>Try it with your numbers →</button>;
   const EDU = [
     { icon: "🪪", t: "Who needs to file", b: <>You must file a return if your income crosses the tax-free limit — or, regardless of income, if you fall in a mandatory-filing category: you hold a TIN and run a business, own a car, own a flat/land in a city corporation area, are a government employee, hold a credit card, are a member of a club, or are a professional (doctor, lawyer, engineer). When in doubt, having a TIN usually means you should file, even a zero return. (Full list: NBR.)</> },
-    { icon: "📐", t: "Tax slabs — a worked example", b: <>Say you earn <b style={{ color: "#fff" }}>৳8 Lakh</b>/year (general). Standard deduction = ⅓ = {fmt(266667)}, so taxable income ≈ {fmt(533333)}. The first ৳4L is tax-free; the next {fmt(133333)} is taxed at 10% = about {fmt(13333)}. After the ৳5,000 minimum-tax check, that's your slab tax before any rebate. Every taka you invest in eligible instruments then chips away at it.</> },
-    { icon: "🎁", t: "The investment rebate — most under-used tool", b: <>You get back <b style={{ color: T.green }}>10%</b> of what you invest in eligible instruments (Sanchayapatra, DPS, listed mutual funds, life insurance) — but capped at <b>3% of your taxable income</b> and <b>৳7.5 Lakh</b>. Rule of thumb: investing about <b style={{ color: "#fff" }}>30% of your taxable income</b> hits the maximum rebate. Beyond that, extra investment is great for your goals but earns no more tax back.</> },
-    { icon: "🔒", t: "Minimum tax", b: <>If your income crosses the threshold, there's a floor: <b style={{ color: "#fff" }}>৳5,000</b> minimum tax (৳1,000 for a first-time filer under ৳4.5 Lakh). This is why a big rebate can take your slab tax to zero but you may still owe the ৳5,000 floor. Below the threshold, though, there's no tax and no minimum — you're clear.</> },
-    { icon: "📅", t: "Filing incentives & penalties (new for FY 2026-27)", table: [["Jul 1 – Sep 30", "5% rebate on tax (max ৳25,000)", T.green], ["Oct 1 – Dec 31", "No rebate, no penalty", T.muted], ["Jan 1 – Mar 31", "+2% additional tax (min ৳3,000)", T.amber], ["Apr 1 – Jun 30", "+5% additional tax (min ৳5,000)", T.red]] },
+    { icon: "🗓️", t: "FY 2025-26 vs FY 2026-27 — why your payslip may differ", b: <>These are two different rule sets, and mixing them is the #1 reason a calculator disagrees with your employer's tax sheet. <b style={{ color: "#fff" }}>FY 2025-26</b> (the return you file by 30 Nov 2026): tax-free ৳3,75,000, rebate <b style={{ color: T.green }}>15%</b> of investment, ceiling ৳10 Lakh. <b style={{ color: "#fff" }}>FY 2026-27</b>: tax-free ৳4,00,000, rebate cut to <b style={{ color: T.amber }}>10%</b>, ceiling ৳7.5 Lakh. Same salary, different tax. Use the year selector above.</> },
+    { icon: "📐", t: "Tax slabs — a worked example", b: <>Say you earn <b style={{ color: "#fff" }}>৳8 Lakh</b>/year (general) in {RULES.label}. Standard deduction = ⅓ = {fmt(266667)}, so taxable income ≈ {fmt(533333)}. The first {fmt(RULES.thresholds.general)} is tax-free; the remaining {fmt(Math.max(533333 - RULES.thresholds.general, 0))} is taxed at 10% = about {fmt(Math.max(533333 - RULES.thresholds.general, 0) * 0.1)}. After the ৳5,000 minimum-tax check, that's your slab tax before any rebate. Every taka you invest in eligible instruments then chips away at it.</> },
+    { icon: "🎁", t: "The investment rebate — most under-used tool", b: <>In {RULES.label} you get back <b style={{ color: T.green }}>{RULES.rebate.rate * 100}%</b> of what you invest in eligible instruments (Sanchayapatra, DPS, listed mutual funds, life insurance) — but capped at <b>3% of your taxable income</b> and <b>{fmt(RULES.rebate.absolute_cap)}</b>. Rule of thumb: investing about <b style={{ color: "#fff" }}>{Math.round(3 / (RULES.rebate.rate * 100) * 100)}% of your taxable income</b> hits the maximum rebate. Beyond that, extra investment is great for your goals but earns no more tax back.</> },
+    { icon: "🔒", t: "Minimum tax", b: <>If your income crosses the threshold, there's a floor: <b style={{ color: "#fff" }}>৳5,000</b> minimum tax (৳1,000 for a first-time filer under ৳4.5 Lakh). This is why a big rebate can take your slab tax to zero but you may still owe the ৳5,000 floor. That ৳5,000 applies in Dhaka and Chattogram city corporations — elsewhere it's ৳4,000 or ৳3,000. Below the threshold, though, there's no tax and no minimum.</> },
+    { icon: "📅", t: "Filing incentives & penalties", table: [["Jul 1 – Sep 30", "5% rebate on tax (max ৳25,000)", T.green], ["Oct 1 – Dec 31", "No rebate, no penalty", T.muted], ["Jan 1 – Mar 31", "+2% additional tax (min ৳3,000)", T.amber], ["Apr 1 – Jun 30", "+5% additional tax (min ৳5,000)", T.red]] },
     { icon: "📄", t: "Documents you'll need", b: <>Keep these ready before you file: your <b style={{ color: "#fff" }}>TIN certificate</b>, salary certificate, bank statements, investment proofs (DPS/Sanchayapatra/insurance receipts), TDS certificates from your employer, and property or vehicle papers if they apply. Having them organised turns filing into a 20-minute job.</> },
   ];
 
   const FAQ_ITEMS = [
-    { q: "What is the tax-free income limit in Bangladesh for FY 2026-27?", a: "For AY 2026-27 the general tax-free limit is ৳4,00,000. It's ৳4,50,000 for women and senior citizens (65+), ৳5,25,000 for persons with disability and third-gender taxpayers, and ৳5,50,000 for freedom fighters. Income above your limit is taxed on a slab basis." },
-    { q: "How is the income tax rebate calculated?", a: "Your rebate is the lowest of three numbers: 10% of your eligible investment, 3% of your taxable income, or ৳7,50,000. It's subtracted straight from your calculated tax. Enter your investment above to see your exact rebate." },
-    { q: "What investments qualify for the 10% tax rebate?", a: "Sanchayapatra (national savings certificates), DPS (deposit pension schemes), listed mutual funds and shares, approved life-insurance premiums, and provident-fund contributions. Sanchayapatra and a bank DPS are the two most popular and lowest-risk options." },
-    { q: "What is the minimum income tax in Bangladesh?", a: "If your income crosses the tax-free threshold, the minimum tax is ৳5,000 — or ৳1,000 for a first-time filer whose taxable income is under ৳4,50,000. A rebate can't reduce your tax below this floor. Below the threshold, there's no minimum tax." },
-    { q: "What is the deadline to file my tax return for AY 2026-27?", a: "For individual taxpayers, 'Tax Day' is 30 November. Filing between 1 July and 30 September earns a 5% rebate on your tax (up to ৳25,000); filing after the deadline adds a 2%–5% surcharge with a minimum penalty. Earlier is cheaper." },
-    { q: "Do I get a discount for filing early?", a: "Yes — new for FY 2026-27, filing between 1 July and 30 September earns a 5% rebate on your tax bill (capped at ৳25,000). October–December is neutral, and from January onward extra tax applies. So filing early literally pays." },
-    { q: "How much investment do I need to make to get the maximum rebate?", a: "Roughly 30% of your taxable income, because the rebate is capped at 3% of taxable income and you earn 10% back on what you invest (3% ÷ 10% = 30%) — up to a ৳75 Lakh investment ceiling. Our calculator shows your exact optimum figure." },
-    { q: "Do women and senior citizens pay less tax?", a: "Effectively yes — they get a higher tax-free threshold (৳4,50,000 vs ৳4,00,000 general), so the first slab of tax starts later. Persons with disability, third-gender taxpayers and freedom fighters get even higher thresholds." },
-    { q: "Is Sanchayapatra interest still taxable?", a: "Source tax (5–10%) is deducted on Sanchayapatra profit at payout, and the interest is part of your total income. But the investment itself still qualifies for the 10% rebate, and it remains the highest safe return in Bangladesh — see our Sanchayapatra page for current rates." },
+    { q: "Which financial year should I calculate — FY 2025-26 or FY 2026-27?", a: "If you're filing a return in 2026, you need FY 2025-26 (income earned 1 July 2025 to 30 June 2026, assessment year 2026-27) — that's the return due by 30 November 2026. Use FY 2026-27 only to plan the year you're currently earning in. This calculator does both; pick the year at the top." },
+    { q: "What is the tax-free income limit in Bangladesh?", a: "For FY 2025-26 the general tax-free limit is ৳3,75,000 — ৳4,25,000 for women and senior citizens (65+), ৳5,00,000 for persons with disability and third-gender taxpayers, and ৳5,25,000 for gazetted war-wounded freedom fighters. For FY 2026-27 the general limit rises to ৳4,00,000. Income above your limit is taxed on a slab basis." },
+    { q: "How is the income tax rebate calculated?", a: "Your rebate is the lowest of three numbers: a percentage of your eligible investment, 3% of your taxable income, and a statutory ceiling. For FY 2025-26 it's 15% of investment with a ৳10,00,000 ceiling; for FY 2026-27 the rate was cut to 10% with a ৳7,50,000 ceiling. It's subtracted straight from your calculated tax." },
+    { q: "Why doesn't my employer's tax sheet match this calculator?", a: "Almost always one of three things. First, fiscal year — a June 2026 payslip uses FY 2025-26 rules, not FY 2026-27. Second, the rebate rate changed from 15% to 10% between those years. Third, income base — corporate payroll often includes the employer's provident-fund contribution in total income before the one-third exemption, so enter your total income, not just take-home pay." },
+    { q: "What investments qualify for the tax rebate?", a: "Sanchayapatra (national savings certificates), DPS (deposit pension schemes), listed mutual funds and shares, approved life-insurance premiums, and provident-fund contributions. Sanchayapatra and a bank DPS are the two most popular and lowest-risk options." },
+    { q: "What is the minimum income tax in Bangladesh?", a: "If your income crosses the tax-free threshold, the minimum tax is ৳5,000 in Dhaka North, Dhaka South and Chattogram city corporations — ৳4,000 in other city corporations and ৳3,000 elsewhere — or ৳1,000 for a first-time filer whose taxable income is under ৳4,50,000. A rebate can't reduce your tax below this floor." },
+    { q: "What is the deadline to file my tax return?", a: "For individual taxpayers, 'Tax Day' is 30 November. Filing between 1 July and 30 September earns a 5% rebate on your tax (up to ৳25,000); filing after the deadline adds a 2%–5% surcharge with a minimum penalty. Earlier is cheaper." },
+    { q: "How much investment do I need to make to get the maximum rebate?", a: "It depends on the year. In FY 2025-26 you earn 15% back and the rebate caps at 3% of taxable income, so roughly 20% of taxable income maximises it. In FY 2026-27 the rate dropped to 10%, so you need about 30%. Our calculator shows your exact optimum figure for the year you select." },
+    { q: "Do women and senior citizens pay less tax?", a: "Effectively yes — they get a higher tax-free threshold (৳4,25,000 vs ৳3,75,000 general in FY 2025-26), so the first slab of tax starts later. Persons with disability, third-gender taxpayers and freedom fighters get even higher thresholds." },
+    { q: "Is Sanchayapatra interest still taxable?", a: "Source tax (5–10%) is deducted on Sanchayapatra profit at payout, and the interest is part of your total income. But the investment itself still qualifies for the rebate, and it remains the highest safe return in Bangladesh — see our Sanchayapatra page for current rates." },
     { q: "Where do I actually file my return?", a: "Filing happens on the government's own e-Return system, run by the National Board of Revenue (NBR). FinDesh doesn't file for you — we help you understand and plan. When you're ready to file, head to the official NBR e-Return portal." },
   ];
 
@@ -1470,14 +1816,33 @@ function IncomeTaxPage() {
       <div style={{ textAlign: "center", padding: "44px 0 20px" }}>
         <div className="fd-up" style={pill}>🧾 Income Tax · আয়কর</div>
         <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(28px,6vw,44px)" }}>Bangladesh income tax, made <span style={gradText}>simple</span></h1>
-        <p className="fd-up fd-up-2" style={sub}>A free FY 2026-27 calculator built on the Finance Act 2026 — plus a rebate optimiser that shows exactly how much Sanchayapatra or DPS could cut your tax.</p>
+        <p className="fd-up fd-up-2" style={sub}>Free calculator for <b style={{ color: "#fff" }}>both</b> FY 2025-26 (the return you file this year) and FY 2026-27 — plus a rebate optimiser that shows exactly how much Sanchayapatra or DPS could cut your tax.</p>
       </div>
       <UpdatedBadge />
 
-      <div style={{ ...inflationNote, marginTop: 0, marginBottom: 18 }}>⚠️ This calculator uses Finance Act 2026 rules (gazetted 30 June 2026) for AY 2026-27. Results are for planning only, not a substitute for a certified tax adviser — verify with a professional before filing.</div>
+      <div style={{ ...inflationNote, marginTop: 0, marginBottom: 18 }}>⚠️ Rules differ between the two years — most importantly the investment rebate was cut from 15% to 10%. Pick the year you're actually filing for. Results are for planning only, not a substitute for a certified tax adviser.</div>
 
       {/* ---------- Calculator ---------- */}
       <div ref={calcRef} className="fd-up fd-up-3" style={card}>
+        <label style={lbl}>Which financial year?</label>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          {FY_LIST.map(y => {
+            const on = fy === y, R = FY_RULES[y];
+            return (
+              <button key={y} className="fd-chip" onClick={() => { setFy(y); taxTrack("tax_fy_changed", { fy: y }); }}
+                style={{ ...chip(on), flex: 1, padding: "12px 8px", textAlign: "center", lineHeight: 1.35, touchAction: "manipulation" }}>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{R.label}</span>
+                <span style={{ display: "block", fontSize: 10.5, opacity: .8, fontWeight: 600 }}>{y === DEFAULT_FY ? "File now ✓" : R.filedIn.replace("Filed ", "")}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ margin: "0 0 22px", fontSize: 11.5, color: T.faint }}>
+          {fy === "2025-26"
+            ? "Income earned 1 Jul 2025 – 30 Jun 2026. This is the return due by 30 November 2026. Tax-free limit ৳3,75,000 · rebate 15%."
+            : "Income earned 1 Jul 2026 – 30 Jun 2027 — use this to plan ahead. Tax-free limit ৳4,00,000 · rebate 10%."}
+        </p>
+
         <label style={lbl}>Taxpayer category</label>
         <div style={{ display: "flex", gap: 8, marginBottom: 22, flexWrap: "wrap" }}>
           {TAX_CATEGORIES.map(c => (
@@ -1488,7 +1853,7 @@ function IncomeTaxPage() {
         <label style={lbl}>Annual gross salary</label>
         <div style={{ position: "relative", marginBottom: 6 }}>
           <span style={taka}>৳</span>
-          <input className="fd-input" value={salary} onChange={onSalary} onKeyDown={e => e.key === "Enter" && run()} inputMode="numeric" placeholder="8,00,000" style={bigInput} aria-label="Annual gross salary" />
+          <input className="fd-input" value={salary} onChange={onSalary} onKeyDown={e => e.key === "Enter" && run()} inputMode="decimal" placeholder="8,00,000" style={bigInput} aria-label="Annual gross salary" />
           {P > 0 && <span style={inputHint}>{fmt(P)}</span>}
         </div>
         <p style={{ margin: "0 0 20px", fontSize: 11.5, color: T.faint }}>Include cash salary + house rent, medical & conveyance allowances.</p>
@@ -1497,12 +1862,12 @@ function IncomeTaxPage() {
           <div>
             <label style={lbl}>Other income</label>
             <div style={{ position: "relative" }}><span style={{ ...taka, fontSize: 18 }}>৳</span>
-              <input className="fd-input" value={other} onChange={e => setOther(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="0" style={{ ...bigInput, fontSize: 18, padding: "13px 14px 13px 38px" }} aria-label="Other annual income" /></div>
+              <input className="fd-input" value={other} onChange={e => setOther(clean(e.target.value))} inputMode="decimal" placeholder="0" style={{ ...bigInput, fontSize: 18, padding: "13px 14px 13px 38px" }} aria-label="Other annual income" /></div>
           </div>
           <div>
             <label style={lbl}>Investment this year</label>
             <div style={{ position: "relative" }}><span style={{ ...taka, fontSize: 18 }}>৳</span>
-              <input className="fd-input" value={investment} onChange={e => setInvestment(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="0" style={{ ...bigInput, fontSize: 18, padding: "13px 14px 13px 38px" }} aria-label="Eligible investment made this year" /></div>
+              <input className="fd-input" value={investment} onChange={e => setInvestment(clean(e.target.value))} inputMode="decimal" placeholder="0" style={{ ...bigInput, fontSize: 18, padding: "13px 14px 13px 38px" }} aria-label="Eligible investment made this year" /></div>
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 4 }}>
@@ -1512,7 +1877,7 @@ function IncomeTaxPage() {
 
         <label style={lbl}>Tax already deducted (TDS)</label>
         <div style={{ position: "relative", marginBottom: 6 }}><span style={{ ...taka, fontSize: 18 }}>৳</span>
-          <input className="fd-input" value={tds} onChange={e => setTds(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="0" style={{ ...bigInput, fontSize: 18, padding: "13px 14px 13px 38px" }} aria-label="Tax deducted at source" /></div>
+          <input className="fd-input" value={tds} onChange={e => setTds(clean(e.target.value))} inputMode="decimal" placeholder="0" style={{ ...bigInput, fontSize: 18, padding: "13px 14px 13px 38px" }} aria-label="Tax deducted at source" /></div>
         <p style={{ margin: "0 0 18px", fontSize: 11.5, color: T.faint }}>Tax deducted at source by your employer — check your payslip.</p>
 
         <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 22 }}>
@@ -1528,7 +1893,7 @@ function IncomeTaxPage() {
       {submitted && (
         <div ref={resultRef} style={{ marginTop: 28 }}>
           <div className="fd-up" style={{ ...card, textAlign: "center", marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: T.accent, fontWeight: 800, letterSpacing: ".08em", marginBottom: 8 }}>YOUR INCOME TAX · FY 2026-27</div>
+            <div style={{ fontSize: 12, color: T.accent, fontWeight: 800, letterSpacing: ".08em", marginBottom: 8 }}>YOUR INCOME TAX · {RULES.label}</div>
             {r.belowThreshold ? (
               <>
                 <div style={{ fontSize: 34, fontWeight: 900, color: T.green, letterSpacing: "-0.02em", marginBottom: 8 }}>৳0 — you're below the tax-free limit</div>
@@ -1594,9 +1959,9 @@ function IncomeTaxPage() {
 
           {/* ---- Actions ---- */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-            <button className="fd-cta" onClick={downloadPDF} disabled={pdfLoading} style={{ ...cta, flex: "1 1 200px", opacity: pdfLoading ? 0.7 : 1, touchAction: "manipulation" }}>{pdfLoading ? <>Preparing <span className="fd-spin" /></> : "📄 Download PDF summary"}</button>
-            <button className="fd-cta" onClick={sharePNG} disabled={shareLoading} style={{ ...cta, flex: "1 1 160px", background: "rgba(255,255,255,0.05)", border: `1px solid ${T.accentBorder}`, boxShadow: "none", color: "#C9D8F0", opacity: shareLoading ? 0.7 : 1, touchAction: "manipulation" }}>{shareLoading ? <>Rendering <span className="fd-spin" /></> : "📸 Share my result"}</button>
+            <button className="fd-cta" onClick={downloadPDF} disabled={pdfLoading} style={{ ...cta, flex: "1 1 240px", opacity: pdfLoading ? 0.7 : 1, touchAction: "manipulation" }}>{pdfLoading ? <>Preparing <span className="fd-spin" /></> : "📄 Download full computation sheet (PDF)"}</button>
           </div>
+          <p style={{ margin: "0 0 8px", fontSize: 11.5, color: T.faint }}>A detailed, slab-by-slab statement you can check against your employer's tax sheet or hand to your accountant.</p>
           {err && submitted && <p style={errStyle}>{err}</p>}
 
           {/* ---- Optional AI explainer ---- */}
@@ -1612,17 +1977,6 @@ function IncomeTaxPage() {
             </div>
           )}
 
-          {/* hidden 1080x1080 share card */}
-          <div ref={shareRef} aria-hidden="true" style={{ position: "fixed", left: -20000, top: 0, width: 1080, height: 1080, background: "radial-gradient(ellipse 80% 50% at 50% 0%, #0B1E3D 0%, #04080F 60%)", color: "#EAF1FC", padding: 90, boxSizing: "border-box", fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em" }}><span style={{ color: "#4F9EFF" }}>Fin</span>Desh <span style={{ fontSize: 16, color: "#4F9EFF", border: "1px solid rgba(79,158,255,0.4)", borderRadius: 6, padding: "2px 8px" }}>AI</span></div>
-              <div style={{ fontSize: 34, color: "#8A9BB8", marginTop: 60 }}>My income tax for FY 2026-27</div>
-              <div style={{ fontSize: 130, fontWeight: 900, letterSpacing: "-0.03em", margin: "20px 0", color: "#fff" }}>{fmtFull(r.net)}</div>
-              <div style={{ fontSize: 34, color: "#8A9BB8" }}>{r.balance > 0 ? `Balance to pay: ${fmtFull(r.balance)}` : r.refund > 0 ? `Refundable: ${fmtFull(r.refund)}` : "Covered by TDS"}</div>
-              {r.rebateState === "A" && r.additionalTaxSaved > 0 && <div style={{ fontSize: 30, color: "#00D68F", marginTop: 40, fontWeight: 700 }}>💡 Could save {fmtFull(r.additionalTaxSaved)} more with the rebate</div>}
-            </div>
-            <div style={{ fontSize: 30, color: "#5C6E8C", borderTop: "1px solid rgba(148,180,255,0.2)", paddingTop: 30 }}>Calculate yours free · findeshai.com/income-tax</div>
-          </div>
         </div>
       )}
 
@@ -2009,13 +2363,13 @@ const ROUTES = {
   },
   "/income-tax": {
     tab: null, view: "income-tax",
-    title: "Bangladesh Income Tax Calculator FY 2026-27 — Free & Current | FinDesh AI",
-    desc: "Free Bangladesh income tax calculator with Finance Act 2026 slabs, rebate optimiser and Sanchayapatra/DPS savings tips. Built for salaried professionals in Dhaka.",
+    title: "Bangladesh Income Tax Calculator FY 2025-26 & 2026-27 | FinDesh AI",
+    desc: "Free Bangladesh income tax calculator for FY 2025-26 and FY 2026-27 — correct slabs, 15%/10% investment rebate, minimum tax, and a downloadable computation sheet PDF.",
   },
   "/tax-calculator": {
     tab: null, view: "income-tax",
-    title: "Bangladesh Income Tax Calculator FY 2026-27 — Free & Current | FinDesh AI",
-    desc: "Free Bangladesh income tax calculator with Finance Act 2026 slabs, rebate optimiser and Sanchayapatra/DPS savings tips. Built for salaried professionals in Dhaka.",
+    title: "Bangladesh Income Tax Calculator FY 2025-26 & 2026-27 | FinDesh AI",
+    desc: "Free Bangladesh income tax calculator for FY 2025-26 and FY 2026-27 — correct slabs, 15%/10% investment rebate, minimum tax, and a downloadable computation sheet PDF.",
   },
   "/compare/credit-cards": {
     tab: null, view: "cmp-cards",
