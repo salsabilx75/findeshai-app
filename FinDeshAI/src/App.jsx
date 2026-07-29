@@ -1611,8 +1611,22 @@ function pdfBreak(doc, y, needed = 60) {
   return 74;
 }
 
+/* Central analytics dispatch: GA4/GTM + Meta Pixel.
+   Every event goes to Meta as a custom event of the same name (so Events Manager
+   shows the same vocabulary as GA4). A few high-intent ones ALSO fire a standard
+   Meta event, because standard events are what Ads campaign optimisation and
+   Custom Audiences work best with. Change the map below if the ad objective changes. */
+const FB_STANDARD = {
+  tax_pdf_downloaded: "Lead",
+  invest_pdf_downloaded: "Lead",
+  borrow_pdf_downloaded: "Lead",
+  tax_calc_completed: "ViewContent",
+  tax_nbr_link_clicked: "Contact",
+};
 function taxTrack(event, params = {}) {
   try { if (window.dataLayer) window.dataLayer.push({ event, ...params }); if (typeof window.gtag === "function") window.gtag("event", event, params); } catch (e) { /* no-op */ }
+  fbTrackCustom(event, params);
+  if (FB_STANDARD[event]) fbTrack(FB_STANDARD[event], { content_name: event, ...params });
 }
 const incomeBucket = t => t < 400000 ? "<4L" : t < 700000 ? "4-7L" : t < 1100000 ? "7-11L" : t < 1600000 ? "11-16L" : t < 3100000 ? "16-31L" : "31L+";
 
@@ -2422,8 +2436,21 @@ function applySEO(routeKey) {
   if (seoInitialized) {
     if (window.dataLayer) window.dataLayer.push({ event: "page_view", page_path: routeKey, page_title: r.title, page_location: url });
     if (typeof window.gtag === "function") window.gtag("event", "page_view", { page_path: routeKey, page_title: r.title, page_location: url });
+    /* Meta Pixel: the base snippet in index.html only fires on the first load,
+       so SPA navigations must be tracked here or Ads only ever sees the landing
+       page. Skipped on the first call for the same reason GA4 is. */
+    fbTrack("PageView");
   }
   seoInitialized = true;
+}
+
+/* Meta Pixel helper — safe no-op if the pixel is blocked, still loading, or
+   stripped by an ad blocker (very common), so tracking can never break the UI. */
+function fbTrack(event, params) {
+  try { if (typeof window.fbq === "function") window.fbq("track", event, params || {}); } catch (e) { /* no-op */ }
+}
+function fbTrackCustom(event, params) {
+  try { if (typeof window.fbq === "function") window.fbq("trackCustom", event, params || {}); } catch (e) { /* no-op */ }
 }
 
 /* Internal SEO links between related tools */
