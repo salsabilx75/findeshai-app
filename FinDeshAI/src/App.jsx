@@ -1124,86 +1124,69 @@ function InflationCheck() {
   );
 }
 
-/* ---------- The guide offer (bKash · "buy me a coffee" tone) ----------
-   Pure client-side. The transaction-ID field is intentionally NOT logged,
-   stored or sent anywhere — it only makes the flow feel complete. The
-   founder spot-checks payments by hand in the bKash app. */
-const GUIDE_LINK = "https://drive.google.com/file/d/10R2fGzsL4_ExlG3Odh5tjpOsnOvXzkoQ/view?usp=sharing";
-const BKASH_NUMBER = "01720408431";
+/* ---------- The guide offer ----------
+   Checkout moved to SupportKori (Jul 2026). Payment, delivery and the download
+   link are all handled on their page now, so this component is purely a sales
+   panel + outbound CTA — no amount input, no manual bKash/transaction-ID step,
+   and deliberately NO Google Drive link in the bundle (the old one was readable
+   in view-source, which let anyone skip paying). Fixed price ৳100. */
+const GUIDE_CHECKOUT_URL = "https://www.supportkori.com/findeshai/extras/the-bangladesh-money-playbook-build-your-rich-life-on-any-salary-fbxn";
+const GUIDE_PRICE = 100;
 const GUIDE_GREEN = "#4ADE80";
 
 function GuideOffer() {
-  const [amount, setAmount] = useState("50");
-  const [txn, setTxn] = useState("");
-  const [done, setDone] = useState(false);
-  const amt = Number(String(amount).replace(/[^0-9]/g, ""));
-  const quick = [50, 100, 200, 500];
+  const go = () => {
+    taxTrack("guide_checkout_clicked", { price: GUIDE_PRICE, currency: "BDT" });
+    window.open(GUIDE_CHECKOUT_URL, "_blank", "noopener,noreferrer");
+  };
 
-  const getGuide = () => { if (!txn.trim()) return; setDone(true); /* no logging / no storage — intentional */ };
-
-  if (done) {
-    return (
-      <div className="fd-up" style={{ ...card, padding: "32px 24px", marginBottom: 30, textAlign: "center", border: "1px solid rgba(0,214,143,0.35)", background: "linear-gradient(135deg, rgba(0,214,143,0.10), rgba(8,18,36,0.92))" }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
-        <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>Thank you — you're in 💚</h2>
-        <p style={{ margin: "0 auto 20px", fontSize: 14.5, color: "#C9D8F0", lineHeight: 1.65, maxWidth: 420 }}>
-          That genuinely means a lot. Your copy of the FinDesh Money Guide is ready — open it, save it, and most importantly, <b style={{ color: "#fff" }}>use it</b>. Even one habit from it can put lakhs back in your pocket over the years.
-        </p>
-        <a href={GUIDE_LINK} target="_blank" rel="noreferrer" className="fd-cta" style={{ ...cta, display: "inline-block", width: "auto", padding: "16px 30px", textDecoration: "none" }}>
-          📖 Open your FinDesh Money Guide →
-        </a>
-        <p style={{ margin: "16px auto 0", fontSize: 12, color: T.faint, lineHeight: 1.6, maxWidth: 380 }}>
-          Trouble opening it? The link is also here:{" "}
-          <a href={GUIDE_LINK} target="_blank" rel="noreferrer" style={{ color: T.accent, wordBreak: "break-all" }}>{GUIDE_LINK}</a>
-        </p>
-      </div>
-    );
-  }
+  const INCLUDES = [
+    "The conscious spending plan, rebuilt for BD salaries",
+    "Where to put money first — in the right order",
+    "Sanchayapatra, DPS & FDR decisions made simple",
+    "How to automate it all so it runs without you",
+  ];
 
   return (
     <div className="fd-up" style={{ ...card, padding: "26px 22px", marginBottom: 30, overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(180deg, ${T.accent}, ${GUIDE_GREEN})`, opacity: 0.9 }} />
-      <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>☕ Buy me a coffee, get the guide</div>
+      <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>📘 The Bangladesh Money Playbook</div>
       <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.12 }}>Stop guessing with <span style={gradText}>your money</span>.</h2>
-      <p style={{ margin: "0 0 18px", fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-        One clear, do-it-this-weekend playbook for growing what you earn in Bangladesh — the smart moves, in the right order, minus the noise and the jargon. It's the stuff most people learn the slow, expensive way. Apply it and it can quietly put <b style={{ color: "#fff" }}>thousands — even lakhs</b> — back in your pocket over the years.
+      <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+        One clear, do-it-this-weekend playbook for building a rich life on any salary in Bangladesh — the smart moves, in the right order, minus the noise and the jargon. It's the stuff most people learn the slow, expensive way.
       </p>
 
-      <label style={lbl}>Pay what feels right — ৳50 is plenty 💙</label>
-      <div style={{ position: "relative", marginBottom: 10 }}>
-        <span style={taka}>৳</span>
-        <input className="fd-input" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="50" style={{ ...bigInput, fontSize: 22, padding: "14px 16px 14px 42px" }} />
-      </div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 22, flexWrap: "wrap" }}>
-        {quick.map(q => <button key={q} className="fd-chip" onClick={() => setAmount(String(q))} style={chip(amt === q)}>৳{q}</button>)}
+      {/* What's inside */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22 }}>
+        {INCLUDES.map(item => (
+          <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <span style={{ color: GUIDE_GREEN, fontSize: 14, fontWeight: 900, lineHeight: 1.5, flexShrink: 0 }}>✓</span>
+            <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>{item}</span>
+          </div>
+        ))}
       </div>
 
-      {/* bKash payment panel — FinDesh palette (navy/blue + green accents) */}
+      {/* Price + CTA */}
       <div style={{ background: "rgba(79,158,255,0.06)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 18px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: "#8AC2FF", letterSpacing: ".03em" }}>bKash · Send Money (Personal)</span>
-          <span style={{ fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "0.04em", fontVariantNumeric: "tabular-nums" }}>{BKASH_NUMBER}</span>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 10, marginBottom: 4 }}>
+          <span style={{ fontSize: 42, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>৳{GUIDE_PRICE}</span>
+          <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 600 }}>one-time</span>
         </div>
-        <div style={{ display: "flex", gap: 11, marginBottom: 9 }}>
-          <span style={stepDot}>1</span>
-          <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>Open your <b style={{ color: "#fff" }}>bKash</b> app and choose <b style={{ color: "#fff" }}>"Send Money"</b> to the number above.</span>
-        </div>
-        <div style={{ display: "flex", gap: 11 }}>
-          <span style={stepDot}>2</span>
-          <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>In the <b style={{ color: "#fff" }}>Reference</b> field, simply write <b style={{ color: "#fff" }}>your name</b>.</span>
+        <p style={{ margin: "0 0 16px", fontSize: 12.5, color: T.faint, textAlign: "center" }}>Less than a cup of coffee. Yours to keep forever.</p>
+
+        <button className="fd-cta" onClick={go} style={{ ...cta, margin: 0, touchAction: "manipulation" }}>
+          Get the Guide →
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11.5, color: T.faint }}>🔒 Secure checkout via SupportKori</span>
+          <span style={{ fontSize: 11.5, color: T.faint }}>·</span>
+          <span style={{ fontSize: 11.5, color: T.faint }}>SSLCommerz</span>
         </div>
       </div>
 
-      <div style={{ marginTop: 18 }}>
-        <label style={lbl}>Enter the last 3 digits of the Transaction ID (or the number you sent from)</label>
-        <input className="fd-input" value={txn} onChange={e => setTxn(e.target.value)} onKeyDown={e => e.key === "Enter" && getGuide()} inputMode="text" placeholder="e.g. 7X9 or your number" style={{ ...bigInput, fontSize: 18, padding: "14px 16px", letterSpacing: "0.06em" }} />
-      </div>
-
-      <button className="fd-cta" onClick={getGuide} disabled={!txn.trim()} style={{ ...cta, marginTop: 16, opacity: txn.trim() ? 1 : 0.55, cursor: txn.trim() ? "pointer" : "not-allowed" }}>
-        Get the Guide →
-      </button>
       <p style={{ margin: "14px 2px 0", fontSize: 12, color: T.faint, lineHeight: 1.6, textAlign: "center" }}>
-        ✨ Instant access — the guide opens right after you tap. No waiting, no account, no spam. Thank you for supporting a one-person project. 🙏
+        ✨ Instant download after payment. No account, no subscription, no spam. Thank you for supporting a one-person project. 🙏
       </p>
     </div>
   );
@@ -1622,6 +1605,7 @@ const FB_STANDARD = {
   borrow_pdf_downloaded: "Lead",
   tax_calc_completed: "ViewContent",
   tax_nbr_link_clicked: "Contact",
+  guide_checkout_clicked: "InitiateCheckout",
 };
 function taxTrack(event, params = {}) {
   try { if (window.dataLayer) window.dataLayer.push({ event, ...params }); if (typeof window.gtag === "function") window.gtag("event", event, params); } catch (e) { /* no-op */ }
