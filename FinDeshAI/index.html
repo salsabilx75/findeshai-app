@@ -189,5 +189,18 @@
     <!-- End Meta Pixel (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- SupportKori support widget — floating button, injects itself into <body>.
+         Loaded async so it never blocks the app bundle from rendering. It mounts
+         once on page load; because it's outside #root, React re-renders and SPA
+         route changes leave it untouched. -->
+    <script
+      async
+      src="https://www.supportkori.com/widget.js"
+      data-id="findeshai"
+      data-message="Support FinDesh-AI"
+      data-color="#4F9EFF"
+      data-position="right"
+    ></script>
   </body>
 </html>
