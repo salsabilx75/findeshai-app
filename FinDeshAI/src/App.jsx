@@ -1192,6 +1192,90 @@ function GuideOffer() {
   );
 }
 
+/* ============================================================
+   CONTACT PAGE — single centered card, no form.
+   FinDesh is a static site with no backend, so a form would need a
+   third-party endpoint; mailto keeps it honest and zero-dependency.
+   The copy button exists because mailto: does nothing on a phone with
+   no mail app configured, which is common in BD — without it those
+   users hit a dead end.
+   ============================================================ */
+const CONTACT_EMAIL = "findeshai@gmail.com";
+const CONTACT_MAILTO = "mailto:findeshai@gmail.com?subject=Hello%20FinDesh%20AI";
+const CONTACT_SOCIALS = [
+  { label: "Facebook", icon: "📘", url: "https://www.facebook.com/FindeshAI" },
+  { label: "Instagram", icon: "📸", url: "https://www.instagram.com/findeshai" },
+];
+
+function ContactPage() {
+  const [copied, setCopied] = useState(false);
+
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(CONTACT_EMAIL);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
+      taxTrack("contact_email_copied");
+    } catch (e) { /* clipboard blocked — the address is visible above anyway */ }
+  };
+
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "44px 0 20px" }}>
+        <div className="fd-up" style={pill}>📬 Contact · যোগাযোগ</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(28px,6vw,44px)" }}>Let's talk money, tech, or <span style={gradText}>both</span>.</h1>
+        <p className="fd-up fd-up-2" style={sub}>
+          Whether you've spotted a rate that's out of date, want to partner with us, are writing about Bangladeshi fintech, or just want to tell us what would make FinDesh more useful — we read every message.
+        </p>
+      </div>
+
+      <div style={{ maxWidth: 500, margin: "0 auto" }}>
+        <div className="fd-up fd-up-3" style={{ ...card, textAlign: "center", padding: "30px 22px" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 10 }}>Email us</div>
+
+          <a href={CONTACT_MAILTO} onClick={() => taxTrack("contact_email_clicked")}
+            style={{ display: "inline-block", fontSize: "clamp(17px,4.4vw,22px)", fontWeight: 800, color: "#fff", textDecoration: "none", letterSpacing: "-0.01em", wordBreak: "break-word", marginBottom: 6 }}>
+            {CONTACT_EMAIL}
+          </a>
+          <p style={{ margin: "0 0 20px", fontSize: 12.5, color: T.faint }}>We usually reply within 1–2 working days.</p>
+
+          <a href={CONTACT_MAILTO} onClick={() => taxTrack("contact_email_clicked")} className="fd-cta"
+            style={{ ...cta, display: "block", textDecoration: "none", textAlign: "center", marginBottom: 10 }}>
+            Send us a message →
+          </a>
+
+          <button className="fd-chip" onClick={copyEmail}
+            style={{ width: "100%", padding: "11px", fontSize: 13, fontWeight: 600, borderRadius: 12, border: `1px solid ${T.border}`, background: "rgba(255,255,255,0.04)", color: copied ? T.green : "#C9D8F0", cursor: "pointer", touchAction: "manipulation" }}>
+            {copied ? "✓ Email copied" : "Copy email address"}
+          </button>
+
+          <div style={{ marginTop: 26, paddingTop: 20, borderTop: `1px solid ${T.borderSoft}` }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 12 }}>Follow along</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              {CONTACT_SOCIALS.map(s => (
+                <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="fd-chip"
+                  onClick={() => taxTrack("contact_social_clicked", { network: s.label.toLowerCase() })}
+                  style={{ textDecoration: "none", padding: "9px 16px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF" }}>
+                  {s.icon} {s.label} →
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ margin: "16px auto 0", fontSize: 12, color: T.faint, lineHeight: 1.65, textAlign: "center", maxWidth: 430 }}>
+          FinDesh AI is a one-person project built in Dhaka. We can't give personalised financial advice or recommend specific investments — but for anything else, do get in touch.
+        </p>
+
+        <RelatedLinks links={[
+          { label: "Income Tax Calculator", path: "/income-tax" },
+          { label: "Sanchayapatra rates", path: "/sanchayapatra" },
+          { label: "Money Blueprint", path: "/blueprint" },
+        ]} />
+      </div>
+    </>
+  );
+}
+
 function BlueprintPage() {
   return (
     <>
@@ -1606,6 +1690,7 @@ const FB_STANDARD = {
   tax_calc_completed: "ViewContent",
   tax_nbr_link_clicked: "Contact",
   guide_checkout_clicked: "InitiateCheckout",
+  contact_email_clicked: "Contact",
 };
 function taxTrack(event, params = {}) {
   try { if (window.dataLayer) window.dataLayer.push({ event, ...params }); if (typeof window.gtag === "function") window.gtag("event", event, params); } catch (e) { /* no-op */ }
@@ -2354,6 +2439,11 @@ const ROUTES = {
     title: "BD Money Blueprint — A Bangladesh Personal Finance Guide | FinDesh AI",
     desc: "A conscious spending plan and money guide for Bangladeshi earners, rebuilt for BD banks, BD instruments and Dhaka's cost of living — plus free planning tools.",
   },
+  "/contact": {
+    tab: null, view: "contact",
+    title: "Get in Touch | FinDesh AI",
+    desc: "Reach the team behind FinDesh AI — questions, feedback, partnerships or press, we'd love to hear from you.",
+  },
   "/sanchayapatra": {
     tab: "invest", view: "sanchayapatra",
     title: "Sanchayapatra Rate 2026, Limits & Profit Calculator | FinDesh AI",
@@ -2502,6 +2592,9 @@ export default function App() {
       { label: "Compare Savings Accounts", icon: "🏦", path: "/compare/savings" },
       { label: "Compare Loans", icon: "🤝", path: "/compare/loans" },
     ] },
+    { heading: "About", items: [
+      { label: "Get in Touch", icon: "📬", path: "/contact" },
+    ] },
   ];
 
   return (
@@ -2567,6 +2660,7 @@ export default function App() {
 
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 40px", position: "relative", zIndex: 1 }}>
         {route.view === "income-tax" ? <IncomeTaxPage />
+          : route.view === "contact" ? <ContactPage />
           : route.view === "sanchayapatra" ? <SanchayapatraPage />
           : route.view === "cmp-loans" ? <LoanComparePage />
           : route.view === "cmp-savings" ? <SavingsComparePage />
@@ -2584,7 +2678,10 @@ export default function App() {
           FinDesh AI provides educational information on Bangladeshi financial products, not licensed investment advice. Rates verified {LAST_UPDATED} and change — always confirm with the institution before investing or borrowing.
         </p>
         <div style={{ fontSize: 12, color: T.faint, fontWeight: 500 }}>
-          Built in Dhaka 🇧🇩 · <a className="fd-link" href="https://findeshai.com" style={{ color: T.accent, textDecoration: "none", fontWeight: 600 }}>findeshai.com</a> · © 2026 FinDesh AI
+          Built in Dhaka 🇧🇩 · <a className="fd-link" href="https://findeshai.com" style={{ color: T.accent, textDecoration: "none", fontWeight: 600 }}>findeshai.com</a>
+          {" · "}
+          <a className="fd-link" href="/contact" onClick={e => { e.preventDefault(); navigate("/contact"); }} style={{ color: T.accent, textDecoration: "none", fontWeight: 600 }}>Get in Touch</a>
+          {" · "}© 2026 FinDesh AI
         </div>
       </footer>
     </div>
