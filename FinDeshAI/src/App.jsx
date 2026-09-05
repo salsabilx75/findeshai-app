@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, createContext, useContext } from "react";
+import { SITE, ROUTES, canonicalFor, OG_IMAGE } from "./seo.js";
 
 /* ============================================================
    FinDesh AI v4 — Dark Premium
@@ -2409,72 +2410,8 @@ function CreditCardComparePage() {
    Native History API (no router dep). Netlify rewrites /* → index.html,
    so deep links resolve; this layer sets active tab + per-page metadata.
    ============================================================ */
-const SITE = "https://findeshai.com";
-const DEFAULT_DESC = "Free AI-powered investment advice, Sanchayapatra & FDR rates, DPS savings plans and loan EMI calculator for Bangladesh. Grow your money with FinDesh AI.";
-
-const ROUTES = {
-  "/": {
-    tab: "invest",
-    title: "FinDesh AI — Bangladesh's First AI Personal Finance & Investment Platform",
-    desc: DEFAULT_DESC,
-  },
-  "/invest": {
-    tab: "invest",
-    title: "Where to Invest in Bangladesh (2026) — AI Investment Planner | FinDesh AI",
-    desc: "Get a personalised Bangladesh investment plan in seconds — Sanchayapatra, FDR, mutual funds, DSE blue-chips and gold, with verified 2026 rates and your risk level.",
-    /* keep the branded hero ("You've earned it. Now make it grow.") — unique <title>/meta still set per route for SEO */
-  },
-  "/save": {
-    tab: "save",
-    title: "DPS Calculator Bangladesh 2026 — Monthly Savings Planner | FinDesh AI",
-    desc: "Plan your monthly savings and compare the best DPS rates in Bangladesh (up to ~11%). See exactly what your DPS grows to at maturity with FinDesh AI.",
-  },
-  "/borrow": {
-    tab: "borrow",
-    title: "Loan EMI Calculator Bangladesh 2026 — Compare Bank Rates | FinDesh AI",
-    desc: "Free loan EMI calculator for Bangladesh plus a side-by-side comparison of personal, home and car loan rates from strong banks (2026).",
-  },
-  "/blueprint": {
-    tab: "blueprint",
-    title: "BD Money Blueprint — A Bangladesh Personal Finance Guide | FinDesh AI",
-    desc: "A conscious spending plan and money guide for Bangladeshi earners, rebuilt for BD banks, BD instruments and Dhaka's cost of living — plus free planning tools.",
-  },
-  "/contact": {
-    tab: null, view: "contact",
-    title: "Get in Touch | FinDesh AI",
-    desc: "Reach the team behind FinDesh AI — questions, feedback, partnerships or press, we'd love to hear from you.",
-  },
-  "/sanchayapatra": {
-    tab: "invest", view: "sanchayapatra",
-    title: "Sanchayapatra Rate 2026, Limits & Profit Calculator | FinDesh AI",
-    desc: "Current Sanchayapatra rates (11.82–11.98%), individual vs joint investment limits, the combined-purchase rule and a free profit calculator for Bangladesh.",
-  },
-  "/income-tax": {
-    tab: null, view: "income-tax",
-    title: "Bangladesh Income Tax Calculator FY 2025-26 & 2026-27 | FinDesh AI",
-    desc: "Free Bangladesh income tax calculator for FY 2025-26 and FY 2026-27 — correct slabs, 15%/10% investment rebate, minimum tax, and a downloadable computation sheet PDF.",
-  },
-  "/tax-calculator": {
-    tab: null, view: "income-tax",
-    title: "Bangladesh Income Tax Calculator FY 2025-26 & 2026-27 | FinDesh AI",
-    desc: "Free Bangladesh income tax calculator for FY 2025-26 and FY 2026-27 — correct slabs, 15%/10% investment rebate, minimum tax, and a downloadable computation sheet PDF.",
-  },
-  "/compare/credit-cards": {
-    tab: null, view: "cmp-cards",
-    title: "Compare Credit Cards in Bangladesh 2026 — Fees, APR & Benefits | FinDesh AI",
-    desc: "Free side-by-side credit card comparison for Bangladesh — annual fees, interest rates (APR) and benefits across flagship cards. Tick up to 3 to compare.",
-  },
-  "/compare/savings": {
-    tab: null, view: "cmp-savings",
-    title: "Compare Savings Account Rates in Bangladesh 2026 | FinDesh AI",
-    desc: "Free comparison of regular savings-account interest rates across 10 Bangladeshi banks — see where your everyday money earns the most, with Islamic options flagged.",
-  },
-  "/compare/loans": {
-    tab: null, view: "cmp-loans",
-    title: "Compare Loan Rates in Bangladesh 2026 — Personal, Home & Car | FinDesh AI",
-    desc: "Free side-by-side comparison of personal, home and car loan rates across 10 strong Bangladeshi banks, plus a built-in EMI calculator.",
-  },
-};
+/* SITE, ROUTES, canonicalFor and OG_IMAGE now live in src/seo.js so the
+   build-time prerenderer and sitemap generator share one definition. */
 
 const TAB_PATH = { invest: "/invest", save: "/save", borrow: "/borrow", blueprint: "/blueprint" };
 
@@ -2496,9 +2433,12 @@ let seoInitialized = false;
 function applySEO(routeKey) {
   const r = ROUTES[routeKey] || ROUTES["/"];
   const url = SITE + (routeKey === "/" ? "/" : routeKey);
+  /* Canonical may point at a different URL than the one being viewed —
+     /tax-calculator is an alias of /income-tax and must not be indexed
+     separately. og:url stays the actual page so shares resolve correctly. */
   document.title = r.title;
   setTag('meta[name="description"]', "content", r.desc);
-  setTag('link[rel="canonical"]', "href", url);
+  setTag('link[rel="canonical"]', "href", canonicalFor(routeKey));
   setTag('meta[property="og:url"]', "content", url);
   setTag('meta[property="og:title"]', "content", r.title);
   setTag('meta[property="og:description"]', "content", r.desc);
