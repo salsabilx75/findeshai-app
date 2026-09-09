@@ -121,6 +121,25 @@ const GLOBAL_CSS = `
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 ::selection { background: rgba(79,158,255,0.35); }
 body { margin: 0; }
+
+/* Nav dropdown: the list is now taller than a short phone viewport, so it must
+   scroll inside itself — otherwise the last items (Get in Touch) are simply
+   unreachable. dvh accounts for mobile browser chrome; the vh line above it is
+   the fallback for older browsers. overscroll-behavior stops the scroll from
+   chaining to the page behind once you hit the end of the list. */
+.fd-menu {
+  max-height: calc(100vh - 96px);
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148,180,255,0.28) transparent;
+}
+.fd-menu::-webkit-scrollbar { width: 8px; }
+.fd-menu::-webkit-scrollbar-track { background: transparent; }
+.fd-menu::-webkit-scrollbar-thumb { background: rgba(148,180,255,0.28); border-radius: 8px; }
+.fd-menu::-webkit-scrollbar-thumb:hover { background: rgba(148,180,255,0.45); }
 @keyframes fdUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fdIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fdOrbA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-25px) scale(1.12); } }
@@ -2560,7 +2579,7 @@ export default function App() {
       {menuOpen && (
         <>
           <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(2,5,11,0.5)", backdropFilter: "blur(2px)" }} />
-          <div className="fd-up" style={{ position: "fixed", top: 70, right: 14, zIndex: 60, width: 268, maxWidth: "calc(100vw - 28px)", background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 16, padding: "10px", boxShadow: "0 24px 70px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)" }}>
+          <div className="fd-up fd-menu" style={{ position: "fixed", top: 70, right: 14, zIndex: 60, width: 268, maxWidth: "calc(100vw - 28px)", background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 16, padding: "10px", boxShadow: "0 24px 70px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)" }}>
             {menuGroups.map((grp, gi) => (
               <div key={gi} style={{ marginTop: gi ? 8 : 0 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", padding: "8px 10px 6px" }}>{grp.heading}</div>
