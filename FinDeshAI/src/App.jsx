@@ -2153,17 +2153,23 @@ const CMP_LOANS = [
 ];
 
 /* Savings — regular savings account rate (tiered) from official deposit sheets */
+/* minRate/maxRate are the two ends of the published `rate` band, split out as
+   numbers so a future min/max-balance column can be built on real data.
+   They are PARSED from each bank's own rate sheet string above — no balance
+   thresholds are inferred here, because most BD banks don't publish the tier
+   boundaries. Banks that publish no rate at all get null, not a guess.
+   `rmid` stays the sort key (the top of the band). */
 const CMP_SAVINGS = [
-  { bank: "Premier Bank", rate: "3.00–4.00%", rmid: 4.0, islamic: true, note: "⚠ Tiered; unusually high vs peers — verify it's current. (May 2025 sheet)", src: "Premier" },
-  { bank: "Bank Asia", rate: "2.00–3.00%", rmid: 3.0, islamic: true, note: "Tiered; 3% above ৳1 Cr.", src: "Bank Asia · 2026" },
-  { bank: "BRAC Bank", rate: "0.50–2.50%", rmid: 2.5, islamic: false, note: "Tiered; AAA-rated bank.", src: "BRAC · Jan 2026" },
-  { bank: "Prime Bank", rate: "0–2.50%", rmid: 2.5, islamic: true, note: "0% up to ৳10K, 2.50% above.", src: "Prime · Mar 2025" },
-  { bank: "UCB", rate: "1.00–2.25%", rmid: 2.25, islamic: true, note: "From 1% on low balances, up to 2.25%.", src: "UCB · Apr 2026" },
-  { bank: "Eastern Bank (EBL)", rate: "0–2.00%", rmid: 2.0, islamic: false, note: "0% under ৳50K, up to 2% above ৳25L.", src: "EBL · May 2026" },
-  { bank: "City Bank", rate: "0–0.25%", rmid: 0.25, islamic: true, note: "General Savings; lowest in the set.", src: "City · 2026" },
-  { bank: "Dutch-Bangla (DBBL)", rate: "Contact bank", rmid: -1, islamic: false, note: "Regular-savings rate not published online.", src: "—" },
-  { bank: "Mutual Trust Bank (MTB)", rate: "Contact bank", rmid: -1, islamic: false, note: "Regular-savings rate not published online.", src: "—" },
-  { bank: "SouthEast Bank", rate: "Contact bank", rmid: -1, islamic: true, note: "Regular-savings rate not published online.", src: "—" },
+  { bank: "Premier Bank", rate: "3.00–4.00%", rmid: 4.0, minRate: 3.0, maxRate: 4.0, islamic: true, note: "⚠ Tiered; unusually high vs peers — verify it's current. (May 2025 sheet)", src: "Premier" },
+  { bank: "Bank Asia", rate: "2.00–3.00%", rmid: 3.0, minRate: 2.0, maxRate: 3.0, islamic: true, note: "Tiered; 3% above ৳1 Cr.", src: "Bank Asia · 2026" },
+  { bank: "BRAC Bank", rate: "0.50–2.50%", rmid: 2.5, minRate: 0.5, maxRate: 2.5, islamic: false, note: "Tiered; AAA-rated bank.", src: "BRAC · Jan 2026" },
+  { bank: "Prime Bank", rate: "0–2.50%", rmid: 2.5, minRate: 0, maxRate: 2.5, islamic: true, note: "0% up to ৳10K, 2.50% above.", src: "Prime · Mar 2025" },
+  { bank: "UCB", rate: "1.00–2.25%", rmid: 2.25, minRate: 1.0, maxRate: 2.25, islamic: true, note: "From 1% on low balances, up to 2.25%.", src: "UCB · Apr 2026" },
+  { bank: "Eastern Bank (EBL)", rate: "0–2.00%", rmid: 2.0, minRate: 0, maxRate: 2.0, islamic: false, note: "0% under ৳50K, up to 2% above ৳25L.", src: "EBL · May 2026" },
+  { bank: "City Bank", rate: "0–0.25%", rmid: 0.25, minRate: 0, maxRate: 0.25, islamic: true, note: "General Savings; lowest in the set.", src: "City · 2026" },
+  { bank: "Dutch-Bangla (DBBL)", rate: "Contact bank", rmid: -1, minRate: null, maxRate: null, islamic: false, note: "Regular-savings rate not published online.", src: "—" },
+  { bank: "Mutual Trust Bank (MTB)", rate: "Contact bank", rmid: -1, minRate: null, maxRate: null, islamic: false, note: "Regular-savings rate not published online.", src: "—" },
+  { bank: "SouthEast Bank", rate: "Contact bank", rmid: -1, minRate: null, maxRate: null, islamic: true, note: "Regular-savings rate not published online.", src: "—" },
 ];
 
 /* Credit cards — flagship cards. Fee/APR from official sheets where posted;
@@ -2275,10 +2281,37 @@ function LoanComparePage() {
 }
 
 /* ---------- SAVINGS COMPARISON ---------- */
+const SAVINGS_SORTS = [
+  { id: "rate", label: "Highest rate" },
+  { id: "name", label: "Bank name (A–Z)" },
+];
+
 function SavingsComparePage() {
   const nav = useNav();
   const [islamicOnly, setIslamicOnly] = useState(false);
-  const rows = CMP_SAVINGS.filter(s => !islamicOnly || s.islamic).sort((a, b) => b.rmid - a.rmid);
+  const [sortBy, setSortBy] = useState("rate");
+  const [sortOpen, setSortOpen] = useState(false);
+  /* Which row's fine print is expanded. One at a time — opening another closes
+     the previous, so the table never grows unpredictably on a phone. */
+  const [openNote, setOpenNote] = useState(null);
+
+  const rows = useMemo(() => {
+    const list = CMP_SAVINGS.filter(s => !islamicOnly || s.islamic);
+    return sortBy === "name"
+      ? [...list].sort((a, b) => a.bank.localeCompare(b.bank))
+      : [...list].sort((a, b) => b.rmid - a.rmid); // "contact bank" (rmid -1) sinks to the bottom
+  }, [islamicOnly, sortBy]);
+
+  /* Top 3 publishable rates, always rate-ranked regardless of the table's sort
+     order — this strip is a fast-scan summary, not a mirror of the table. */
+  const top3 = useMemo(
+    () => CMP_SAVINGS.filter(s => (!islamicOnly || s.islamic) && s.rmid > 0)
+      .sort((a, b) => b.rmid - a.rmid).slice(0, 3),
+    [islamicOnly]
+  );
+
+  const sortLabel = (SAVINGS_SORTS.find(s => s.id === sortBy) || SAVINGS_SORTS[0]).label;
+
   return (
     <>
       <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
@@ -2288,26 +2321,105 @@ function SavingsComparePage() {
       </div>
       <UpdatedBadge />
 
+      {/* ---- Top offers: fast-scan summary above the detailed table ---- */}
+      {top3.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", margin: "0 2px 10px" }}>Top rates right now</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {top3.map((s, i) => (
+              /* basis 150 (not 170) so two cards still fit side-by-side inside the
+                 343px content width of a 375px phone instead of stacking three deep */
+              <div key={s.bank} className="fd-up" style={{ ...card, padding: "14px 15px", margin: 0, flex: "1 1 150px", minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#EAF1FC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.bank}</span>
+                  {i === 0 && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.green, flexShrink: 0 }}>★</span>}
+                </div>
+                {/* 20px: measured in-browser with the real Inter 900 face, the widest
+                    string "3.00–4.00%" is 128px against 136px of usable card width when
+                    two cards sit side-by-side on a 375px phone. 22px measures 141px and
+                    overflows; don't raise this without re-measuring. */}
+                <div style={{ ...gradText, fontSize: 20, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.15, wordBreak: "break-word" }}>{s.rate}</div>
+                <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 5, lineHeight: 1.45 }}>{s.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ ...card, padding: "20px 18px" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 16 }}>
-          <input type="checkbox" checked={islamicOnly} onChange={e => setIslamicOnly(e.target.checked)} style={{ width: 17, height: 17, accentColor: T.accent }} />
-          <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>Show only banks with a Shariah-compliant (Islamic) option 🕌</span>
-        </label>
+        {/* ---- Controls: Islamic filter + sort ---- */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flex: "1 1 240px", minWidth: 0 }}>
+            <input type="checkbox" checked={islamicOnly} onChange={e => setIslamicOnly(e.target.checked)} style={{ width: 17, height: 17, accentColor: T.accent, flexShrink: 0 }} />
+            <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>Show only banks with a Shariah-compliant (Islamic) option 🕌</span>
+          </label>
+
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button className="fd-chip" aria-haspopup="listbox" aria-expanded={sortOpen}
+              onClick={() => setSortOpen(o => !o)}
+              style={{ ...chip(sortOpen), flex: "0 0 auto", minWidth: 0, padding: "9px 13px", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap", touchAction: "manipulation" }}>
+              <span style={{ color: T.faint, fontWeight: 600 }}>Sort:</span>
+              <span style={{ fontWeight: 700 }}>{sortLabel}</span>
+              <span style={{ fontSize: 9, opacity: .8 }}>{sortOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {sortOpen && (
+              <>
+                {/* full-screen catcher so a tap anywhere dismisses — same pattern as the nav menu */}
+                <div onClick={() => setSortOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+                <div className="fd-up" role="listbox" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 41, minWidth: 180, background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: "0 18px 50px rgba(0,0,0,0.55)", backdropFilter: "blur(20px)" }}>
+                  {SAVINGS_SORTS.map(opt => {
+                    const active = opt.id === sortBy;
+                    return (
+                      <button key={opt.id} role="option" aria-selected={active}
+                        onClick={() => { setSortBy(opt.id); setSortOpen(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "10px 10px", borderRadius: 9, border: "none", background: active ? T.accentSoft : "transparent", color: active ? "#fff" : "#C9D8F0", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", touchAction: "manipulation" }}>
+                        <span style={{ width: 12, flexShrink: 0, color: T.accent }}>{active ? "✓" : ""}</span>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
         <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
           <table className="fd-tbl">
             <thead><tr><th>Bank</th><th>Savings rate</th><th>Islamic</th><th>Source</th></tr></thead>
             <tbody>
-              {rows.map((s, i) => (
-                <tr key={s.bank}>
-                  <td style={{ fontWeight: 600, color: "#EAF1FC" }}>{s.bank}{i === 0 && s.rmid > 0 && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: T.green }}>★ highest</span>}</td>
-                  <td style={{ color: s.rmid < 0 ? T.faint : "#fff", fontWeight: 700 }}>{s.rate}<div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 2 }}>{s.note}</div></td>
-                  <td>{s.islamic ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>}</td>
-                  <td style={{ color: T.faint, fontSize: 11.5 }}>{s.src}</td>
-                </tr>
-              ))}
+              {rows.map((s, i) => {
+                const noteOpen = openNote === s.bank;
+                /* "★ highest" only makes sense while the table is rate-sorted. */
+                const showStar = sortBy === "rate" && i === 0 && s.rmid > 0;
+                return (
+                  <tr key={s.bank}>
+                    <td style={{ fontWeight: 600, color: "#EAF1FC" }}>{s.bank}{showStar && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: T.green }}>★ highest</span>}</td>
+                    <td style={{ color: s.rmid < 0 ? T.faint : "#fff", fontWeight: 700 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        {s.rate}
+                        <button aria-label={`View terms for ${s.bank}`} aria-expanded={noteOpen}
+                          onClick={() => setOpenNote(noteOpen ? null : s.bank)}
+                          style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", border: `1px solid ${noteOpen ? "rgba(79,158,255,0.6)" : T.border}`, background: noteOpen ? T.accentSoft : "rgba(255,255,255,0.04)", color: noteOpen ? T.accent : T.faint, touchAction: "manipulation", padding: 0 }}>i</button>
+                      </span>
+                      {/* Inline reveal rather than a floating popover: this cell lives inside an
+                          overflow-x container, which would clip an absolutely-positioned tooltip. */}
+                      {noteOpen && (
+                        <div className="fd-up" style={{ marginTop: 6, maxWidth: 230, background: T.glass, border: `1px solid ${T.border}`, borderRadius: 10, padding: "8px 10px", fontSize: 11, fontWeight: 500, color: "#C9D8F0", lineHeight: 1.5, whiteSpace: "normal" }}>
+                          {s.note}
+                        </div>
+                      )}
+                    </td>
+                    <td>{s.islamic ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>}</td>
+                    <td style={{ color: T.faint, fontSize: 11.5 }}>{s.src}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+        <p style={{ margin: "10px 2px 0", fontSize: 11, color: T.faint }}>Tap <b style={{ color: T.muted }}>ⓘ</b> next to any rate to see that bank's tier terms.</p>
       </div>
 
       <div style={{ ...card, padding: "22px 20px", marginTop: 16 }}>
