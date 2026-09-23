@@ -1154,60 +1154,160 @@ const GUIDE_CHECKOUT_URL = "https://www.supportkori.com/findeshai/extras/the-ban
 const GUIDE_PRICE = 100;
 const GUIDE_GREEN = "#4ADE80";
 
-function GuideOffer() {
-  const go = () => {
-    taxTrack("guide_checkout_clicked", { price: GUIDE_PRICE, currency: "BDT" });
-    window.open(GUIDE_CHECKOUT_URL, "_blank", "noopener,noreferrer");
+const FIRST_JOB_CHECKOUT_URL = "https://www.supportkori.com/findeshai/extras/the-first-job-money-guide-8wzu";
+
+const GUIDES = [
+  {
+    id: "playbook",
+    tabLabel: "📘 Playbook · ৳100",
+    badge: "📘 The Bangladesh Money Playbook",
+    headLead: "Stop guessing with ", headAccent: "your money", headTail: ".",
+    intro: "One clear, do-it-this-weekend playbook for building a rich life on any salary in Bangladesh — the smart moves, in the right order, minus the noise and the jargon. It's the stuff most people learn the slow, expensive way.",
+    includes: [
+      "The conscious spending plan, rebuilt for BD salaries",
+      "Where to put money first — in the right order",
+      "Sanchayapatra, DPS & FDR decisions made simple",
+      "How to automate it all so it runs without you",
+    ],
+    price: GUIDE_PRICE,
+    priceCaption: "Less than a cup of coffee. Yours to keep forever.",
+    cta: "Get the Guide →",
+    url: GUIDE_CHECKOUT_URL,
+  },
+  {
+    id: "first-job",
+    tabLabel: "📗 First Job · ৳100",
+    badge: "📗 The First Job Money Guide",
+    headLead: "Just started ", headAccent: "earning", headTail: "?",
+    intro: "The first three years of a salary decide the next thirty. This is the plan for what to do on payday — automate it, protect it, grow it — built for Bangladeshi first jobs, not American ones.",
+    includes: [
+      "Negotiate your offer — and read PF & gratuity properly",
+      "A payday system that saves automatically from ৳500",
+      "Say no to the first EMI — what borrowing really costs",
+      "Family support, scams, and your first 30 days",
+    ],
+    price: 100, // matches the live SupportKori listing — verified Sep 2026
+    priceCaption: "For your first three years of earning. Yours to keep forever.",
+    cta: "Get the First Job Guide →",
+    url: FIRST_JOB_CHECKOUT_URL,
+  },
+];
+
+function GuideOffer({ initialGuide }) {
+  const [activeId, setActiveId] = useState(
+    GUIDES.some(g => g.id === initialGuide) ? initialGuide : GUIDES[0].id
+  );
+  const tabRefs = useRef([]);
+
+  const select = (id) => {
+    if (id === activeId) return;
+    setActiveId(id);
+    taxTrack("guide_tab_switched", { guide: id });
   };
 
-  const INCLUDES = [
-    "The conscious spending plan, rebuilt for BD salaries",
-    "Where to put money first — in the right order",
-    "Sanchayapatra, DPS & FDR decisions made simple",
-    "How to automate it all so it runs without you",
-  ];
+  /* Left/right arrows move between tabs and take focus with them, which is what
+     the WAI-ARIA tabs pattern expects. */
+  const onTabKey = (e, i) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const next = (i + (e.key === "ArrowRight" ? 1 : -1) + GUIDES.length) % GUIDES.length;
+    select(GUIDES[next].id);
+    const el = tabRefs.current[next];
+    if (el) el.focus();
+  };
+
+  const go = (g) => {
+    taxTrack("guide_checkout_clicked", { guide: g.id, price: g.price, currency: "BDT" });
+    window.open(g.url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="fd-up" style={{ ...card, padding: "26px 22px", marginBottom: 30, overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(180deg, ${T.accent}, ${GUIDE_GREEN})`, opacity: 0.9 }} />
-      <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>📘 The Bangladesh Money Playbook</div>
-      <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.12 }}>Stop guessing with <span style={gradText}>your money</span>.</h2>
-      <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-        One clear, do-it-this-weekend playbook for building a rich life on any salary in Bangladesh — the smart moves, in the right order, minus the noise and the jargon. It's the stuff most people learn the slow, expensive way.
-      </p>
 
-      {/* What's inside */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22 }}>
-        {INCLUDES.map(item => (
-          <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span style={{ color: GUIDE_GREEN, fontSize: 14, fontWeight: 900, lineHeight: 1.5, flexShrink: 0 }}>✓</span>
-            <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>{item}</span>
-          </div>
-        ))}
+      {/* ---- Tab row: both products stay visible even when unselected ---- */}
+      <div role="tablist" aria-label="Choose a guide" style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {GUIDES.map((g, i) => {
+          const on = g.id === activeId;
+          return (
+            <button key={g.id} ref={el => (tabRefs.current[i] = el)}
+              role="tab" id={`guide-tab-${g.id}`} aria-selected={on} aria-controls={`guide-panel-${g.id}`}
+              tabIndex={on ? 0 : -1}
+              onClick={() => select(g.id)} onKeyDown={e => onTabKey(e, i)}
+              className="fd-chip"
+              style={{
+                flex: "1 1 0", minWidth: 0, padding: "9px 6px", borderRadius: 11,
+                fontSize: 12, fontWeight: 800, fontFamily: "inherit", cursor: "pointer",
+                /* Measured with the real Inter face: both labels are 115px/112px at
+                   12px against 126px of usable pill width on a 360px phone, so they
+                   fit one row with ~11px spare. Below ~340px they'd exceed it, so
+                   ellipsis is a graceful fallback instead of text bleeding out. */
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                textAlign: "center", touchAction: "manipulation",
+                border: `1px solid ${on ? "rgba(79,158,255,0.6)" : T.border}`,
+                background: on ? "rgba(79,158,255,0.16)" : "rgba(255,255,255,0.025)",
+                color: on ? "#8AC2FF" : T.muted,
+              }}>
+              {g.tabLabel}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Price + CTA */}
-      <div style={{ background: "rgba(79,158,255,0.06)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 18px 16px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 10, marginBottom: 4 }}>
-          <span style={{ fontSize: 42, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>৳{GUIDE_PRICE}</span>
-          <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 600 }}>one-time</span>
-        </div>
-        <p style={{ margin: "0 0 16px", fontSize: 12.5, color: T.faint, textAlign: "center" }}>Less than a cup of coffee. Yours to keep forever.</p>
+      {/* ---- Panels ----
+          Both panels are rendered and stacked in one grid cell; the inactive one
+          keeps its layout box (visibility, not display) so the card is always as
+          tall as the taller guide. That removes the tab-switch page jump without
+          hardcoding a minHeight that would be wrong at a different breakpoint. */}
+      <div style={{ display: "grid" }}>
+        {GUIDES.map(g => {
+          const on = g.id === activeId;
+          return (
+            <div key={g.id} role="tabpanel" id={`guide-panel-${g.id}`} aria-labelledby={`guide-tab-${g.id}`}
+              aria-hidden={!on}
+              className={on ? "fd-up" : undefined}
+              style={{ gridArea: "1 / 1", visibility: on ? "visible" : "hidden", pointerEvents: on ? "auto" : "none" }}>
 
-        <button className="fd-cta" onClick={go} style={{ ...cta, margin: 0, touchAction: "manipulation" }}>
-          Get the Guide →
-        </button>
+              <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>{g.badge}</div>
+              <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.12 }}>{g.headLead}<span style={gradText}>{g.headAccent}</span>{g.headTail}</h2>
+              <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>{g.intro}</p>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 11.5, color: T.faint }}>🔒 Secure checkout via SupportKori</span>
-          <span style={{ fontSize: 11.5, color: T.faint }}>·</span>
-          <span style={{ fontSize: 11.5, color: T.faint }}>SSLCommerz</span>
-        </div>
+              {/* What's inside */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22 }}>
+                {g.includes.map(item => (
+                  <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ color: GUIDE_GREEN, fontSize: 14, fontWeight: 900, lineHeight: 1.5, flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price + CTA */}
+              <div style={{ background: "rgba(79,158,255,0.06)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 18px 16px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontSize: 42, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>৳{g.price}</span>
+                  <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 600 }}>one-time</span>
+                </div>
+                <p style={{ margin: "0 0 16px", fontSize: 12.5, color: T.faint, textAlign: "center" }}>{g.priceCaption}</p>
+
+                <button className="fd-cta" onClick={() => go(g)} tabIndex={on ? 0 : -1} style={{ ...cta, margin: 0, touchAction: "manipulation" }}>
+                  {g.cta}
+                </button>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11.5, color: T.faint }}>🔒 Secure checkout via SupportKori</span>
+                  <span style={{ fontSize: 11.5, color: T.faint }}>·</span>
+                  <span style={{ fontSize: 11.5, color: T.faint }}>SSLCommerz</span>
+                </div>
+              </div>
+
+              <p style={{ margin: "14px 2px 0", fontSize: 12, color: T.faint, lineHeight: 1.6, textAlign: "center" }}>
+                ✨ Instant download after payment. No account, no subscription, no spam. Thank you for supporting a one-person project. 🙏
+              </p>
+            </div>
+          );
+        })}
       </div>
-
-      <p style={{ margin: "14px 2px 0", fontSize: 12, color: T.faint, lineHeight: 1.6, textAlign: "center" }}>
-        ✨ Instant download after payment. No account, no subscription, no spam. Thank you for supporting a one-person project. 🙏
-      </p>
     </div>
   );
 }
