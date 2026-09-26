@@ -26,7 +26,7 @@ const INSTRUMENTS = [
   { id: "fdr", name: "Fixed Deposit (FDR)", bn: "ফিক্সড ডিপোজিট", icon: "🏦", min: 10000, max: null, risk: ["low"], rate: 10, rateLabel: "9–11.5%", liquidity: "Medium", horizon: "3 mo – 3 yrs", taxNote: "10–15% source tax", blurb: "Banks are competing hard for deposits with the policy rate at 10%. Strong banks (BRAC, EBL, DBBL, City, Prime, MTB) pay 9–11.5% on 1-year FDRs. Avoid weak banks chasing you with 12%+.", why: "More flexible tenure than Sanchayapatra. Good for money you may need within a few years — stick to well-capitalised banks.", tags: ["Flexible tenure", "Near-record rates"], link: null },
   { id: "ifarmer", name: "iFarmer (Agri Funding)", bn: "আইফার্মার", icon: "🌾", min: 40000, max: 1000000, risk: ["low", "medium"], rate: 12, rateLabel: "8–15%", liquidity: "Low", horizon: "3–9 months", taxNote: "TIN required", blurb: "Fund verified farm projects via profit-sharing with insurance backing. ⚠️ iFarmer now works mainly with institutional financiers — retail lots open intermittently, so confirm availability in their app before planning around it.", why: "Above any bank deposit on short cycles when lots are open, with insurance reducing downside. Start small.", tags: ["Short cycle", "Insured", "Check availability"], link: "https://ifarmer.asia" },
   { id: "tbond", name: "Treasury Bond / Bill", bn: "ট্রেজারি বন্ড", icon: "📜", min: 100000, max: null, risk: ["low", "medium"], rate: 10, rateLabel: "9.5–10.2%", liquidity: "Medium", horizon: "91 days – 20 yrs", taxNote: "Tax on coupon", blurb: "Government debt via any bank's treasury desk. Early 2026: 91-day bills ~9.5%, 10-year bonds ~10.2% — yields are drifting down as the govt borrows less from banks.", why: "Govt-backed like Sanchayapatra but tradeable — and locking a 10-yr bond now keeps today's rate if cuts continue.", tags: ["Govt. backed", "Tradeable"], link: "https://www.bb.org.bd/en/index.php/monetaryactivity/treasury" },
-  { id: "mutualfund", name: "Mutual Fund", bn: "মিউচুয়াল ফান্ড", icon: "📊", min: 5000, max: null, risk: ["medium"], rate: 12, rateLabel: "8–18%", liquidity: "Medium", horizon: "2–5 years", taxNote: "Dividend mostly tax-exempt", blurb: "Professionally managed pooled funds on the DSE. Compare funds by weekly NAV (published on dsebd.org) — favour managers with 3+ years of NAV growth above the DSEX.", why: "A managed bridge into the market — diversified, lower-effort, tax-friendly dividends.", tags: ["Diversified", "Check weekly NAV"], link: "https://dsebd.org" },
+  { id: "mutualfund", name: "Mutual Fund", bn: "মিউচুয়াল ফান্ড", icon: "📊", min: 5000, max: null, risk: ["medium"], rate: 12, rateLabel: "−6% to +23%", liquidity: "Medium", horizon: "2–5 years", taxNote: "Dividend mostly tax-exempt", blurb: "Professionally managed pooled funds. Across the 20 largest open-end funds, 2026 year-to-date returns ran from +7.0% to +23.1%, while 2025 ran from −5.8% to +17.7% (LankaBangla, 3 Sep 2026) — five of the twenty lost money that year. There is no promised rate: compare real NAV and returns fund by fund before choosing.", why: "A managed bridge into the market — diversified and lower-effort, but market-linked, so only for money you can leave for years.", tags: ["Diversified", "Not guaranteed"], link: "/compare/mutual-funds" },
   { id: "bluechip", name: "DSE Blue-Chip Shares", bn: "ব্লু-চিপ শেয়ার", icon: "📈", min: 25000, max: null, risk: ["medium", "high"], rate: 15, rateLabel: "12–25%", liquidity: "High", horizon: "1–5 years", taxNote: "No capital-gains tax", blurb: "Shares in DS30 leaders — Grameenphone, BRAC Bank, Square Pharma. DSEX is ~5,480, up ~14.8% over the last 12 months.", why: "Real ownership in BD's best companies, no CGT for individuals. Prices swing — invest for years.", tags: ["High liquidity", "No CGT"], link: "https://dsebd.org" },
   { id: "growth", name: "DSE Growth Stocks", bn: "গ্রোথ শেয়ার", icon: "🚀", min: 50000, max: null, risk: ["high"], rate: 25, rateLabel: "20–60%+", liquidity: "High", horizon: "6 mo – 3 yrs", taxNote: "No capital-gains tax", blurb: "Smaller high-growth listed firms. Big upside, real downside — DSE has boom/bust history.", why: "Where the largest returns live, and where people lose money. Only money you can lock away.", tags: ["High return", "High risk"], link: "https://dsebd.org" },
   { id: "gold", name: "Gold", bn: "সোনা", icon: "🪙", min: 50000, max: null, risk: ["medium"], rate: 13, rateLabel: "10–15% (long-run)", liquidity: "High", horizon: "3–10 years", taxNote: "VAT on purchase", blurb: "22k gold is ~৳2.2 Lakh/bhori (June 2026) — up roughly 28% in 12 months. Long-run returns are lower; don't chase last year's spike. Buy BAJUS-hallmarked only.", why: "When the taka weakens or inflation bites, gold holds purchasing power. A stabiliser, not a growth engine.", tags: ["Inflation hedge", "+28% last yr"], link: null },
@@ -717,6 +717,8 @@ function SavingsPage({ seoHead, focus }) {
           </div>
 
           <div style={inflationNote}>💡 A DPS auto-deducts on a fixed date each month — the single best trick for building a savings habit. Set it and forget it.</div>
+
+          <MutualFundUpsell monthly={effectiveMonthly} years={years} islamicOnly={islamicOnly} />
 
           <div className="fd-up" style={{ marginTop: 24, background: T.glass, borderRadius: 20, padding: "24px 20px", textAlign: "center", border: `1px solid ${T.border}`, backdropFilter: "blur(16px)" }}>
             <h3 style={{ margin: "0 0 7px", fontSize: 16, fontWeight: 800, color: "#fff" }}>Got a lump sum sitting idle too?</h3>
@@ -2307,6 +2309,63 @@ function FAQ({ items }) {
   );
 }
 
+/* ============================================================
+   MUTUAL FUNDS — open-end, top 20 by AUM.
+   EVERY figure below is transcribed from ONE dated source:
+   LankaBangla Financial Portal, "Weekly Open End Mutual Fund Review:
+   2026-09-03" (compiled from UCB Stock Brokerage's weekly review),
+   https://lankabd.com/MF/OpenEndMutualFund — which lists all 102
+   open-end funds with NAV, AUM, returns, dividend and loads.
+
+   DELIBERATE OMISSIONS — do not fill these in by estimating:
+   · 1-year / 3-year returns: no accessible source publishes them per
+     fund. What IS published is calendar-period return, so that is what
+     the columns say: ytd = 2026 year-to-date, prev = full-year 2025.
+     Never relabel ytd as "1-year return" — they are different numbers.
+   · Minimum investment and expense ratio: not in the weekly review, and
+     several AMC sites are dead or parked domains. Columns omitted rather
+     than filled with 20 rows of "data not available".
+   · Closed-end (DSE-listed) funds: dsebd.org restructured and the
+     industry listing 404s. Open-end only for now.
+
+   `cat` and `shariah` are taken from each fund's REGISTERED NAME only
+   (e.g. "SHANTA AMANAH SHARIAH FUND", "IDLC BALANCED FUND"). Where the
+   name doesn't state it, cat is "" and renders as "Not stated" — it is
+   not inferred from holdings.
+
+   These are market-linked. Returns are historical and can be negative:
+   note that five of these twenty lost money in 2025. Nothing here is a
+   guaranteed rate like Sanchayapatra, DPS or FDR.
+   ============================================================ */
+const MF_UPDATED = "3 September 2026";
+const MF_SOURCE_URL = "https://lankabd.com/MF/OpenEndMutualFund";
+const MF_SRC = "LankaBD · 3 Sep 26";
+const MF_BENCH = { dsexYtd: 16.4, mfYtd: 12.3 }; // same source, same date
+
+const CMP_MUTUAL_FUNDS = [
+  { fund: "Bangladesh Fund", amc: "ICB Asset Management", cat: "", shariah: false, nav: 89.82, ytd: 15.0, prev: -2.5, div: 0, aum: 15623, exitLoad: "4.40%", src: MF_SRC },
+  { fund: "ICB AMCL Unit Fund", amc: "ICB Asset Management", cat: "", shariah: false, nav: 219.68, ytd: 14.5, prev: 1.5, div: 0, aum: 5827, exitLoad: "1.70%", src: MF_SRC },
+  { fund: "UCB Income Plus Fund", amc: "UCB AML", cat: "Income", shariah: false, nav: 14.92, ytd: 10.9, prev: 17.7, div: 0, aum: 4242, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "Shanta Fixed Income Fund", amc: "Shanta Asset Management", cat: "Income", shariah: false, nav: 12.30, ytd: 9.8, prev: 12.9, div: 8.0, aum: 2925, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "Grameen Bank-AIMS First Unit Fund", amc: "AIMS Bangladesh", cat: "", shariah: false, nav: 10.77, ytd: 7.9, prev: 5.5, div: 8.0, aum: 1446, exitLoad: "0.50%", src: MF_SRC },
+  { fund: "IDLC Income Fund", amc: "IDLC Asset Management", cat: "Income", shariah: false, nav: 11.58, ytd: 7.0, prev: 10.6, div: 6.25, aum: 1379, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "Sandhani AML SLIC Fixed Income Fund", amc: "Sandhani AML", cat: "Income", shariah: false, nav: 14.31, ytd: 10.4, prev: 14.0, div: 0, aum: 1199, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "IDLC AML Shariah Fund", amc: "IDLC Asset Management", cat: "", shariah: true, nav: 11.17, ytd: 8.0, prev: 6.8, div: 5.0, aum: 1016, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "BMSL National Housing Growth Fund", amc: "BMSL Asset Management", cat: "Growth", shariah: false, nav: 10.75, ytd: 14.6, prev: -4.8, div: 5.0, aum: 969, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "IDLC Growth Fund", amc: "IDLC Asset Management", cat: "Growth", shariah: false, nav: 13.17, ytd: 16.1, prev: 10.3, div: 4.0, aum: 952, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "ICB AMCL Second NRB Unit Fund", amc: "ICB Asset Management", cat: "", shariah: false, nav: 9.79, ytd: 20.6, prev: -1.8, div: 0, aum: 924, exitLoad: "4.10%", src: MF_SRC },
+  { fund: "Shanta First Income Unit Fund", amc: "Shanta Asset Management", cat: "Income", shariah: false, nav: 12.43, ytd: 15.3, prev: 4.1, div: 0, aum: 842, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "VIPB SEBL 1st Unit Fund", amc: "VIPB Asset Management", cat: "", shariah: false, nav: 11.98, ytd: 10.4, prev: 11.0, div: 5.0, aum: 821, exitLoad: "0.50%", src: MF_SRC },
+  { fund: "MTB Unit Fund", amc: "Alliance Capital AML", cat: "", shariah: false, nav: 9.74, ytd: 8.3, prev: -5.8, div: 14.0, aum: 802, exitLoad: "2.00%", src: MF_SRC },
+  { fund: "EDGE High Quality Income Fund", amc: "EDGE AMC", cat: "Income", shariah: false, nav: 13.65, ytd: 7.9, prev: 17.5, div: 0, aum: 755, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "First ICB Unit Fund", amc: "ICB Asset Management", cat: "", shariah: false, nav: 9.33, ytd: 23.1, prev: -3.2, div: 0, aum: 692, exitLoad: "3.70%", src: MF_SRC },
+  { fund: "Shanta Amanah Shariah Fund", amc: "Shanta Asset Management", cat: "", shariah: true, nav: 10.87, ytd: 10.5, prev: 2.4, div: 0, aum: 649, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "IDLC Balanced Fund", amc: "IDLC Asset Management", cat: "Balanced", shariah: false, nav: 12.15, ytd: 14.7, prev: 12.5, div: 5.0, aum: 638, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "Ekush Stable Return Fund", amc: "Ekush Wealth Management", cat: "Income", shariah: false, nav: 15.35, ytd: 11.5, prev: 16.7, div: 0, aum: 627, exitLoad: "0.00%", src: MF_SRC },
+  { fund: "VIPB NLI 1st Unit Fund", amc: "VIPB Asset Management", cat: "", shariah: false, nav: 11.33, ytd: 10.7, prev: 11.0, div: 4.0, aum: 563, exitLoad: "0.50%", src: MF_SRC },
+];
+const MF_CATEGORIES = ["All", "Income", "Growth", "Balanced"];
+
 function CompareDisclaimer() {
   return (
     <p style={{ fontSize: 11.5, color: T.faint, lineHeight: 1.65, margin: "26px 6px 0", textAlign: "center" }}>
@@ -2381,6 +2440,250 @@ function LoanComparePage() {
 }
 
 /* ---------- SAVINGS COMPARISON ---------- */
+/* Savings-planner upsell. Deliberately OUTSIDE the DPS/FDR results list and
+   outside run()'s compounding projector: SAVINGS entries carry a contracted
+   `rate` that legitimately compounds monthly, and funds do not. Showing a fund
+   inside that list — or through that maths — would present a market-linked
+   instrument as if it matured like a DPS.
+
+   No projected maturity value is shown either. The only published history is
+   2026-to-date plus full-year 2025; projecting a multi-year outcome from two
+   calendar periods (one of them partial) would be flimsy even with a
+   disclaimer attached. Published returns and the plain contributed total are
+   shown instead, and the user is sent to the full table to decide. */
+function MutualFundUpsell({ monthly, years, islamicOnly }) {
+  const nav = useNav();
+  const picks = useMemo(() => {
+    const list = CMP_MUTUAL_FUNDS.filter(f => !islamicOnly || f.shariah);
+    return [...list].sort((a, b) => b.aum - a.aum).slice(0, 3);
+  }, [islamicOnly]);
+  if (!picks.length || !monthly) return null;
+  const contributed = monthly * years * 12;
+  const pct = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
+
+  return (
+    <div className="fd-up" style={{ marginTop: 24, background: "rgba(255,180,84,0.06)", border: "1px solid rgba(255,180,84,0.26)", borderRadius: 20, padding: "22px 20px" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: T.amber, letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 6 }}>Want to aim higher? (not guaranteed)</div>
+      <p style={{ margin: "0 0 4px", fontSize: 13.5, lineHeight: 1.7, color: "#FFCE8A" }}>
+        Everything above pays a <b style={{ color: "#fff" }}>contracted rate</b> — you know the maturity figure before you start. Mutual funds don't work that way: no promised rate, and your units can be worth less than you paid. Over a long horizon they can beat a DPS, and in a bad year they lose money.
+      </p>
+      <p style={{ margin: "0 0 16px", fontSize: 12, color: T.faint }}>
+        {islamicOnly ? "Shariah-registered funds, largest first" : "The three largest open-end funds by size"} · published returns as of {MF_UPDATED}
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+        {picks.map(f => (
+          <div key={f.fund} style={{ background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 150px", minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#EAF1FC" }}>{f.fund} {f.shariah && <span style={{ color: T.green, fontSize: 11 }}>☪</span>}</div>
+              <div style={{ fontSize: 10.5, color: T.faint, marginTop: 2 }}>{f.amc} · ৳{(f.aum / 1000).toFixed(1)} bn fund</div>
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: f.ytd < 0 ? T.red : T.green }}>{pct(f.ytd)} <span style={{ fontSize: 10, color: T.faint, fontWeight: 600 }}>2026 YTD</span></div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: f.prev < 0 ? T.red : T.muted }}>{pct(f.prev)} <span style={{ fontSize: 10, color: T.faint, fontWeight: 600 }}>2025</span></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "rgba(8,18,36,0.4)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
+        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.65, color: "#C9D8F0" }}>
+          At {fmt(monthly)}/month for {years} year{years > 1 ? "s" : ""} you'd put in <b style={{ color: "#fff" }}>{fmtFull(contributed)}</b> of your own money.
+          {" "}<b style={{ color: T.amber }}>We don't show a projected maturity value for funds</b> — unlike a DPS there's no rate to project from, and two published periods isn't enough history to forecast honestly. Compare the funds and decide for yourself.
+        </p>
+      </div>
+
+      <button className="fd-cta" onClick={() => nav("/compare/mutual-funds")} style={{ ...cta, background: "rgba(255,255,255,0.05)", border: `1px solid ${T.accentBorder}`, boxShadow: "none", color: "#C9D8F0", margin: 0, touchAction: "manipulation" }}>
+        Compare all 20 mutual funds →
+      </button>
+      <p style={{ margin: "10px 2px 0", fontSize: 11, color: T.faint, lineHeight: 1.55 }}>
+        Minimum investment isn't published in one verifiable place — confirm with the asset manager. Money you need within 3 years belongs in the DPS or FDR options above, not here.
+      </p>
+    </div>
+  );
+}
+
+/* ============================================================
+   MUTUAL FUND COMPARE PAGE
+   Framing rule: this table must never read like /compare/savings.
+   Savings/DPS/FDR rates are contractual; these are historical outcomes
+   that include losses. Hence: a warning band above the table, "past
+   performance" tagging on every return column header, negative years
+   shown in red, and a note directly under the table rather than relying
+   on the shared CompareDisclaimer footer.
+   ============================================================ */
+const MF_SORTS = [
+  { id: "aum", label: "Fund size (AUM)" },
+  { id: "ytd", label: "2026 return so far" },
+  { id: "prev", label: "2025 return" },
+  { id: "name", label: "Fund name (A–Z)" },
+];
+
+function MutualFundComparePage() {
+  const nav = useNav();
+  const [cat, setCat] = useState("All");
+  const [shariahOnly, setShariahOnly] = useState(false);
+  const [sortBy, setSortBy] = useState("aum");
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const rows = useMemo(() => {
+    const list = CMP_MUTUAL_FUNDS.filter(f =>
+      (cat === "All" || f.cat === cat) && (!shariahOnly || f.shariah));
+    const by = { aum: (a, b) => b.aum - a.aum, ytd: (a, b) => b.ytd - a.ytd, prev: (a, b) => b.prev - a.prev, name: (a, b) => a.fund.localeCompare(b.fund) };
+    return [...list].sort(by[sortBy] || by.aum);
+  }, [cat, shariahOnly, sortBy]);
+
+  const sortLabel = (MF_SORTS.find(s => s.id === sortBy) || MF_SORTS[0]).label;
+  const pct = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
+  const pctColor = v => (v < 0 ? T.red : v > 0 ? T.green : T.muted);
+  const losers2025 = CMP_MUTUAL_FUNDS.filter(f => f.prev < 0).length;
+
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
+        <div className="fd-up" style={pill}>📊 Compare Mutual Funds · মিউচুয়াল ফান্ড</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare mutual funds in <span style={gradText}>Bangladesh</span></h1>
+        <p className="fd-up fd-up-2" style={sub}>
+          The 20 largest open-end funds by size, with their real NAV and published returns. These are <b style={{ color: "#fff" }}>market-linked, not guaranteed</b> — {losers2025} of these {CMP_MUTUAL_FUNDS.length} funds lost money in 2025. Past returns tell you how a fund has behaved, never what it will pay you.
+        </p>
+      </div>
+
+      {/* ---- What is a mutual fund (FinDesh assumes nothing) ---- */}
+      <div className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 16 }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>New to this? What a mutual fund actually is</h3>
+        <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+          You and thousands of others put money into one pot. A professional manager invests that pot across shares, bonds and deposits, and you own <b style={{ color: "#fff" }}>units</b> of it. The unit price — the <b style={{ color: "#fff" }}>NAV</b> — moves up and down with whatever the fund owns.
+        </p>
+        <div style={{ display: "grid", gap: 9 }}>
+          {[
+            ["Why people use them", "You get spread across many companies with a small amount of money, and someone else picks the shares."],
+            ["The real trade-off", "There is no promised rate. A good year can beat Sanchayapatra comfortably; a bad year can lose money outright."],
+            ["Open-end vs closed-end", "These 20 are open-end — bought and sold with the asset manager at NAV. Closed-end funds trade on the DSE like a share."],
+            ["How to think about it", "Money you need within 3 years should not be here. Use DPS, FDR or Sanchayapatra for that, and treat funds as long-term money."],
+          ].map(([t, d]) => (
+            <div key={t} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <span style={{ color: T.accent, fontSize: 13, fontWeight: 900, lineHeight: 1.6, flexShrink: 0 }}>→</span>
+              <span style={{ fontSize: 13, lineHeight: 1.6, color: "#C9D8F0" }}><b style={{ color: "#fff" }}>{t}:</b> {d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ---- The warning band: this is the line between this page and /compare/savings ---- */}
+      <div style={{ ...inflationNote, marginTop: 0, marginBottom: 16 }}>
+        ⚠️ <b>Every number in this table is history, not a rate you will receive.</b> Unlike Sanchayapatra, DPS or FDR, a mutual fund promises nothing — your units can be worth less than you paid. Figures are NAV-based as published on {MF_UPDATED}.
+      </div>
+
+      <div style={{ ...card, padding: "20px 18px" }}>
+        {/* ---- Filters ---- */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          {MF_CATEGORIES.map(c => (
+            <button key={c} className="fd-chip" onClick={() => setCat(c)} style={{ ...chip(cat === c), flex: "0 1 auto", minWidth: 0, padding: "8px 14px", touchAction: "manipulation" }}>{c}</button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flex: "1 1 220px", minWidth: 0 }}>
+            <input type="checkbox" checked={shariahOnly} onChange={e => setShariahOnly(e.target.checked)} style={{ width: 17, height: 17, accentColor: T.accent, flexShrink: 0 }} />
+            <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>Shariah-compliant funds only 🕌</span>
+          </label>
+
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button className="fd-chip" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen(o => !o)}
+              style={{ ...chip(sortOpen), flex: "0 0 auto", minWidth: 0, padding: "9px 13px", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap", touchAction: "manipulation" }}>
+              <span style={{ color: T.faint, fontWeight: 600 }}>Sort:</span>
+              <span style={{ fontWeight: 700 }}>{sortLabel}</span>
+              <span style={{ fontSize: 9, opacity: .8 }}>{sortOpen ? "▲" : "▼"}</span>
+            </button>
+            {sortOpen && (
+              <>
+                <div onClick={() => setSortOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+                <div className="fd-up" role="listbox" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 41, minWidth: 190, background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: "0 18px 50px rgba(0,0,0,0.55)", backdropFilter: "blur(20px)" }}>
+                  {MF_SORTS.map(opt => {
+                    const on = opt.id === sortBy;
+                    return (
+                      <button key={opt.id} role="option" aria-selected={on} onClick={() => { setSortBy(opt.id); setSortOpen(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "10px", borderRadius: 9, border: "none", background: on ? T.accentSoft : "transparent", color: on ? "#fff" : "#C9D8F0", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", touchAction: "manipulation" }}>
+                        <span style={{ width: 12, flexShrink: 0, color: T.accent }}>{on ? "✓" : ""}</span>{opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
+          <table className="fd-tbl">
+            <thead>
+              <tr>
+                <th>Fund</th><th>Category</th><th>NAV ৳</th>
+                <th>2026 YTD<div style={{ fontSize: 9, fontWeight: 700, color: T.amber, letterSpacing: ".04em" }}>PAST PERF.</div></th>
+                <th>2025<div style={{ fontSize: 9, fontWeight: 700, color: T.amber, letterSpacing: ".04em" }}>PAST PERF.</div></th>
+                <th>Shariah</th><th>Fund size</th><th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr><td colSpan={8} style={{ color: T.faint, padding: "18px 4px" }}>No funds match that combination — try clearing the Shariah filter or choosing "All".</td></tr>
+              )}
+              {rows.map(f => (
+                <tr key={f.fund}>
+                  <td style={{ fontWeight: 600, color: "#EAF1FC", minWidth: 190 }}>{f.fund}
+                    <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 2 }}>{f.amc}</div>
+                  </td>
+                  <td style={{ color: f.cat ? "#C9D8F0" : T.faint, fontSize: 12.5 }}>{f.cat || "Not stated"}</td>
+                  <td style={{ color: "#fff", fontWeight: 700 }}>{f.nav.toFixed(2)}</td>
+                  <td style={{ color: pctColor(f.ytd), fontWeight: 700 }}>{pct(f.ytd)}</td>
+                  <td style={{ color: pctColor(f.prev), fontWeight: 700 }}>{pct(f.prev)}</td>
+                  <td>{f.shariah ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>}</td>
+                  <td style={{ color: "#C9D8F0", fontSize: 12.5 }}>৳{f.aum >= 1000 ? (f.aum / 1000).toFixed(1) + " bn" : f.aum + " m"}</td>
+                  <td style={{ color: T.faint, fontSize: 11 }}>{f.src}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ---- Note directly under the table, not buried in the footer ---- */}
+        <div style={{ marginTop: 12, background: "rgba(255,180,84,0.07)", border: "1px solid rgba(255,180,84,0.28)", borderRadius: 12, padding: "12px 14px" }}>
+          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.65, color: "#FFCE8A" }}>
+            <b style={{ color: T.amber }}>Reading these numbers honestly.</b> "2026 YTD" is this year so far and "2025" is that full calendar year — they are <b>not</b> annualised 1-year or 3-year returns, because no Bangladeshi source publishes those per fund. A fund can top one column and sit near the bottom of the other, which is exactly why one good year is a bad reason to buy. Over 2026 so far the DSEX index returned {MF_BENCH.dsexYtd}% and open-end funds averaged {MF_BENCH.mfYtd}%.
+          </p>
+        </div>
+        <p style={{ margin: "10px 2px 0", fontSize: 11, color: T.faint, lineHeight: 1.6 }}>
+          All figures NAV-based, as published {MF_UPDATED} in LankaBangla's Weekly Open End Mutual Fund Review (compiled from UCB Stock Brokerage) —{" "}
+          <a href={MF_SOURCE_URL} target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: "none" }}>view the source ↗</a>.
+          Category and Shariah status are taken from each fund's registered name; where the name doesn't state a category we show "Not stated" rather than guess. Minimum investment and expense ratio are not published in a single verifiable place, so they are deliberately not shown — ask the asset manager directly.
+        </p>
+      </div>
+
+      <FAQ items={[
+        { q: "Are mutual fund returns guaranteed in Bangladesh?", a: "No. Every figure on this page is historical. Of the 20 largest open-end funds, " + losers2025 + " lost money during 2025 even though most gained during 2026. If you need a fixed, promised return, Sanchayapatra, a bank DPS or an FDR are the right instruments — see our Save and Sanchayapatra pages." },
+        { q: "What is NAV?", a: "Net Asset Value is the per-unit value of everything the fund owns, minus what it owes, divided by the number of units. It's the honest price of one unit. Open-end funds are bought and sold at prices set around NAV, so a rising NAV means the fund's holdings gained value." },
+        { q: "How much do I need to start?", a: "It varies by asset management company and isn't published in one verifiable place, so we don't list it — confirm directly with the AMC. As a rule, open-end funds in Bangladesh start far lower than most people assume, often within reach of a few thousand taka." },
+        { q: "Mutual fund or DPS — which should I choose?", a: "Different jobs. A DPS pays a contracted rate (up to ~11%) and is the right home for money you'll need in a few years. A mutual fund has no promised rate and should only hold money you can leave for 5+ years. Many people do both: DPS for the emergency and near-term goals, funds for long-term growth." },
+        { q: "Which funds are Shariah-compliant?", a: "Funds registered as Shariah funds include the IDLC AML Shariah Fund and the Shanta Amanah Shariah Fund. Use the Shariah-only filter above to see them. Confirm the certification and the screening methodology with the asset manager before investing." },
+      ]} />
+
+      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Want a guaranteed return instead?</h3>
+        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Sanchayapatra pays ~11.8–11.98% with a government guarantee, and a DPS auto-deducts monthly at up to ~11%. No market risk.</p>
+        <button className="fd-cta" onClick={() => nav("/sanchayapatra")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>See Sanchayapatra rates →</button>
+      </div>
+
+      <RelatedLinks links={[
+        { label: "Save · DPS planner", path: "/save" },
+        { label: "Sanchayapatra rates", path: "/sanchayapatra" },
+        { label: "Compare savings accounts", path: "/compare/savings" },
+        { label: "Invest planner", path: "/invest" },
+      ]} />
+      <CompareDisclaimer />
+    </>
+  );
+}
+
 const SAVINGS_SORTS = [
   { id: "rate", label: "Highest rate" },
   { id: "name", label: "Bank name (A–Z)" },
@@ -2761,6 +3064,7 @@ export default function App() {
     { heading: "Compare", items: [
       { label: "Compare Credit Cards", icon: "💳", path: "/compare/credit-cards" },
       { label: "Compare Savings Accounts", icon: "🏦", path: "/compare/savings" },
+      { label: "Compare Mutual Funds", icon: "📊", path: "/compare/mutual-funds" },
       { label: "Compare Loans", icon: "🤝", path: "/compare/loans" },
     ] },
     { heading: "About", items: [
@@ -2835,6 +3139,7 @@ export default function App() {
           : route.view === "sanchayapatra" ? <SanchayapatraPage />
           : route.view === "cmp-loans" ? <LoanComparePage />
           : route.view === "cmp-savings" ? <SavingsComparePage />
+          : route.view === "cmp-mutualfunds" ? <MutualFundComparePage />
           : route.view === "cmp-cards" ? <CreditCardComparePage />
           : page === "invest" ? <InvestPage seoHead={route.h1 ? { h1: route.h1, sub: route.sub } : null} />
           : page === "save" ? <SavingsPage seoHead={route.h1 ? { h1: route.h1, sub: route.sub } : null} />

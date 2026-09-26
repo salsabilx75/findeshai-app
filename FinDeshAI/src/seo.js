@@ -110,6 +110,18 @@ export const ROUTES = {
     desc: "Compare regular savings-account interest rates across 10 Bangladeshi banks and see where your everyday money earns the most, with Islamic options flagged.",
     sitemap: { priority: "0.8", changefreq: "weekly" },
   },
+  "/compare/mutual-funds": {
+    tab: null, view: "cmp-mutualfunds",
+    title: "Compare Mutual Funds Bangladesh 2026 — NAV & Returns",
+    desc: "Compare 20 of Bangladesh's largest open-end mutual funds by NAV, 2026 year-to-date and 2025 returns, dividend and Shariah status. Historical, not guaranteed.",
+    sitemap: { priority: "0.8", changefreq: "monthly" },
+    faq: [
+      { q: "What is a mutual fund in Bangladesh?", a: "A mutual fund pools money from many investors and a professional asset manager invests it across shares, bonds and deposits. You own units, and the unit price (NAV) rises or falls with the value of what the fund holds. Unlike Sanchayapatra, DPS or FDR, a mutual fund has no promised rate — returns can be negative." },
+      { q: "Are mutual fund returns guaranteed in Bangladesh?", a: "No. Every return figure is historical and can be negative. Of the 20 largest open-end funds, five lost money during 2025 while most gained during 2026. If you need a fixed, guaranteed return, Sanchayapatra, a bank DPS or an FDR are the right instruments instead." },
+      { q: "What is the difference between open-end and closed-end mutual funds?", a: "Open-end funds are bought and sold directly with the asset management company at NAV-linked prices, and the fund can issue new units at any time. Closed-end funds have a fixed number of units that trade on the Dhaka Stock Exchange like a share, so their market price can differ from NAV. The funds compared here are all open-end." },
+      { q: "Which Bangladeshi mutual funds are Shariah-compliant?", a: "Several funds are registered as Shariah funds, including the IDLC AML Shariah Fund and the Shanta Amanah Shariah Fund. They avoid interest-bearing instruments and non-compliant sectors. Use the Shariah-only filter on this page to see them, and confirm the certification with the asset manager before investing." },
+    ],
+  },
   "/compare/loans": {
     tab: null, view: "cmp-loans",
     title: "Compare Loan Rates Bangladesh 2026 — Personal, Home & Car",
