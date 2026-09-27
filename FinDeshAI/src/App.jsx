@@ -1817,7 +1817,28 @@ const FB_STANDARD = {
 function taxTrack(event, params = {}) {
   try { if (window.dataLayer) window.dataLayer.push({ event, ...params }); if (typeof window.gtag === "function") window.gtag("event", event, params); } catch (e) { /* no-op */ }
   fbTrackCustom(event, params);
-  if (FB_STANDARD[event]) fbTrack(FB_STANDARD[event], { content_name: event, ...params });
+  /* Standard events get a server-side CAPI twin under a shared event_id; custom
+     events deliberately don't. Meta optimises ad delivery on standard events
+     (Lead / InitiateCheckout / Contact / ViewContent), which is exactly where
+     recovering ad-blocked and ITP-lost conversions is worth a function call.
+     The custom events are FinDesh's own reporting vocabulary — mirroring them
+     too would roughly double function invocations to no optimisation benefit
+     and clutter Events Manager. */
+  const std = FB_STANDARD[event];
+  if (std) {
+    const eventId = fbGenEventId();
+    /* Only Meta-recognised custom_data fields go server-side. params carries
+       FinDesh's own analytics vocabulary (rebate_state, taxable_income_bucket,
+       risk…) which means nothing to Meta; price/currency DO map onto
+       value/currency, which is what lets Meta optimise toward the ৳100 guide
+       checkout rather than treating every conversion as equally valuable. */
+    const customData = {
+      content_name: event,
+      ...(typeof params.price === "number" ? { value: params.price, currency: params.currency || "BDT" } : {}),
+    };
+    fbTrack(std, { content_name: event, ...params }, eventId);
+    fbCapiEvent(std, eventId, customData);
+  }
 }
 const incomeBucket = t => t < 400000 ? "<4L" : t < 700000 ? "4-7L" : t < 1100000 ? "7-11L" : t < 1600000 ? "11-16L" : t < 3100000 ? "16-31L" : "31L+";
 
@@ -2986,20 +3007,75 @@ function applySEO(routeKey) {
     if (typeof window.gtag === "function") window.gtag("event", "page_view", { page_path: routeKey, page_title: r.title, page_location: url });
     /* Meta Pixel: the base snippet in index.html only fires on the first load,
        so SPA navigations must be tracked here or Ads only ever sees the landing
-       page. Skipped on the first call for the same reason GA4 is. */
-    fbTrack("PageView");
+       page. Skipped on the first call for the same reason GA4 is. Fires both
+       the browser pixel event and its server-side CAPI twin under one shared
+       event_id so Meta dedupes them (see fbCapiPageView / fb-capi.js). */
+    const fbEventId = fbGenEventId();
+    fbTrack("PageView", {}, fbEventId);
+    fbCapiPageView(fbEventId);
   }
   seoInitialized = true;
 }
 
 /* Meta Pixel helper — safe no-op if the pixel is blocked, still loading, or
-   stripped by an ad blocker (very common), so tracking can never break the UI. */
-function fbTrack(event, params) {
-  try { if (typeof window.fbq === "function") window.fbq("track", event, params || {}); } catch (e) { /* no-op */ }
+   stripped by an ad blocker (very common), so tracking can never break the UI.
+   Pass eventId to pair a browser pixel event with its server-side Conversions
+   API twin (see fbCapiPageView below) so Meta dedupes them into one event. */
+function fbTrack(event, params, eventId) {
+  try { if (typeof window.fbq === "function") window.fbq("track", event, params || {}, eventId ? { eventID: eventId } : undefined); } catch (e) { /* no-op */ }
 }
 function fbTrackCustom(event, params) {
   try { if (typeof window.fbq === "function") window.fbq("trackCustom", event, params || {}); } catch (e) { /* no-op */ }
 }
+
+function fbGetCookie(name) {
+  try {
+    const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : undefined;
+  } catch (e) { return undefined; }
+}
+/* _fbc is only set by the pixel when a visitor arrives via an fbclid-tagged
+   click. If a later in-app navigation is the first moment we check and the
+   cookie hasn't been set yet, derive it from the URL the same way Meta's own
+   docs describe, so click attribution isn't lost. */
+function fbGetOrDeriveFbc() {
+  const existing = fbGetCookie("_fbc");
+  if (existing) return existing;
+  try {
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    if (fbclid) return `fb.1.${Date.now()}.${fbclid}`;
+  } catch (e) { /* no-op */ }
+  return undefined;
+}
+function fbGenEventId() {
+  return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+/* Server-side Conversions API mirror of a browser pixel event, deduplicated via
+   the same event_id (see netlify/functions/fb-capi.js). Meta matches on
+   event_id + event_name within 48 hours, so ordering and small delays are fine.
+   Best-effort and fire-and-forget — must never block navigation or throw.
+
+   No _fbp poll here, unlike the first-load path in index.html: by the time the
+   SPA is running and someone is clicking things, fbevents.js has long since
+   loaded and written the cookie. The poll only earns its keep on cold load. */
+function fbCapiEvent(eventName, eventId, customData) {
+  try {
+    fetch("/.netlify/functions/fb-capi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: eventName,
+        event_id: eventId,
+        event_source_url: window.location.href,
+        fbp: fbGetCookie("_fbp"),
+        fbc: fbGetOrDeriveFbc(),
+        ...(customData ? { custom_data: customData } : {}),
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (e) { /* no-op */ }
+}
+const fbCapiPageView = eventId => fbCapiEvent("PageView", eventId);
 
 /* Internal SEO links between related tools */
 function RelatedLinks({ links }) {
