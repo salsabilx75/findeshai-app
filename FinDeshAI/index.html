@@ -168,13 +168,22 @@
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     fbq('init', '1731114804575229');
-    fbq('track', 'PageView');
+    /* Shared event_id so the browser pixel PageView below and the server-side
+       Conversions API PageView (sent further down, after the DOM/cookies are
+       ready) dedupe into ONE event in Meta's Events Manager instead of two.
+       See netlify/functions/fb-capi.js for the CAPI side. */
+    window.__fdPvId = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Date.now() + '-' + Math.random().toString(36).slice(2));
+    fbq('track', 'PageView', {}, {eventID: window.__fdPvId});
     </script>
     <!-- End Meta Pixel Code -->
     <!-- NOTE: this fires PageView for the FIRST page load only. FinDesh is a
          single-page app, so every subsequent in-app navigation is tracked from
-         applySEO() in src/App.jsx, alongside the GA4 page_view. Don't add a
-         second fbq('track','PageView') here or loads will be double-counted. -->
+         applySEO() in src/App.jsx, alongside the GA4 page_view (and its own
+         server-side CAPI PageView — see fbCapiPageView() in src/App.jsx).
+         Don't add a second fbq('track','PageView') here or loads will be
+         double-counted. -->
   </head>
   <body style="margin:0;background:#04080F;">
     <!-- Google Tag Manager (noscript) -->
@@ -188,6 +197,66 @@
     /></noscript>
     <!-- End Meta Pixel (noscript) -->
     <div id="root"></div>
+
+    <!-- Conversions API (CAPI): server-side mirror of the PageView above,
+         deduplicated via the shared event_id (Meta matches on event_id +
+         event_name, within a 48-hour window — so the small delay below is
+         nowhere near the dedup limit).
+
+         Why a poll and not a fixed delay: _fbp is written by fbevents.js only
+         once that script has downloaded from connect.facebook.net and run. A
+         hardcoded 300ms was a guess that most FinDesh visitors — on Bangladeshi
+         mobile networks — would lose, sending the event with no fbp and a
+         weaker Event Match Quality. This waits for the cookie and fires the
+         moment it appears, giving up after FBP_MAX_WAIT_MS and sending anyway
+         (event still counts, just matched on IP/UA alone).
+
+         Best-effort throughout: silently no-ops on failure, never blocks. -->
+
+    <script>
+    (function () {
+      function getCookie(name) {
+        var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+        return m ? decodeURIComponent(m[1]) : undefined;
+      }
+      function getOrDeriveFbc() {
+        var existing = getCookie('_fbc');
+        if (existing) return existing;
+        try {
+          var fbclid = new URLSearchParams(window.location.search).get('fbclid');
+          if (fbclid) return 'fb.1.' + Date.now() + '.' + fbclid;
+        } catch (e) { /* no-op */ }
+        return undefined;
+      }
+      var FBP_MAX_WAIT_MS = 2500, FBP_POLL_MS = 100, waited = 0, sent = false;
+      function send() {
+        if (sent) return;
+        sent = true;
+        try {
+          fetch('/.netlify/functions/fb-capi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_name: 'PageView',
+              event_id: window.__fdPvId,
+              event_source_url: window.location.href,
+              fbp: getCookie('_fbp'),
+              fbc: getOrDeriveFbc()
+            }),
+            keepalive: true
+          }).catch(function () {});
+        } catch (e) { /* no-op */ }
+      }
+      (function poll() {
+        if (getCookie('_fbp') || waited >= FBP_MAX_WAIT_MS) return send();
+        waited += FBP_POLL_MS;
+        setTimeout(poll, FBP_POLL_MS);
+      })();
+      // If the visitor leaves before the cookie shows up, still send what we have.
+      window.addEventListener('pagehide', send, { once: true });
+    })();
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
 
     <!-- SupportKori support widget — floating button, injects itself into <body>.
