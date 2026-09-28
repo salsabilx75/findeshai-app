@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, createContext, useContext } from "react";
-import { SITE, ROUTES, canonicalFor, OG_IMAGE } from "./seo.js";
+import { SITE, ROUTES, canonicalFor, OG_IMAGE, CAREER_FAQ } from "./seo.js";
 
 /* ============================================================
    FinDesh AI v4 — Dark Premium
@@ -1311,6 +1311,211 @@ function GuideOffer({ initialGuide }) {
         })}
       </div>
     </div>
+  );
+}
+
+/* ============================================================
+   FIND YOUR DREAM JOB — the "earn more" pillar.
+   Long-form editorial page, not a calculator. Structure follows the
+   classic hook → agitate → self-check → after-state → playbook → FAQ →
+   CTA shape, written fresh for Bangladesh.
+
+   EVERY statistic here is sourced and dated — see CAREER_STATS. No
+   invented salary-increase percentages, no testimonials, no enrolment
+   counts, no scarcity timers: FinDesh sells trust in numbers, and a
+   fabricated stat on this page would undermine the tax and fund pages
+   too. Social proof is deliberately absent until there are real numbers
+   worth showing (see TODO in the handover notes).
+   ============================================================ */
+const CAREER_STATS = [
+  { n: "13.5%", l: "Graduate youth unemployment", s: "BBS Labour Force Survey 2024" },
+  { n: "885,000", l: "Unemployed degree holders", s: "BBS LFS 2024" },
+  { n: "৳30–35k", l: "Average gross monthly salary", s: "Bangladesh, early 2026" },
+  { n: "500,000+", l: "Bangladeshis freelancing for foreign clients", s: "earning $1bn+/yr" },
+];
+
+const CAREER_STEPS = [
+  {
+    n: 1, icon: "🔍", t: "Find out what you're actually worth",
+    b: "You can't negotiate a number you don't have. No single Bangladeshi salary source is trustworthy on its own, so triangulate three: watch live bdjobs.com postings for your exact title for a week; read LinkedIn postings from multinationals, which disclose more than local firms; then privately ask two or three people doing your job elsewhere. Glassdoor's BD coverage is thin — a hint, not a number.",
+    out: "One realistic band, e.g. \"৳55–70k for this role at my experience level in Dhaka.\"",
+  },
+  {
+    n: 2, icon: "📄", t: "Rebuild your CV around achievements",
+    b: "Most BD CVs are duty lists: \"responsible for monthly reporting.\" Rewrite every line as something that changed: \"cut monthly reporting from five days to two.\" Two pages maximum. Drop the photo, marital status, religion and NID — still standard on local templates, and instantly dating at an MNC. Tailor the top third per role, because on the first pass nobody reads further.",
+    out: "A CV where the first ten seconds show results, not responsibilities.",
+  },
+  {
+    n: 3, icon: "🤝", t: "Stop relying on the apply button",
+    b: "Referrals carry a large share of hiring here, and most people draw the wrong conclusion from that — they decide merit doesn't matter. It does; the application queue is just the weakest door. Talk to people doing the job you want before a vacancy exists. A fifteen-minute conversation about how they got there is not a favour you're asking, and it puts you in mind when a role opens.",
+    out: "Three to five real conversations a month in the field you want to be in.",
+  },
+  {
+    n: 4, icon: "💬", t: "Negotiate once, properly",
+    b: "Pay in Bangladesh is set at hiring and then moves through increments, promotion or leaving — so the offer conversation is one of the few moments your salary is genuinely flexible. Know who you're talking to: multinationals have banded pay, so negotiate inside the band and push on grade. Local conglomerates run on hiring-manager discretion and relationship. Startups have the least cash and the most flexibility on title, scope and hours. Ask what's flexible before you name a number.",
+    out: "One polite, evidence-backed ask — not an ultimatum, and not silence.",
+  },
+  {
+    n: 5, icon: "🌍", t: "Price in the remote option",
+    b: "Over 500,000 Bangladeshis already work for overseas clients, together earning more than a billion dollars a year, typically $300–$1,500 a month depending on skill and platform. The hard parts aren't ability — they're the first client and getting paid, since PayPal doesn't operate normally here and Payoneer is the usual route. Build it as a slow second income stream, not a resignation plan.",
+    out: "A realistic read on whether foreign clients are a lever for your skill set.",
+  },
+  {
+    n: 6, icon: "🎯", t: "Decide where the raise goes before it lands",
+    b: "This is the step people skip, and it's the one that decides whether earning more makes you richer. A raise with no plan gets absorbed into daily spending within about two months. Pick the destination on the day it arrives — a DPS, Sanchayapatra, or simply a larger automatic transfer on payday. Earning more is the fastest lever in personal finance and the easiest one to waste.",
+    out: "A standing instruction, set up before the first larger payslip arrives.",
+  },
+];
+
+function DreamJobPage() {
+  const nav = useNav();
+  /* Lightweight self-check rather than a scored quiz: every box ticked is a
+     specific, fixable gap that maps to a numbered step below. */
+  const CHECKS = [
+    "I don't know what my role pays at other companies",
+    "My CV lists duties, not things I changed",
+    "I've never asked for a raise or negotiated an offer",
+    "Almost everyone I know professionally works where I work",
+    "My salary has only moved by the annual increment",
+    "A raise would go straight into daily spending",
+  ];
+  const [checked, setChecked] = useState([]);
+  const toggle = i => setChecked(c => (c.includes(i) ? c.filter(x => x !== i) : [...c, i]));
+
+  return (
+    <>
+      <div style={{ textAlign: "center", padding: "44px 0 20px" }}>
+        <div className="fd-up" style={pill}>💼 Earn More · আয় বাড়ান</div>
+        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(28px,6vw,44px)" }}>
+          The fastest way to fix your finances is to <span style={gradText}>earn more</span>.
+        </h1>
+        <p className="fd-up fd-up-2" style={sub}>
+          You can budget carefully, save every month and still feel stuck — because there's a floor on how much you can cut, and no ceiling on what you can earn. This is the part of personal finance almost nobody in Bangladesh writes about.
+        </p>
+      </div>
+
+      {/* ---- Hook / agitate ---- */}
+      <div className="fd-up fd-up-3" style={{ ...card, padding: "26px 22px" }}>
+        <p style={{ margin: "0 0 14px", fontSize: 15, lineHeight: 1.75, color: "#C9D8F0" }}>
+          You've been at the same desk for three years. The increment came through at the usual few percent, roughly matching inflation, and you said thank you. Someone who joined after you is now on more, and you found out by accident. You've thought about leaving, opened bdjobs at midnight, and closed it again — because you don't actually know what you're worth, and asking feels like something people here don't do.
+        </p>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.75, color: "#C9D8F0" }}>
+          None of that is a character flaw. It's what happens when <b style={{ color: "#fff" }}>pay is set once at hiring</b>, salary is a private subject, and most hiring runs through people who already know each other. The system isn't built to tell you your market rate. So you have to go and find it.
+        </p>
+      </div>
+
+      {/* ---- Sourced reality check ---- */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "16px 0" }}>
+        {CAREER_STATS.map(s => (
+          <div key={s.l} className="fd-up" style={{ ...card, padding: "14px 15px", margin: 0, flex: "1 1 150px", minWidth: 0 }}>
+            <div style={{ ...gradText, fontSize: 21, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.15 }}>{s.n}</div>
+            <div style={{ fontSize: 12, color: "#C9D8F0", fontWeight: 600, marginTop: 4, lineHeight: 1.4 }}>{s.l}</div>
+            <div style={{ fontSize: 10, color: T.faint, marginTop: 3 }}>{s.s}</div>
+          </div>
+        ))}
+      </div>
+      <p style={{ margin: "0 2px 18px", fontSize: 11.5, color: T.faint, lineHeight: 1.6 }}>
+        A degree is no longer the differentiator the education system implies: Bangladesh produces 700,000–800,000 graduates a year, and roughly 12,000 computer science graduates enter a market creating about 5,000 entry-level tech jobs annually. Your degree gets the CV read. Something else gets you hired.
+      </p>
+
+      {/* ---- Self-check ---- */}
+      <div className="fd-up" style={{ ...card, padding: "24px 20px", marginBottom: 16 }}>
+        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>Where are you stuck?</h2>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: T.muted }}>Tick what's true. Nothing is stored or sent anywhere.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {CHECKS.map((c, i) => {
+            const on = checked.includes(i);
+            return (
+              <button key={c} onClick={() => toggle(i)} className="fd-chip"
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left", padding: "11px 13px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, border: `1px solid ${on ? "rgba(79,158,255,0.5)" : T.borderSoft}`, background: on ? T.accentSoft : "rgba(255,255,255,0.025)", color: on ? "#EAF1FC" : "#8A9BB8", touchAction: "manipulation" }}>
+                <span style={{ flexShrink: 0, color: on ? T.accent : T.faint, fontWeight: 900 }}>{on ? "✓" : "○"}</span>
+                <span>{c}</span>
+              </button>
+            );
+          })}
+        </div>
+        {checked.length > 0 && (
+          <div className="fd-up" style={{ marginTop: 14, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.28)", borderRadius: 12, padding: "13px 15px" }}>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "#D6E2F5" }}>
+              {checked.length >= 4
+                ? <>You ticked <b style={{ color: GUIDE_GREEN }}>{checked.length} of 6</b> — which is completely normal, and it means there's a lot of room here. Every one of those maps to a step below. Start with step 1: you can't fix any of the others until you know your number.</>
+                : <>You ticked <b style={{ color: GUIDE_GREEN }}>{checked.length} of 6</b>. Work through the matching steps below — the ones you didn't tick, skip.</>}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ---- The "after" ---- */}
+      <div className="fd-up" style={{ background: "linear-gradient(135deg, rgba(79,158,255,0.14), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 10 }}>What changes</div>
+        <p style={{ margin: "0 0 12px", fontSize: 15, lineHeight: 1.75, color: "#EAF1FC" }}>
+          Six months from now, you know your market band to within a few thousand taka. When a recruiter asks your expectation, you give a range without your stomach dropping. You have three people outside your company who'd take your call. And when the offer comes, you ask for more — once, politely, with evidence — and it isn't a scene.
+        </p>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.75, color: "#C9D8F0" }}>
+          The raise, whenever it lands, already has somewhere to go. That's the difference between earning more and simply spending more.
+        </p>
+      </div>
+
+      {/* ---- The playbook ---- */}
+      <SectionHead title="The playbook" hint="Six steps · in order" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+        {CAREER_STEPS.map(s => (
+          <div key={s.n} className="fd-up" style={{ ...card, padding: "22px 20px", margin: 0, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: `linear-gradient(180deg, ${T.accent}, ${GUIDE_GREEN})`, opacity: 0.85 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: T.accent, letterSpacing: ".1em" }}>STEP {s.n}</span>
+              <span style={{ fontSize: 17 }}>{s.icon}</span>
+            </div>
+            <h3 style={{ margin: "0 0 9px", fontSize: 17, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.25 }}>{s.t}</h3>
+            <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.72, color: "#B8C7E0" }}>{s.b}</p>
+            <div style={{ background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 10, padding: "10px 12px" }}>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: T.faint, letterSpacing: ".07em", textTransform: "uppercase" }}>You end up with</span>
+              <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.55, color: "#C9D8F0" }}>{s.out}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ---- Bridge to the tools ---- */}
+      <div className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 20 }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>Now put a number on it</h3>
+        <p style={{ margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+          Say step 1 tells you you're ৳10,000/month below market. That gap isn't ৳10,000 — it's ৳1,20,000 a year, and considerably more once it compounds in a DPS or Sanchayapatra. Run it through the planners and see what the raise you haven't asked for yet would actually become.
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[["Save planner", "/save"], ["Invest planner", "/invest"], ["Income tax calculator", "/income-tax"]].map(([label, path]) => (
+            <button key={path} className="fd-chip" onClick={() => nav(path)}
+              style={{ padding: "9px 15px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF", cursor: "pointer", fontFamily: "inherit", touchAction: "manipulation" }}>
+              {label} →
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <FAQ items={CAREER_FAQ.map(f => ({ q: f.q, a: f.a }))} />
+
+      {/* ---- CTA: the one thing FinDesh can actually deliver today ---- */}
+      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(8,18,36,0.92))", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "26px 22px", textAlign: "center" }}>
+        <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📗 The First Job Money Guide · ৳100</div>
+        <h3 style={{ margin: "0 0 10px", fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>Got the offer? Don't sign it blind.</h3>
+        <p style={{ margin: "0 auto 16px", fontSize: 14, color: "#B8C7E0", lineHeight: 1.7, maxWidth: 460 }}>
+          The guide covers the part this page stops at: how to negotiate the offer itself, and how to read the PF, gratuity and basic-versus-gross terms in a Bangladeshi offer letter — the clauses that quietly decide what you actually take home.
+        </p>
+        <button className="fd-cta" onClick={() => { taxTrack("guide_checkout_clicked", { guide: "first-job", price: 100, currency: "BDT", from: "dream-job" }); window.open(FIRST_JOB_CHECKOUT_URL, "_blank", "noopener,noreferrer"); }}
+          style={{ ...cta, width: "auto", padding: "14px 28px", margin: 0 }}>
+          Get the First Job Guide →
+        </button>
+        <p style={{ margin: "12px 0 0", fontSize: 11.5, color: T.faint }}>Instant download · no account · secure checkout via SupportKori</p>
+      </div>
+
+      <RelatedLinks links={[
+        { label: "Money Blueprint", path: "/blueprint" },
+        { label: "Save · DPS planner", path: "/save" },
+        { label: "Income tax calculator", path: "/income-tax" },
+        { label: "Where to invest", path: "/invest" },
+      ]} />
+      <TabDisclaimer />
+    </>
   );
 }
 
@@ -3143,6 +3348,9 @@ export default function App() {
       { label: "Compare Mutual Funds", icon: "📊", path: "/compare/mutual-funds" },
       { label: "Compare Loans", icon: "🤝", path: "/compare/loans" },
     ] },
+    { heading: "Earn more", items: [
+      { label: "Find Your Dream Job", icon: "💼", path: "/find-your-dream-job" },
+    ] },
     { heading: "About", items: [
       { label: "Get in Touch", icon: "📬", path: "/contact" },
     ] },
@@ -3212,6 +3420,7 @@ export default function App() {
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 40px", position: "relative", zIndex: 1 }}>
         {route.view === "income-tax" ? <IncomeTaxPage />
           : route.view === "contact" ? <ContactPage />
+          : route.view === "dream-job" ? <DreamJobPage />
           : route.view === "sanchayapatra" ? <SanchayapatraPage />
           : route.view === "cmp-loans" ? <LoanComparePage />
           : route.view === "cmp-savings" ? <SavingsComparePage />
