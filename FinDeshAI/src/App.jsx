@@ -578,6 +578,27 @@ function InvestPage({ seoHead, focus }) {
             <h3 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>Suggested allocation</h3>
             <Donut data={ALLOCATION[risk]} amount={num} />
           </div>
+
+          {/* ---- Money Playbook CTA ----
+               Sits directly under the allocation donut: the reader has just
+               seen their result, which is the moment the "now make it happen
+               every month" pitch lands, and it's high enough that people who
+               don't scroll the full instrument list still see it. Still inside
+               the `submitted` block, so the page shows no sell until a plan
+               exists. Same ৳100 product and event as the Blueprint page, with
+               from:"invest" so conversions attribute per page. */}
+          <div className="fd-up" style={{ marginBottom: 24, background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(8,18,36,0.92))", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+            <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📘 The Bangladesh Money Playbook · ৳100</div>
+            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>You know <span style={gradText}>where</span> to invest. Now build the system around it.</h3>
+            <p style={{ margin: "0 auto 16px", fontSize: 13.5, color: "#B8C7E0", lineHeight: 1.7, maxWidth: 440 }}>
+              A plan only works if the money reaches it every month. The 14-page playbook covers the spending split that survives a Bangladeshi salary, how to automate the transfers so investing happens without you, and the order to fill each account in.
+            </p>
+            <button className="fd-cta" onClick={() => { taxTrack("guide_checkout_clicked", { guide: "playbook", price: GUIDE_PRICE, currency: "BDT", from: "invest" }); window.open(GUIDE_CHECKOUT_URL, "_blank", "noopener,noreferrer"); }}
+              style={{ ...cta, width: "auto", padding: "14px 28px", margin: 0 }}>
+              Get the Playbook →
+            </button>
+            <p style={{ margin: "12px 0 0", fontSize: 11.5, color: T.faint }}>Read in 20 minutes · instant download · no account needed</p>
+          </div>
           {matched.some(i => SANCHAYAPATRA_LIMITS.some(s => s.id === i.id)) && <SanchayapatraLimits />}
           <SectionHead title={`${matched.length} options for you`} hint="Low → high risk · tap for detail" />
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -590,24 +611,6 @@ function InvestPage({ seoHead, focus }) {
             <p style={{ margin: "8px 0 0", fontSize: 11.5, color: T.faint }}>Your allocation, matched instruments and 5-year projections — one page you can save or share with your bank.</p>
           </div>
 
-          {/* ---- Money Playbook CTA ----
-               Placed after the plan, not before it: the tool stays free and
-               complete on its own, and the guide is offered as the next step
-               once the reader has a result in hand. Same ৳100 product and
-               tracking event as the Blueprint page, with from:"invest" so
-               conversions can be attributed per page. */}
-          <div className="fd-up" style={{ marginTop: 24, background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(8,18,36,0.92))", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-            <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📘 The Bangladesh Money Playbook · ৳100</div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>You know <span style={gradText}>where</span> to invest. Now build the system around it.</h3>
-            <p style={{ margin: "0 auto 16px", fontSize: 13.5, color: "#B8C7E0", lineHeight: 1.7, maxWidth: 440 }}>
-              A plan only works if the money reaches it every month. The 14-page playbook covers the spending split that survives a Bangladeshi salary, how to automate the transfers so investing happens without you, and the order to fill each account in.
-            </p>
-            <button className="fd-cta" onClick={() => { taxTrack("guide_checkout_clicked", { guide: "playbook", price: GUIDE_PRICE, currency: "BDT", from: "invest" }); window.open(GUIDE_CHECKOUT_URL, "_blank", "noopener,noreferrer"); }}
-              style={{ ...cta, width: "auto", padding: "14px 28px", margin: 0 }}>
-              Get the Playbook →
-            </button>
-            <p style={{ margin: "12px 0 0", fontSize: 11.5, color: T.faint }}>Read in 20 minutes · instant download · no account needed</p>
-          </div>
         </div>
       )}
       <RelatedLinks links={[
