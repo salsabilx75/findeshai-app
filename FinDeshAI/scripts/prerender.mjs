@@ -59,7 +59,7 @@ function setMeta(html, selectorAttr, selectorValue, targetAttr, newValue) {
   return html.replace(re, `$1$2${newValue}$2`);
 }
 
-function buildJsonLd(path, route) {
+function buildJsonLd(path, route, faq) {
   const url = SITE + (path === "/" ? "/" : path);
   const blocks = [];
 
@@ -74,11 +74,28 @@ function buildJsonLd(path, route) {
     publisher: { "@type": "Organization", name: "FinDesh AI", url: SITE, logo: OG_IMAGE },
   });
 
-  if (route.faq && route.faq.length) {
+  if (route.article) {
+    blocks.push({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: route.title,
+      description: route.desc,
+      url,
+      mainEntityOfPage: url,
+      datePublished: route.article.published,
+      dateModified: route.article.modified || route.article.published,
+      inLanguage: "en-BD",
+      author: { "@type": "Organization", name: "FinDesh AI", url: SITE },
+      publisher: { "@type": "Organization", name: "FinDesh AI", url: SITE, logo: { "@type": "ImageObject", url: OG_IMAGE } },
+      image: OG_IMAGE,
+    });
+  }
+
+  if (faq && faq.length) {
     blocks.push({
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: route.faq.map((f) => ({
+      mainEntity: faq.map((f) => ({
         "@type": "Question",
         name: f.q,
         acceptedAnswer: { "@type": "Answer", text: f.a },
@@ -102,7 +119,7 @@ function buildJsonLd(path, route) {
     .join("\n    ");
 }
 
-function renderRoute(templateHtml, path, route) {
+function renderRoute(templateHtml, path, route, faq) {
   const url = SITE + (path === "/" ? "/" : path);
   let html = templateHtml;
 
@@ -118,7 +135,7 @@ function renderRoute(templateHtml, path, route) {
 
   /* Swap the template's static JSON-LD for this route's own blocks. */
   html = html.replace(/\s*<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, "");
-  html = html.replace(/<\/head>/i, `  ${buildJsonLd(path, route)}\n  </head>`);
+  html = html.replace(/<\/head>/i, `  ${buildJsonLd(path, route, faq)}\n  </head>`);
 
   return html;
 }
@@ -137,7 +154,16 @@ function writeSitemap() {
   return indexableRoutes().length;
 }
 
-function main() {
+/* A route's faq is either an inline array or a loader returning one (newer
+   pages keep FAQ text in src/content/faqs.js so it stays out of the main
+   bundle). Resolve both forms to a plain array here. */
+async function resolveFaq(route) {
+  const f = route.faq;
+  if (!f) return null;
+  return typeof f === "function" ? await f() : f;
+}
+
+async function main() {
   const indexPath = join(DIST, "index.html");
   if (!existsSync(indexPath)) {
     console.error("prerender: dist/index.html not found — run `vite build` first.");
@@ -147,7 +173,7 @@ function main() {
 
   let count = 0;
   for (const [path, route] of Object.entries(ROUTES)) {
-    const html = renderRoute(template, path, route);
+    const html = renderRoute(template, path, route, await resolveFaq(route));
     if (path === "/") {
       writeFileSync(indexPath, html, "utf8");
     } else {
@@ -163,4 +189,4 @@ function main() {
   console.log(`\nprerender: ${count} routes written, sitemap regenerated with ${sitemapCount} URLs.`);
 }
 
-main();
+main().catch(err => { console.error("prerender failed:", err); process.exit(1); });
