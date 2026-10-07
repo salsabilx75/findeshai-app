@@ -20,7 +20,10 @@
                 should NOT be indexed separately (e.g. /tax-calculator).
      noindex    OPTIONAL. Excluded from sitemap + gets robots noindex.
      sitemap    OPTIONAL { priority, changefreq }. Defaults below.
-     faq        OPTIONAL [{q,a}] emitted as FAQPage JSON-LD for rich results.
+     article    OPTIONAL { published, modified } (YYYY-MM-DD) → Article JSON-LD
+     faq        OPTIONAL [{q,a}] emitted as FAQPage JSON-LD for rich results —
+                or a loader () => import("./content/faqs.js").then(m => m.X)
+                for newer pages, which keeps FAQ text out of the main bundle.
    ============================================================ */
 
 /* Rendered on /find-your-dream-job AND emitted as FAQPage JSON-LD from the
@@ -92,6 +95,74 @@ export const ROUTES = {
     sitemap: { priority: "0.9", changefreq: "monthly" },
     get faq() { return CAREER_FAQ; },
   },
+  "/learn": {
+    tab: null, view: "learn",
+    title: "Learn Personal Finance in Bangladesh — Plain-English Guide",
+    desc: "Plain-English money guide for Bangladesh: budgeting in Dhaka, emergency funds, DPS vs FDR vs Sanchayapatra, inflation, funds, loans, tax and a Bangla glossary.",
+    sitemap: { priority: "0.9", changefreq: "monthly" },
+    faq: () => import("./content/faqs.js").then(m => m.LEARN_FAQ),
+  },
+  "/tools": {
+    tab: null, view: "tools",
+    title: "Free Money Tools for Bangladesh — Calculators & Comparisons",
+    desc: "Every free FinDesh tool in one place: DPS, EMI, Sanchayapatra and income tax calculators, loan, card, savings and mutual fund comparisons, and plain-English guides.",
+    sitemap: { priority: "0.6", changefreq: "monthly" },
+  },
+  "/methodology": {
+    tab: null, view: "methodology",
+    title: "How FinDesh Works — Sources, Dates & Methodology",
+    desc: "Where every FinDesh figure comes from and when it was checked, how each calculator does its maths, and what the numbers leave out: taxes, fees, spreads and charges.",
+    sitemap: { priority: "0.5", changefreq: "monthly" },
+  },
+  "/faq": {
+    tab: null, view: "faq",
+    title: "Money FAQ Bangladesh — Sanchayapatra, DPS, Funds, Loans & Tax",
+    desc: "Plain-English answers to 42 money questions in Bangladesh: Sanchayapatra limits and tax, DPS vs FDR, mutual fund risk, loan EMIs, card interest and income tax.",
+    sitemap: { priority: "0.7", changefreq: "monthly" },
+    /* Exactly the questions the page shows (FAQ_HUB_FLAT is built from the
+       same groups the page renders). */
+    faq: () => import("./content/faqHub.js").then(m => m.FAQ_HUB_FLAT),
+  },
+  "/about": {
+    tab: null, view: "about",
+    title: "About FinDesh AI — Who Builds It and How It's Funded",
+    desc: "Why FinDesh AI exists, who builds it, how it makes money and how its figures are checked: free plain-English money tools for people in Bangladesh.",
+    sitemap: { priority: "0.4", changefreq: "yearly" },
+  },
+  /* ---- Guides: one search question each, ending at a tool. `article` adds
+     Article JSON-LD in prerender. ---- */
+  "/guides/fdr-vs-dps-vs-sanchayapatra": {
+    tab: null, view: "guide", guide: "fdr-vs-dps-vs-sanchayapatra",
+    title: "FDR vs DPS vs Sanchayapatra — Which to Choose in 2026?",
+    desc: "FDR, DPS and Sanchayapatra compared for Bangladesh: listed rates, minimums, terms, tax and who backs your money — and which suits monthly saving or a lump sum.",
+    sitemap: { priority: "0.7", changefreq: "monthly" },
+    article: { published: "2026-10-08", modified: "2026-10-08" },
+    faq: () => import("./content/faqs.js").then(m => m.GUIDE_DEPOSITS_FAQ),
+  },
+  "/guides/how-to-compare-mutual-funds": {
+    tab: null, view: "guide", guide: "how-to-compare-mutual-funds",
+    title: "How to Compare Two Mutual Funds in Bangladesh",
+    desc: "A checklist for comparing Bangladeshi mutual funds with published figures: category, returns over two periods, benchmark, exit load, size, and what to ask the AMC.",
+    sitemap: { priority: "0.7", changefreq: "monthly" },
+    article: { published: "2026-10-08", modified: "2026-10-08" },
+    faq: () => import("./content/faqs.js").then(m => m.GUIDE_COMPARE_MF_FAQ),
+  },
+  "/guides/what-is-nav": {
+    tab: null, view: "guide", guide: "what-is-nav",
+    title: "What Is NAV? Why Mutual Fund Prices Differ Between Sites",
+    desc: "What NAV means for a Bangladeshi mutual fund, how it differs from the selling and repurchase price, and why two websites can show different numbers for one fund.",
+    sitemap: { priority: "0.7", changefreq: "monthly" },
+    article: { published: "2026-10-08", modified: "2026-10-08" },
+    faq: () => import("./content/faqs.js").then(m => m.GUIDE_NAV_FAQ),
+  },
+  "/guides/emergency-fund-dhaka": {
+    tab: null, view: "guide", guide: "emergency-fund-dhaka",
+    title: "How Much Emergency Fund Do You Need in Dhaka?",
+    desc: "How many months of expenses to keep, where to hold an emergency fund in Bangladesh, and how to build it from a salary — with a quick calculator.",
+    sitemap: { priority: "0.7", changefreq: "monthly" },
+    article: { published: "2026-10-08", modified: "2026-10-08" },
+    faq: () => import("./content/faqs.js").then(m => m.GUIDE_EMERGENCY_FAQ),
+  },
   "/contact": {
     tab: null, view: "contact",
     title: "Get in Touch | FinDesh AI",
@@ -134,32 +205,31 @@ export const ROUTES = {
   "/compare/credit-cards": {
     tab: null, view: "cmp-cards",
     title: "Compare Credit Cards Bangladesh 2026 — Fees & APR",
-    desc: "Free side-by-side credit card comparison for Bangladesh — annual fees, interest rates and benefits across flagship cards from 10 banks. Compare up to 3 at once.",
+    desc: "Free side-by-side credit card comparison for Bangladesh — annual fees, interest rates and benefits across 8 flagship cards from 6 banks. Compare up to 3 at once.",
     sitemap: { priority: "0.8", changefreq: "weekly" },
+    faq: () => import("./content/faqs.js").then(m => m.CARDS_FAQ),
   },
   "/compare/savings": {
     tab: null, view: "cmp-savings",
     title: "Compare Savings Account Rates Bangladesh 2026",
     desc: "Compare regular savings-account interest rates across 10 Bangladeshi banks and see where your everyday money earns the most, with Islamic options flagged.",
     sitemap: { priority: "0.8", changefreq: "weekly" },
+    faq: () => import("./content/faqs.js").then(m => m.SAVINGS_CMP_FAQ),
   },
   "/compare/mutual-funds": {
     tab: null, view: "cmp-mutualfunds",
     title: "Compare Mutual Funds Bangladesh 2026 — NAV & Returns",
     desc: "Compare 20 of Bangladesh's largest open-end mutual funds by NAV, 2026 year-to-date and 2025 returns, dividend and Shariah status. Historical, not guaranteed.",
     sitemap: { priority: "0.8", changefreq: "monthly" },
-    faq: [
-      { q: "What is a mutual fund in Bangladesh?", a: "A mutual fund pools money from many investors and a professional asset manager invests it across shares, bonds and deposits. You own units, and the unit price (NAV) rises or falls with the value of what the fund holds. Unlike Sanchayapatra, DPS or FDR, a mutual fund has no promised rate — returns can be negative." },
-      { q: "Are mutual fund returns guaranteed in Bangladesh?", a: "No. Every return figure is historical and can be negative. Of the 20 largest open-end funds, five lost money during 2025 while most gained during 2026. If you need a fixed, guaranteed return, Sanchayapatra, a bank DPS or an FDR are the right instruments instead." },
-      { q: "What is the difference between open-end and closed-end mutual funds?", a: "Open-end funds are bought and sold directly with the asset management company at NAV-linked prices, and the fund can issue new units at any time. Closed-end funds have a fixed number of units that trade on the Dhaka Stock Exchange like a share, so their market price can differ from NAV. The funds compared here are all open-end." },
-      { q: "Which Bangladeshi mutual funds are Shariah-compliant?", a: "Several funds are registered as Shariah funds, including the IDLC AML Shariah Fund and the Shanta Amanah Shariah Fund. They avoid interest-bearing instruments and non-compliant sectors. Use the Shariah-only filter on this page to see them, and confirm the certification with the asset manager before investing." },
-    ],
+    /* Same array the page renders, so schema matches the visible FAQ. */
+    faq: () => import("./content/faqs.js").then(m => m.MF_FAQ),
   },
   "/compare/loans": {
     tab: null, view: "cmp-loans",
     title: "Compare Loan Rates Bangladesh 2026 — Personal, Home & Car",
     desc: "Compare personal, home and car loan rates across 10 strong Bangladeshi banks side by side, with a built-in EMI calculator and downloadable repayment plan.",
     sitemap: { priority: "0.8", changefreq: "weekly" },
+    faq: () => import("./content/faqs.js").then(m => m.LOANS_FAQ),
   },
 };
 

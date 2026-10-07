@@ -1,5 +1,27 @@
-import { useState, useRef, useEffect, useMemo, createContext, useContext } from "react";
+import { useState, useRef, useEffect, useMemo, createContext, useContext, lazy, Suspense } from "react";
 import { SITE, ROUTES, canonicalFor, OG_IMAGE, CAREER_FAQ } from "./seo.js";
+import { TAX_FAQ } from "./content/taxFaq.js";
+
+/* Pages added after Oct 2026 are code-split: each loads as its own chunk the
+   first time someone opens it, so the initial bundle (and LCP) doesn't grow
+   with every new page. They import shared styles/data from this file via the
+   export block at the bottom. */
+const LearnPage = lazy(() => import("./pages/LearnPage.jsx"));
+const trustPages = () => import("./pages/TrustPages.jsx");
+const MethodologyPage = lazy(() => trustPages().then(m => ({ default: m.MethodologyPage })));
+const AboutPage = lazy(() => trustPages().then(m => ({ default: m.AboutPage })));
+const FaqHubPage = lazy(() => trustPages().then(m => ({ default: m.FaqHubPage })));
+const GuidePage = lazy(() => import("./pages/GuidePages.jsx"));
+const ToolsPage = lazy(() => import("./pages/ToolsPage.jsx"));
+/* All four /compare/* pages share one chunk (and the CompareKit). */
+const comparePages = () => import("./pages/ComparePages.jsx");
+const LoanComparePage = lazy(() => comparePages().then(m => ({ default: m.LoanComparePage })));
+const SavingsComparePage = lazy(() => comparePages().then(m => ({ default: m.SavingsComparePage })));
+const CreditCardComparePage = lazy(() => comparePages().then(m => ({ default: m.CreditCardComparePage })));
+const MutualFundComparePage = lazy(() => comparePages().then(m => ({ default: m.MutualFundComparePage })));
+function PageFallback() {
+  return <div aria-busy="true" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}><span className="fd-spin" /></div>;
+}
 
 /* ============================================================
    FinDesh AI v4 — Dark Premium
@@ -26,7 +48,7 @@ const INSTRUMENTS = [
   { id: "fdr", name: "Fixed Deposit (FDR)", bn: "ফিক্সড ডিপোজিট", icon: "🏦", min: 10000, max: null, risk: ["low"], rate: 10, rateLabel: "9–11.5%", liquidity: "Medium", horizon: "3 mo – 3 yrs", taxNote: "10–15% source tax", blurb: "Banks are competing hard for deposits with the policy rate at 10%. Strong banks (BRAC, EBL, DBBL, City, Prime, MTB) pay 9–11.5% on 1-year FDRs. Avoid weak banks chasing you with 12%+.", why: "More flexible tenure than Sanchayapatra. Good for money you may need within a few years — stick to well-capitalised banks.", tags: ["Flexible tenure", "Near-record rates"], link: null },
   { id: "ifarmer", name: "iFarmer (Agri Funding)", bn: "আইফার্মার", icon: "🌾", min: 40000, max: 1000000, risk: ["low", "medium"], rate: 12, rateLabel: "8–15%", liquidity: "Low", horizon: "3–9 months", taxNote: "TIN required", blurb: "Fund verified farm projects via profit-sharing with insurance backing. ⚠️ iFarmer now works mainly with institutional financiers — retail lots open intermittently, so confirm availability in their app before planning around it.", why: "Above any bank deposit on short cycles when lots are open, with insurance reducing downside. Start small.", tags: ["Short cycle", "Insured", "Check availability"], link: "https://ifarmer.asia" },
   { id: "tbond", name: "Treasury Bond / Bill", bn: "ট্রেজারি বন্ড", icon: "📜", min: 100000, max: null, risk: ["low", "medium"], rate: 10, rateLabel: "9.5–10.2%", liquidity: "Medium", horizon: "91 days – 20 yrs", taxNote: "Tax on coupon", blurb: "Government debt via any bank's treasury desk. Early 2026: 91-day bills ~9.5%, 10-year bonds ~10.2% — yields are drifting down as the govt borrows less from banks.", why: "Govt-backed like Sanchayapatra but tradeable — and locking a 10-yr bond now keeps today's rate if cuts continue.", tags: ["Govt. backed", "Tradeable"], link: "https://www.bb.org.bd/en/index.php/monetaryactivity/treasury" },
-  { id: "mutualfund", name: "Mutual Fund", bn: "মিউচুয়াল ফান্ড", icon: "📊", min: 5000, max: null, risk: ["medium"], rate: 12, rateLabel: "−6% to +23%", liquidity: "Medium", horizon: "2–5 years", taxNote: "Dividend mostly tax-exempt", blurb: "Professionally managed pooled funds. Across the 20 largest open-end funds, 2026 year-to-date returns ran from +7.0% to +23.1%, while 2025 ran from −5.8% to +17.7% (LankaBangla, 3 Sep 2026) — five of the twenty lost money that year. There is no promised rate: compare real NAV and returns fund by fund before choosing.", why: "A managed bridge into the market — diversified and lower-effort, but market-linked, so only for money you can leave for years.", tags: ["Diversified", "Not guaranteed"], link: "/compare/mutual-funds" },
+  { id: "mutualfund", name: "Mutual Fund", bn: "মিউচুয়াল ফান্ড", icon: "📊", min: 5000, max: null, risk: ["medium"], rate: 12, noProjection: true, rateLabel: "−6% to +23%", liquidity: "Medium", horizon: "2–5 years", taxNote: "Dividend mostly tax-exempt", blurb: "Professionally managed pooled funds. Across the 20 largest open-end funds, 2026 year-to-date returns ran from +7.0% to +23.1%, while 2025 ran from −5.8% to +17.7% (LankaBangla, 3 Sep 2026) — five of the twenty lost money that year. There is no promised rate: compare real NAV and returns fund by fund before choosing.", why: "A managed bridge into the market — diversified and lower-effort, but market-linked, so only for money you can leave for years.", tags: ["Diversified", "Not guaranteed"], link: "/compare/mutual-funds" },
   { id: "bluechip", name: "DSE Blue-Chip Shares", bn: "ব্লু-চিপ শেয়ার", icon: "📈", min: 25000, max: null, risk: ["medium", "high"], rate: 15, rateLabel: "12–25%", liquidity: "High", horizon: "1–5 years", taxNote: "No capital-gains tax", blurb: "Shares in DS30 leaders — Grameenphone, BRAC Bank, Square Pharma. DSEX is ~5,480, up ~14.8% over the last 12 months.", why: "Real ownership in BD's best companies, no CGT for individuals. Prices swing — invest for years.", tags: ["High liquidity", "No CGT"], link: "https://dsebd.org" },
   { id: "growth", name: "DSE Growth Stocks", bn: "গ্রোথ শেয়ার", icon: "🚀", min: 50000, max: null, risk: ["high"], rate: 25, rateLabel: "20–60%+", liquidity: "High", horizon: "6 mo – 3 yrs", taxNote: "No capital-gains tax", blurb: "Smaller high-growth listed firms. Big upside, real downside — DSE has boom/bust history.", why: "Where the largest returns live, and where people lose money. Only money you can lock away.", tags: ["High return", "High risk"], link: "https://dsebd.org" },
   { id: "gold", name: "Gold", bn: "সোনা", icon: "🪙", min: 50000, max: null, risk: ["medium"], rate: 13, rateLabel: "10–15% (long-run)", liquidity: "High", horizon: "3–10 years", taxNote: "VAT on purchase", blurb: "22k gold is ~৳2.2 Lakh/bhori (June 2026) — up roughly 28% in 12 months. Long-run returns are lower; don't chase last year's spike. Buy BAJUS-hallmarked only.", why: "When the taka weakens or inflation bites, gold holds purchasing power. A stabiliser, not a growth engine.", tags: ["Inflation hedge", "+28% last yr"], link: null },
@@ -334,8 +356,11 @@ function SanchayapatraLimits() {
 function InvestCard({ inst, amount, idx }) {
   const [open, setOpen] = useState(false);
   const r = RISK[inst.risk[0]];
-  const projected = amount * inst.rate / 100;
-  const real = (inst.rate - INFLATION).toFixed(1);
+  /* noProjection: market-linked instruments with no promised rate. `rate` is
+     kept only as an internal sort key — it must never become a projected ৳ gain
+     or a "real return", which would present a fund like a fixed deposit. */
+  const projected = inst.noProjection ? null : amount * inst.rate / 100;
+  const real = inst.noProjection ? null : (inst.rate - INFLATION).toFixed(1);
   return (
     <div className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} onClick={() => setOpen(o => !o)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 18, padding: "18px 20px", cursor: "pointer", backdropFilter: "blur(16px)", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: r.color, opacity: 0.85, boxShadow: `0 0 14px ${r.color}66` }} />
@@ -347,14 +372,24 @@ function InvestCard({ inst, amount, idx }) {
             <span style={{ fontSize: 12, color: T.faint }}>{inst.bn}</span>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: r.color }}>{inst.rateLabel}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: inst.noProjection ? T.amber : r.color }}>{inst.noProjection ? "No fixed rate" : inst.rateLabel}</span>
             <MetaPill>⏱ {inst.horizon}</MetaPill>
             <MetaPill>💧 {inst.liquidity}</MetaPill>
           </div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase" }}>~1yr est.</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: T.green }}>+{fmt(projected)}</div>
+          {inst.noProjection ? (
+            <>
+              <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase" }}>Past range</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.amber, whiteSpace: "nowrap" }}>{inst.rateLabel}</div>
+              <div style={{ fontSize: 9.5, color: T.faint, fontWeight: 700, letterSpacing: ".04em" }}>NOT GUARANTEED</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase" }}>~1yr est.</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: T.green }}>+{fmt(projected)}</div>
+            </>
+          )}
         </div>
       </div>
       {open && (
@@ -369,7 +404,9 @@ function InvestCard({ inst, amount, idx }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, fontSize: 12.5, color: T.muted }}>
             <span>💵 Min: <b style={{ color: "#EAF1FC" }}>{fmt(inst.min)}</b></span>
-            <span>📉 Real: <b style={{ color: real > 0 ? T.green : T.red }}>{real > 0 ? "+" : ""}{real}%</b> after inflation</span>
+            {inst.noProjection
+              ? <span>📉 Real return: <b style={{ color: T.amber }}>no promised rate</b> — depends on the year</span>
+              : <span>📉 Real: <b style={{ color: real > 0 ? T.green : T.red }}>{real > 0 ? "+" : ""}{real}%</b> after inflation</span>}
             {inst.max && <span>🔒 Max (individual): <b style={{ color: "#EAF1FC" }}>{fmt(inst.max)}</b></span>}
             {inst.maxJoint && <span>👥 Max (joint): <b style={{ color: "#EAF1FC" }}>{fmt(inst.maxJoint)}</b></span>}
             <span>🧾 {inst.taxNote}</span>
@@ -515,11 +552,11 @@ function InvestPage({ seoHead, focus }) {
         doc.text(doc.splitTextToSize(i.name, 250)[0], PDF.L + 8, y);
         doc.text(i.rateLabel, 330, y, { align: "right" });
         doc.text(i.horizon, 430, y, { align: "right" });
-        doc.text(bdt(num * Math.pow(1 + i.rate / 100, 5)), PDF.R - 8, y, { align: "right" });
+        doc.text(i.noProjection ? "Not projected" : bdt(num * Math.pow(1 + i.rate / 100, 5)), PDF.R - 8, y, { align: "right" });
         y += 15.5;
       });
       y += 2;
-      y = pdfNote(doc, y, "*Illustrative value if the entire amount were placed in that single instrument and returns held steady for five years, compounded annually. Actual returns vary; rates are not guaranteed except where explicitly government-backed.");
+      y = pdfNote(doc, y, "*Illustrative value if the entire amount were placed in that single instrument and returns held steady for five years, compounded annually. Actual returns vary; rates are not guaranteed except where explicitly government-backed. Mutual funds are marked \"Not projected\": they have no fixed rate, and their past range is shown instead of a forecast.");
 
       y = pdfBreak(doc, y, 110);
       y = pdfSection(doc, y, "3.  WHY THIS MATTERS");
@@ -616,8 +653,10 @@ function InvestPage({ seoHead, focus }) {
       <RelatedLinks links={[
         { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
         { label: "Savings & DPS planner", path: "/save" },
+        { label: "Compare mutual funds", path: "/compare/mutual-funds" },
+        { label: "FDR vs DPS vs Sanchayapatra", path: "/guides/fdr-vs-dps-vs-sanchayapatra" },
+        { label: "Learn money basics", path: "/learn" },
         { label: "Loan EMI calculator", path: "/borrow" },
-        { label: "Money Blueprint", path: "/blueprint" },
       ]} />
       <TabDisclaimer />
     </>
@@ -752,7 +791,9 @@ function SavingsPage({ seoHead, focus }) {
       <RelatedLinks links={[
         { label: "Where to invest a lump sum", path: "/invest" },
         { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
-        { label: "Loan EMI calculator", path: "/borrow" },
+        { label: "Emergency fund guide", path: "/guides/emergency-fund-dhaka" },
+        { label: "FDR vs DPS vs Sanchayapatra", path: "/guides/fdr-vs-dps-vs-sanchayapatra" },
+        { label: "Learn money basics", path: "/learn" },
         { label: "Money Blueprint", path: "/blueprint" },
       ]} />
       <TabDisclaimer />
@@ -1051,8 +1092,9 @@ function BorrowPage({ initialType }) {
       </div>
       <RelatedLinks links={[
         { label: "Where to invest instead", path: "/invest" },
-        { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
-        { label: "Savings & DPS planner", path: "/save" },
+        { label: "Compare loan rates", path: "/compare/loans" },
+        { label: "Compare credit cards", path: "/compare/credit-cards" },
+        { label: "Learn: loans and EMI", path: "/learn" },
         { label: "Money Blueprint", path: "/blueprint" },
       ]} />
       <TabDisclaimer />
@@ -1666,7 +1708,8 @@ function BlueprintPage() {
       <RelatedLinks links={[
         { label: "Where to invest", path: "/invest" },
         { label: "Savings & DPS planner", path: "/save" },
-        { label: "Sanchayapatra rates & limits", path: "/sanchayapatra" },
+        { label: "Emergency fund guide", path: "/guides/emergency-fund-dhaka" },
+        { label: "Learn money basics", path: "/learn" },
         { label: "Loan EMI calculator", path: "/borrow" },
       ]} />
       <TabDisclaimer />
@@ -1782,7 +1825,8 @@ function SanchayapatraPage() {
       <RelatedLinks links={[
         { label: "Where to invest", path: "/invest" },
         { label: "Savings & DPS planner", path: "/save" },
-        { label: "Loan EMI calculator", path: "/borrow" },
+        { label: "FDR vs DPS vs Sanchayapatra", path: "/guides/fdr-vs-dps-vs-sanchayapatra" },
+        { label: "Income tax calculator", path: "/income-tax" },
         { label: "Money Blueprint", path: "/blueprint" },
       ]} />
       <TabDisclaimer />
@@ -2250,19 +2294,6 @@ function IncomeTaxPage() {
     { icon: "📄", t: "Documents you'll need", b: <>Keep these ready before you file: your <b style={{ color: "#fff" }}>TIN certificate</b>, salary certificate, bank statements, investment proofs (DPS/Sanchayapatra/insurance receipts), TDS certificates from your employer, and property or vehicle papers if they apply. Having them organised turns filing into a 20-minute job.</> },
   ];
 
-  const FAQ_ITEMS = [
-    { q: "Which financial year should I calculate — FY 2025-26 or FY 2026-27?", a: "If you're filing a return in 2026, you need FY 2025-26 (income earned 1 July 2025 to 30 June 2026, assessment year 2026-27) — that's the return due by 30 November 2026. Use FY 2026-27 only to plan the year you're currently earning in. This calculator does both; pick the year at the top." },
-    { q: "What is the tax-free income limit in Bangladesh?", a: "For FY 2025-26 the general tax-free limit is ৳3,75,000 — ৳4,25,000 for women and senior citizens (65+), ৳5,00,000 for persons with disability and third-gender taxpayers, and ৳5,25,000 for gazetted war-wounded freedom fighters. For FY 2026-27 the general limit rises to ৳4,00,000. Income above your limit is taxed on a slab basis." },
-    { q: "How is the income tax rebate calculated?", a: "Your rebate is the lowest of three numbers: a percentage of your eligible investment, 3% of your taxable income, and a statutory ceiling. For FY 2025-26 it's 15% of investment with a ৳10,00,000 ceiling; for FY 2026-27 the rate was cut to 10% with a ৳7,50,000 ceiling. It's subtracted straight from your calculated tax." },
-    { q: "Why doesn't my employer's tax sheet match this calculator?", a: "Almost always one of three things. First, fiscal year — a June 2026 payslip uses FY 2025-26 rules, not FY 2026-27. Second, the rebate rate changed from 15% to 10% between those years. Third, income base — corporate payroll often includes the employer's provident-fund contribution in total income before the one-third exemption, so enter your total income, not just take-home pay." },
-    { q: "What investments qualify for the tax rebate?", a: "Sanchayapatra (national savings certificates), DPS (deposit pension schemes), listed mutual funds and shares, approved life-insurance premiums, and provident-fund contributions. Sanchayapatra and a bank DPS are the two most popular and lowest-risk options." },
-    { q: "What is the minimum income tax in Bangladesh?", a: "If your income crosses the tax-free threshold, the minimum tax is ৳5,000 in Dhaka North, Dhaka South and Chattogram city corporations — ৳4,000 in other city corporations and ৳3,000 elsewhere — or ৳1,000 for a first-time filer whose taxable income is under ৳4,50,000. A rebate can't reduce your tax below this floor." },
-    { q: "What is the deadline to file my tax return?", a: "For individual taxpayers, 'Tax Day' is 30 November. Filing between 1 July and 30 September earns a 5% rebate on your tax (up to ৳25,000); filing after the deadline adds a 2%–5% surcharge with a minimum penalty. Earlier is cheaper." },
-    { q: "How much investment do I need to make to get the maximum rebate?", a: "It depends on the year. In FY 2025-26 you earn 15% back and the rebate caps at 3% of taxable income, so roughly 20% of taxable income maximises it. In FY 2026-27 the rate dropped to 10%, so you need about 30%. Our calculator shows your exact optimum figure for the year you select." },
-    { q: "Do women and senior citizens pay less tax?", a: "Effectively yes — they get a higher tax-free threshold (৳4,25,000 vs ৳3,75,000 general in FY 2025-26), so the first slab of tax starts later. Persons with disability, third-gender taxpayers and freedom fighters get even higher thresholds." },
-    { q: "Is Sanchayapatra interest still taxable?", a: "Source tax (5–10%) is deducted on Sanchayapatra profit at payout, and the interest is part of your total income. But the investment itself still qualifies for the rebate, and it remains the highest safe return in Bangladesh — see our Sanchayapatra page for current rates." },
-    { q: "Where do I actually file my return?", a: "Filing happens on the government's own e-Return system, run by the National Board of Revenue (NBR). FinDesh doesn't file for you — we help you understand and plan. When you're ready to file, head to the official NBR e-Return portal." },
-  ];
 
   return (
     <>
@@ -2452,7 +2483,7 @@ function IncomeTaxPage() {
       </div>
 
       {/* ---------- FAQ ---------- */}
-      <FAQ items={FAQ_ITEMS} />
+      <FAQ items={TAX_FAQ} />
 
       {/* ---------- Where to file (NBR only) ---------- */}
       <div className="fd-up" style={{ ...card, marginTop: 16, textAlign: "center", padding: "22px 20px" }}>
@@ -2534,7 +2565,6 @@ const CMP_CARDS = [
   { id: "ucb", bank: "UCB", name: "Credit Card", network: "Visa / Mastercard", fee: "Contact bank", apr: "25%", benefit: "Wide acceptance; UCB privileges", tags: [] },
   { id: "premier", bank: "Premier Bank", name: "Credit Card", network: "Visa / Mastercard", fee: "Contact bank", apr: "25%", benefit: "Premier card privileges", tags: [] },
 ];
-const CARD_FILTERS = [["all", "All"], ["lowapr", "Lowest APR"], ["travel", "Travel / Lounge"], ["lowfee", "Low fee"], ["rewards", "Rewards"], ["islamic", "Islamic"]];
 
 /* ---------- shared: comparison FAQ (expandable, SEO-friendly) ---------- */
 function FAQ({ items }) {
@@ -2622,72 +2652,7 @@ function CompareDisclaimer() {
   );
 }
 
-/* ---------- LOAN COMPARISON ---------- */
-function LoanComparePage() {
-  const nav = useNav();
-  const [type, setType] = useState("personal");
-  const midKey = { personal: "pmid", home: "hmid", car: "cmid" }[type];
-  const rows = [...CMP_LOANS].sort((a, b) => a[midKey] - b[midKey]);
-  const types = [["personal", "Personal"], ["home", "Home"], ["car", "Car"]];
-  return (
-    <>
-      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
-        <div className="fd-up" style={pill}>🤝 Compare Loans · ঋণ তুলনা</div>
-        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare loans in <span style={gradText}>Bangladesh</span></h1>
-        <p className="fd-up fd-up-2" style={sub}>Personal, home and car loan rates from 10 strong banks — side by side, with the real EMI before you ever walk into a branch.</p>
-      </div>
-      <UpdatedBadge />
-
-      <EMICalculator />
-
-      <div style={{ marginTop: 30 }}>
-        <SectionHead title="Compare rates by loan type" hint="Lowest rate first · reducing balance" />
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-          {types.map(([k, label]) => (
-            <button key={k} className="fd-chip" onClick={() => setType(k)} style={{ ...chip(type === k), flex: 1, minWidth: 90, padding: "11px 6px", fontSize: 13 }}>{label}</button>
-          ))}
-        </div>
-        <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
-          <table className="fd-tbl">
-            <thead><tr><th>Bank</th><th>Rate (p.a.)</th><th>Source</th></tr></thead>
-            <tbody>
-              {rows.map((l, i) => (
-                <tr key={l.bank}>
-                  <td style={{ fontWeight: 600, color: "#EAF1FC" }}>{l.bank}{i === 0 && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: T.green }}>★ lowest</span>}</td>
-                  <td style={{ color: "#fff", fontWeight: 700 }}>{l[type]}{l.note && <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 2 }}>{l.note}</div>}</td>
-                  <td style={{ color: T.faint, fontSize: 11.5 }}>{l.src}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={inflationNote}>💡 Rates are bands — your actual offer depends on income, employer and credit profile, and most are reducing-balance. A 1% lower rate on a 20-year home loan saves several lakh taka, so always negotiate and get a formal rate letter.</div>
-      </div>
-
-      <FAQ items={[
-        { q: "Flat rate vs reducing-balance — what's the difference?", a: "On a reducing-balance loan, interest is charged only on the outstanding balance, which falls every month — so the true cost is much lower than the same headline number quoted 'flat'. Bangladeshi banks quote these consumer loans on a reducing-balance basis. Always ask which method applies." },
-        { q: "Why is one bank's personal-loan rate so much higher?", a: "Unsecured personal loans are priced for risk and vary widely (here, roughly 10% to 18%). A loan secured against your salary, FDR or DPS is usually far cheaper. The rate you're offered also depends on your income, employer and credit history." },
-        { q: "How is my monthly EMI calculated?", a: "EMI = P × r × (1+r)ⁿ ÷ ((1+r)ⁿ − 1), where P is the loan amount, r the monthly rate and n the number of months. Use the calculator above to see your EMI, total interest and a year-by-year breakdown." },
-        { q: "Are these rates final?", a: "No — they're the banks' published bands as of " + CMP_UPDATED + ". Banks reprice periodically and your personal offer may differ. Confirm directly before applying." },
-      ]} />
-
-      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Run your exact loan first</h3>
-        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>See the full EMI, total interest and whether it's worth it in the Borrow tool.</p>
-        <button className="fd-cta" onClick={() => nav("/borrow")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>Open the Borrow planner →</button>
-      </div>
-      <RelatedLinks links={[
-        { label: "Borrow · EMI planner", path: "/borrow" },
-        { label: "Compare savings accounts", path: "/compare/savings" },
-        { label: "Compare credit cards", path: "/compare/credit-cards" },
-        { label: "Where to invest", path: "/invest" },
-      ]} />
-      <CompareDisclaimer />
-    </>
-  );
-}
-
-/* ---------- SAVINGS COMPARISON ---------- */
+/* ---------- Savings-planner mutual fund upsell ---------- */
 /* Savings-planner upsell. Deliberately OUTSIDE the DPS/FDR results list and
    outside run()'s compounding projector: SAVINGS entries carry a contracted
    `rate` that legitimately compounds monthly, and funds do not. Showing a fund
@@ -2760,433 +2725,6 @@ function MutualFundUpsell({ monthly, years, islamicOnly }) {
    shown in red, and a note directly under the table rather than relying
    on the shared CompareDisclaimer footer.
    ============================================================ */
-const MF_SORTS = [
-  { id: "aum", label: "Fund size (AUM)" },
-  { id: "ytd", label: "2026 return so far" },
-  { id: "prev", label: "2025 return" },
-  { id: "name", label: "Fund name (A–Z)" },
-];
-
-function MutualFundComparePage() {
-  const nav = useNav();
-  const [cat, setCat] = useState("All");
-  const [shariahOnly, setShariahOnly] = useState(false);
-  const [sortBy, setSortBy] = useState("aum");
-  const [sortOpen, setSortOpen] = useState(false);
-
-  const rows = useMemo(() => {
-    const list = CMP_MUTUAL_FUNDS.filter(f =>
-      (cat === "All" || f.cat === cat) && (!shariahOnly || f.shariah));
-    const by = { aum: (a, b) => b.aum - a.aum, ytd: (a, b) => b.ytd - a.ytd, prev: (a, b) => b.prev - a.prev, name: (a, b) => a.fund.localeCompare(b.fund) };
-    return [...list].sort(by[sortBy] || by.aum);
-  }, [cat, shariahOnly, sortBy]);
-
-  const sortLabel = (MF_SORTS.find(s => s.id === sortBy) || MF_SORTS[0]).label;
-  const pct = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
-  const pctColor = v => (v < 0 ? T.red : v > 0 ? T.green : T.muted);
-  const losers2025 = CMP_MUTUAL_FUNDS.filter(f => f.prev < 0).length;
-
-  return (
-    <>
-      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
-        <div className="fd-up" style={pill}>📊 Compare Mutual Funds · মিউচুয়াল ফান্ড</div>
-        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare mutual funds in <span style={gradText}>Bangladesh</span></h1>
-        <p className="fd-up fd-up-2" style={sub}>
-          The 20 largest open-end funds by size, with their real NAV and published returns. These are <b style={{ color: "#fff" }}>market-linked, not guaranteed</b> — {losers2025} of these {CMP_MUTUAL_FUNDS.length} funds lost money in 2025. Past returns tell you how a fund has behaved, never what it will pay you.
-        </p>
-      </div>
-
-      {/* ---- What is a mutual fund (FinDesh assumes nothing) ---- */}
-      <div className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 16 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>New to this? What a mutual fund actually is</h3>
-        <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-          You and thousands of others put money into one pot. A professional manager invests that pot across shares, bonds and deposits, and you own <b style={{ color: "#fff" }}>units</b> of it. The unit price — the <b style={{ color: "#fff" }}>NAV</b> — moves up and down with whatever the fund owns.
-        </p>
-        <div style={{ display: "grid", gap: 9 }}>
-          {[
-            ["Why people use them", "You get spread across many companies with a small amount of money, and someone else picks the shares."],
-            ["The real trade-off", "There is no promised rate. A good year can beat Sanchayapatra comfortably; a bad year can lose money outright."],
-            ["Open-end vs closed-end", "These 20 are open-end — bought and sold with the asset manager at NAV. Closed-end funds trade on the DSE like a share."],
-            ["How to think about it", "Money you need within 3 years should not be here. Use DPS, FDR or Sanchayapatra for that, and treat funds as long-term money."],
-          ].map(([t, d]) => (
-            <div key={t} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-              <span style={{ color: T.accent, fontSize: 13, fontWeight: 900, lineHeight: 1.6, flexShrink: 0 }}>→</span>
-              <span style={{ fontSize: 13, lineHeight: 1.6, color: "#C9D8F0" }}><b style={{ color: "#fff" }}>{t}:</b> {d}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ---- The warning band: this is the line between this page and /compare/savings ---- */}
-      <div style={{ ...inflationNote, marginTop: 0, marginBottom: 16 }}>
-        ⚠️ <b>Every number in this table is history, not a rate you will receive.</b> Unlike Sanchayapatra, DPS or FDR, a mutual fund promises nothing — your units can be worth less than you paid. Figures are NAV-based as published on {MF_UPDATED}.
-      </div>
-
-      <div style={{ ...card, padding: "20px 18px" }}>
-        {/* ---- Filters ---- */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-          {MF_CATEGORIES.map(c => (
-            <button key={c} className="fd-chip" onClick={() => setCat(c)} style={{ ...chip(cat === c), flex: "0 1 auto", minWidth: 0, padding: "8px 14px", touchAction: "manipulation" }}>{c}</button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flex: "1 1 220px", minWidth: 0 }}>
-            <input type="checkbox" checked={shariahOnly} onChange={e => setShariahOnly(e.target.checked)} style={{ width: 17, height: 17, accentColor: T.accent, flexShrink: 0 }} />
-            <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>Shariah-compliant funds only 🕌</span>
-          </label>
-
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <button className="fd-chip" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen(o => !o)}
-              style={{ ...chip(sortOpen), flex: "0 0 auto", minWidth: 0, padding: "9px 13px", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap", touchAction: "manipulation" }}>
-              <span style={{ color: T.faint, fontWeight: 600 }}>Sort:</span>
-              <span style={{ fontWeight: 700 }}>{sortLabel}</span>
-              <span style={{ fontSize: 9, opacity: .8 }}>{sortOpen ? "▲" : "▼"}</span>
-            </button>
-            {sortOpen && (
-              <>
-                <div onClick={() => setSortOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
-                <div className="fd-up" role="listbox" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 41, minWidth: 190, background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: "0 18px 50px rgba(0,0,0,0.55)", backdropFilter: "blur(20px)" }}>
-                  {MF_SORTS.map(opt => {
-                    const on = opt.id === sortBy;
-                    return (
-                      <button key={opt.id} role="option" aria-selected={on} onClick={() => { setSortBy(opt.id); setSortOpen(false); }}
-                        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "10px", borderRadius: 9, border: "none", background: on ? T.accentSoft : "transparent", color: on ? "#fff" : "#C9D8F0", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", touchAction: "manipulation" }}>
-                        <span style={{ width: 12, flexShrink: 0, color: T.accent }}>{on ? "✓" : ""}</span>{opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
-          <table className="fd-tbl">
-            <thead>
-              <tr>
-                <th>Fund</th><th>Category</th><th>NAV ৳</th>
-                <th>2026 YTD<div style={{ fontSize: 9, fontWeight: 700, color: T.amber, letterSpacing: ".04em" }}>PAST PERF.</div></th>
-                <th>2025<div style={{ fontSize: 9, fontWeight: 700, color: T.amber, letterSpacing: ".04em" }}>PAST PERF.</div></th>
-                <th>Shariah</th><th>Fund size</th><th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr><td colSpan={8} style={{ color: T.faint, padding: "18px 4px" }}>No funds match that combination — try clearing the Shariah filter or choosing "All".</td></tr>
-              )}
-              {rows.map(f => (
-                <tr key={f.fund}>
-                  <td style={{ fontWeight: 600, color: "#EAF1FC", minWidth: 190 }}>{f.fund}
-                    <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 2 }}>{f.amc}</div>
-                  </td>
-                  <td style={{ color: f.cat ? "#C9D8F0" : T.faint, fontSize: 12.5 }}>{f.cat || "Not stated"}</td>
-                  <td style={{ color: "#fff", fontWeight: 700 }}>{f.nav.toFixed(2)}</td>
-                  <td style={{ color: pctColor(f.ytd), fontWeight: 700 }}>{pct(f.ytd)}</td>
-                  <td style={{ color: pctColor(f.prev), fontWeight: 700 }}>{pct(f.prev)}</td>
-                  <td>{f.shariah ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>}</td>
-                  <td style={{ color: "#C9D8F0", fontSize: 12.5 }}>৳{f.aum >= 1000 ? (f.aum / 1000).toFixed(1) + " bn" : f.aum + " m"}</td>
-                  <td style={{ color: T.faint, fontSize: 11 }}>{f.src}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ---- Note directly under the table, not buried in the footer ---- */}
-        <div style={{ marginTop: 12, background: "rgba(255,180,84,0.07)", border: "1px solid rgba(255,180,84,0.28)", borderRadius: 12, padding: "12px 14px" }}>
-          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.65, color: "#FFCE8A" }}>
-            <b style={{ color: T.amber }}>Reading these numbers honestly.</b> "2026 YTD" is this year so far and "2025" is that full calendar year — they are <b>not</b> annualised 1-year or 3-year returns, because no Bangladeshi source publishes those per fund. A fund can top one column and sit near the bottom of the other, which is exactly why one good year is a bad reason to buy. Over 2026 so far the DSEX index returned {MF_BENCH.dsexYtd}% and open-end funds averaged {MF_BENCH.mfYtd}%.
-          </p>
-        </div>
-        <p style={{ margin: "10px 2px 0", fontSize: 11, color: T.faint, lineHeight: 1.6 }}>
-          All figures NAV-based, as published {MF_UPDATED} in LankaBangla's Weekly Open End Mutual Fund Review (compiled from UCB Stock Brokerage) —{" "}
-          <a href={MF_SOURCE_URL} target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: "none" }}>view the source ↗</a>.
-          Category and Shariah status are taken from each fund's registered name; where the name doesn't state a category we show "Not stated" rather than guess. Minimum investment and expense ratio are not published in a single verifiable place, so they are deliberately not shown — ask the asset manager directly.
-        </p>
-      </div>
-
-      <FAQ items={[
-        { q: "Are mutual fund returns guaranteed in Bangladesh?", a: "No. Every figure on this page is historical. Of the 20 largest open-end funds, " + losers2025 + " lost money during 2025 even though most gained during 2026. If you need a fixed, promised return, Sanchayapatra, a bank DPS or an FDR are the right instruments — see our Save and Sanchayapatra pages." },
-        { q: "What is NAV?", a: "Net Asset Value is the per-unit value of everything the fund owns, minus what it owes, divided by the number of units. It's the honest price of one unit. Open-end funds are bought and sold at prices set around NAV, so a rising NAV means the fund's holdings gained value." },
-        { q: "How much do I need to start?", a: "It varies by asset management company and isn't published in one verifiable place, so we don't list it — confirm directly with the AMC. As a rule, open-end funds in Bangladesh start far lower than most people assume, often within reach of a few thousand taka." },
-        { q: "Mutual fund or DPS — which should I choose?", a: "Different jobs. A DPS pays a contracted rate (up to ~11%) and is the right home for money you'll need in a few years. A mutual fund has no promised rate and should only hold money you can leave for 5+ years. Many people do both: DPS for the emergency and near-term goals, funds for long-term growth." },
-        { q: "Which funds are Shariah-compliant?", a: "Funds registered as Shariah funds include the IDLC AML Shariah Fund and the Shanta Amanah Shariah Fund. Use the Shariah-only filter above to see them. Confirm the certification and the screening methodology with the asset manager before investing." },
-      ]} />
-
-      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Want a guaranteed return instead?</h3>
-        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Sanchayapatra pays ~11.8–11.98% with a government guarantee, and a DPS auto-deducts monthly at up to ~11%. No market risk.</p>
-        <button className="fd-cta" onClick={() => nav("/sanchayapatra")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>See Sanchayapatra rates →</button>
-      </div>
-
-      <RelatedLinks links={[
-        { label: "Save · DPS planner", path: "/save" },
-        { label: "Sanchayapatra rates", path: "/sanchayapatra" },
-        { label: "Compare savings accounts", path: "/compare/savings" },
-        { label: "Invest planner", path: "/invest" },
-      ]} />
-      <CompareDisclaimer />
-    </>
-  );
-}
-
-const SAVINGS_SORTS = [
-  { id: "rate", label: "Highest rate" },
-  { id: "name", label: "Bank name (A–Z)" },
-];
-
-function SavingsComparePage() {
-  const nav = useNav();
-  const [islamicOnly, setIslamicOnly] = useState(false);
-  const [sortBy, setSortBy] = useState("rate");
-  const [sortOpen, setSortOpen] = useState(false);
-  /* Which row's fine print is expanded. One at a time — opening another closes
-     the previous, so the table never grows unpredictably on a phone. */
-  const [openNote, setOpenNote] = useState(null);
-
-  const rows = useMemo(() => {
-    const list = CMP_SAVINGS.filter(s => !islamicOnly || s.islamic);
-    return sortBy === "name"
-      ? [...list].sort((a, b) => a.bank.localeCompare(b.bank))
-      : [...list].sort((a, b) => b.rmid - a.rmid); // "contact bank" (rmid -1) sinks to the bottom
-  }, [islamicOnly, sortBy]);
-
-  /* Top 3 publishable rates, always rate-ranked regardless of the table's sort
-     order — this strip is a fast-scan summary, not a mirror of the table. */
-  const top3 = useMemo(
-    () => CMP_SAVINGS.filter(s => (!islamicOnly || s.islamic) && s.rmid > 0)
-      .sort((a, b) => b.rmid - a.rmid).slice(0, 3),
-    [islamicOnly]
-  );
-
-  const sortLabel = (SAVINGS_SORTS.find(s => s.id === sortBy) || SAVINGS_SORTS[0]).label;
-
-  return (
-    <>
-      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
-        <div className="fd-up" style={pill}>🏦 Compare Savings · সঞ্চয় হিসাব</div>
-        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare savings accounts in <span style={gradText}>Bangladesh</span></h1>
-        <p className="fd-up fd-up-2" style={sub}>Regular savings-account interest rates across 10 banks — see at a glance where your everyday money works hardest.</p>
-      </div>
-      <UpdatedBadge />
-
-      {/* ---- Top offers: fast-scan summary above the detailed table ---- */}
-      {top3.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", margin: "0 2px 10px" }}>Top rates right now</div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {top3.map((s, i) => (
-              /* basis 150 (not 170) so two cards still fit side-by-side inside the
-                 343px content width of a 375px phone instead of stacking three deep */
-              <div key={s.bank} className="fd-up" style={{ ...card, padding: "14px 15px", margin: 0, flex: "1 1 150px", minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#EAF1FC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.bank}</span>
-                  {i === 0 && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.green, flexShrink: 0 }}>★</span>}
-                </div>
-                {/* 20px: measured in-browser with the real Inter 900 face, the widest
-                    string "3.00–4.00%" is 128px against 136px of usable card width when
-                    two cards sit side-by-side on a 375px phone. 22px measures 141px and
-                    overflows; don't raise this without re-measuring. */}
-                <div style={{ ...gradText, fontSize: 20, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.15, wordBreak: "break-word" }}>{s.rate}</div>
-                <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 500, marginTop: 5, lineHeight: 1.45 }}>{s.note}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ ...card, padding: "20px 18px" }}>
-        {/* ---- Controls: Islamic filter + sort ---- */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flex: "1 1 240px", minWidth: 0 }}>
-            <input type="checkbox" checked={islamicOnly} onChange={e => setIslamicOnly(e.target.checked)} style={{ width: 17, height: 17, accentColor: T.accent, flexShrink: 0 }} />
-            <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 500 }}>Show only banks with a Shariah-compliant (Islamic) option 🕌</span>
-          </label>
-
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <button className="fd-chip" aria-haspopup="listbox" aria-expanded={sortOpen}
-              onClick={() => setSortOpen(o => !o)}
-              style={{ ...chip(sortOpen), flex: "0 0 auto", minWidth: 0, padding: "9px 13px", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap", touchAction: "manipulation" }}>
-              <span style={{ color: T.faint, fontWeight: 600 }}>Sort:</span>
-              <span style={{ fontWeight: 700 }}>{sortLabel}</span>
-              <span style={{ fontSize: 9, opacity: .8 }}>{sortOpen ? "▲" : "▼"}</span>
-            </button>
-
-            {sortOpen && (
-              <>
-                {/* full-screen catcher so a tap anywhere dismisses — same pattern as the nav menu */}
-                <div onClick={() => setSortOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
-                <div className="fd-up" role="listbox" style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 41, minWidth: 180, background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: "0 18px 50px rgba(0,0,0,0.55)", backdropFilter: "blur(20px)" }}>
-                  {SAVINGS_SORTS.map(opt => {
-                    const active = opt.id === sortBy;
-                    return (
-                      <button key={opt.id} role="option" aria-selected={active}
-                        onClick={() => { setSortBy(opt.id); setSortOpen(false); }}
-                        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "10px 10px", borderRadius: 9, border: "none", background: active ? T.accentSoft : "transparent", color: active ? "#fff" : "#C9D8F0", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", touchAction: "manipulation" }}>
-                        <span style={{ width: 12, flexShrink: 0, color: T.accent }}>{active ? "✓" : ""}</span>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
-          <table className="fd-tbl">
-            <thead><tr><th>Bank</th><th>Savings rate</th><th>Islamic</th><th>Source</th></tr></thead>
-            <tbody>
-              {rows.map((s, i) => {
-                const noteOpen = openNote === s.bank;
-                /* "★ highest" only makes sense while the table is rate-sorted. */
-                const showStar = sortBy === "rate" && i === 0 && s.rmid > 0;
-                return (
-                  <tr key={s.bank}>
-                    <td style={{ fontWeight: 600, color: "#EAF1FC" }}>{s.bank}{showStar && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: T.green }}>★ highest</span>}</td>
-                    <td style={{ color: s.rmid < 0 ? T.faint : "#fff", fontWeight: 700 }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        {s.rate}
-                        <button aria-label={`View terms for ${s.bank}`} aria-expanded={noteOpen}
-                          onClick={() => setOpenNote(noteOpen ? null : s.bank)}
-                          style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", border: `1px solid ${noteOpen ? "rgba(79,158,255,0.6)" : T.border}`, background: noteOpen ? T.accentSoft : "rgba(255,255,255,0.04)", color: noteOpen ? T.accent : T.faint, touchAction: "manipulation", padding: 0 }}>i</button>
-                      </span>
-                      {/* Inline reveal rather than a floating popover: this cell lives inside an
-                          overflow-x container, which would clip an absolutely-positioned tooltip. */}
-                      {noteOpen && (
-                        <div className="fd-up" style={{ marginTop: 6, maxWidth: 230, background: T.glass, border: `1px solid ${T.border}`, borderRadius: 10, padding: "8px 10px", fontSize: 11, fontWeight: 500, color: "#C9D8F0", lineHeight: 1.5, whiteSpace: "normal" }}>
-                          {s.note}
-                        </div>
-                      )}
-                    </td>
-                    <td>{s.islamic ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>}</td>
-                    <td style={{ color: T.faint, fontSize: 11.5 }}>{s.src}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p style={{ margin: "10px 2px 0", fontSize: 11, color: T.faint }}>Tap <b style={{ color: T.muted }}>ⓘ</b> next to any rate to see that bank's tier terms.</p>
-      </div>
-
-      <div style={{ ...card, padding: "22px 20px", marginTop: 16 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>How BD savings interest works</h3>
-        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-          Bangladeshi savings accounts pay interest on a <b style={{ color: "#fff" }}>tiered, daily-balance</b> basis and usually credit it twice a year. Rates are low by design (0–4%) — well below the ~8.6% inflation rate — so a savings account is for liquidity and your emergency fund, <i>not</i> for growing wealth. For that, a DPS, FDR or Sanchayapatra pays far more. Banks marked "Islamic" run a separate Shariah (Mudaraba profit-sharing) savings product alongside the conventional one.
-        </p>
-      </div>
-
-      <FAQ items={[
-        { q: "Which bank has the highest savings rate?", a: "On the regular savings accounts published here, Premier Bank (~3–4%) and Bank Asia (2–3%) are at the top, while City Bank's general savings is the lowest (0–0.25%). Rates are tiered by balance, so your effective rate depends on how much you keep." },
-        { q: "Is a savings account a good place to grow money?", a: "No. At 0–4%, a savings account loses purchasing power against ~8.6% inflation. Keep your emergency fund and short-term cash here, but move longer-term money to a DPS, FDR or Sanchayapatra — use the Save and Invest tools to see the difference." },
-        { q: "Why do some banks show 'contact bank'?", a: "A few banks (DBBL, MTB, SouthEast) don't publish their regular-savings rate online — only their lending rates. Rather than guess, we show 'contact bank' so you can confirm the exact figure with them." },
-      ]} />
-
-      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Make your savings actually grow</h3>
-        <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>A DPS auto-deducts monthly and pays up to ~11%. See what yours grows to in the Save tool.</p>
-        <button className="fd-cta" onClick={() => nav("/save")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>Open the Save planner →</button>
-      </div>
-      <RelatedLinks links={[
-        { label: "Save · DPS planner", path: "/save" },
-        { label: "Sanchayapatra rates", path: "/sanchayapatra" },
-        { label: "Compare loans", path: "/compare/loans" },
-        { label: "Compare credit cards", path: "/compare/credit-cards" },
-      ]} />
-      <CompareDisclaimer />
-    </>
-  );
-}
-
-/* ---------- CREDIT CARD COMPARISON (card grid + multi-select compare) ---------- */
-function CreditCardComparePage() {
-  const nav = useNav();
-  const [filter, setFilter] = useState("all");
-  const [sel, setSel] = useState([]);
-  const toggle = id => setSel(s => s.includes(id) ? s.filter(x => x !== id) : (s.length < 3 ? [...s, id] : s));
-  const cards = CMP_CARDS.filter(c => filter === "all" || c.tags.includes(filter));
-  const selCards = CMP_CARDS.filter(c => sel.includes(c.id));
-  return (
-    <>
-      <div style={{ textAlign: "center", padding: "40px 0 16px" }}>
-        <div className="fd-up" style={pill}>💳 Compare Credit Cards · ক্রেডিট কার্ড</div>
-        <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare credit cards in <span style={gradText}>Bangladesh</span></h1>
-        <p className="fd-up fd-up-2" style={sub}>Annual fees, interest rates and headline benefits across flagship cards — tick up to 3 to compare side by side. No sales calls.</p>
-      </div>
-      <UpdatedBadge />
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {CARD_FILTERS.map(([k, label]) => (
-          <button key={k} className="fd-chip" onClick={() => setFilter(k)} style={{ ...chip(filter === k), flex: "0 1 auto", padding: "9px 14px", fontSize: 12.5 }}>{label}</button>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-        {cards.map((c, idx) => {
-          const on = sel.includes(c.id);
-          return (
-            <div key={c.id} className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} onClick={() => toggle(c.id)} style={{ background: T.glass, border: `1px solid ${on ? T.accentBorder : T.border}`, borderRadius: 16, padding: "16px 17px", cursor: "pointer", backdropFilter: "blur(14px)", boxShadow: on ? `0 0 0 1px ${T.accentBorder}, 0 10px 30px rgba(79,158,255,0.15)` : "none" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                <div>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, color: "#fff" }}>{c.name}</div>
-                  <div style={{ fontSize: 12, color: T.muted }}>{c.bank}</div>
-                </div>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: on ? T.accent : T.faint, whiteSpace: "nowrap" }}>{on ? "☑" : "☐"} Compare</span>
-              </div>
-              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 10 }}>
-                <MetaPill>💳 {c.network}</MetaPill>
-                <MetaPill>🧾 {c.fee}</MetaPill>
-                <MetaPill>📈 APR {c.apr}</MetaPill>
-              </div>
-              <div style={{ fontSize: 12.5, color: "#C9D8F0", lineHeight: 1.5 }}>✦ {c.benefit}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {selCards.length >= 2 && (
-        <div className="fd-up" style={{ marginTop: 20 }}>
-          <SectionHead title={`Comparing ${selCards.length} cards`} hint="Side by side" />
-          <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "6px 12px" }}>
-            <table className="fd-tbl">
-              <thead><tr><th>Feature</th>{selCards.map(c => <th key={c.id}>{c.name}</th>)}</tr></thead>
-              <tbody>
-                <tr><td>Bank</td>{selCards.map(c => <td key={c.id}>{c.bank}</td>)}</tr>
-                <tr><td>Network</td>{selCards.map(c => <td key={c.id}>{c.network}</td>)}</tr>
-                <tr><td>Annual fee</td>{selCards.map(c => <td key={c.id} style={{ color: "#fff", fontWeight: 700 }}>{c.fee}</td>)}</tr>
-                <tr><td>Interest (APR)</td>{selCards.map(c => <td key={c.id} style={{ color: "#fff", fontWeight: 700 }}>{c.apr}</td>)}</tr>
-                <tr><td>Headline benefit</td>{selCards.map(c => <td key={c.id} style={{ fontSize: 11.5 }}>{c.benefit}</td>)}</tr>
-                <tr><td>Rewards</td>{selCards.map(c => <td key={c.id} style={{ color: T.faint, fontSize: 11.5 }}>Contact bank</td>)}</tr>
-              </tbody>
-            </table>
-          </div>
-          <button className="fd-chip" onClick={() => setSel([])} style={{ ...chip(false), marginTop: 12, padding: "9px 16px", fontSize: 12.5 }}>Clear selection</button>
-        </div>
-      )}
-      {selCards.length < 2 && <p style={{ fontSize: 12.5, color: T.faint, textAlign: "center", margin: "16px 0 0" }}>Tick 2–3 cards above to see them side by side.</p>}
-
-      <FAQ items={[
-        { q: "How do credit cards charge interest in Bangladesh?", a: "If you pay your full statement balance by the due date, most cards charge no interest (interest-free grace period). Carry a balance and interest applies — here roughly 18–25% per year, charged monthly on the outstanding amount. DBBL is the lowest in this set at 18%." },
-        { q: "What is a fuel surcharge waiver?", a: "Card networks normally add a small surcharge (≈2%) on fuel-station transactions. A 'fuel surcharge waiver' means the bank refunds that surcharge, so filling up doesn't cost extra on the card. Availability varies by card — confirm with the bank." },
-        { q: "Why don't you show cashback / reward rates?", a: "Bangladeshi banks publish card annual fees and interest rates, but generally do NOT publish their reward/cashback rates online — those depend on ongoing campaigns. We show fee, APR and network (which are official) and mark rewards 'contact bank' rather than guess." },
-        { q: "Which card has the lowest cost?", a: "It depends on how you use it. If you sometimes carry a balance, the lowest APR matters most (DBBL, 18%). If you always pay in full, focus on the lowest annual fee and the perks you'll actually use (e.g. SouthEast Classic at ৳1,200)." },
-      ]} />
-
-      <RelatedLinks links={[
-        { label: "Compare loans", path: "/compare/loans" },
-        { label: "Compare savings accounts", path: "/compare/savings" },
-        { label: "Money Blueprint", path: "/blueprint" },
-        { label: "Where to invest", path: "/invest" },
-      ]} />
-      <CompareDisclaimer />
-    </>
-  );
-}
-
 /* ============================================================
    ROUTING + SEO — main tabs + the standalone Sanchayapatra page.
    Native History API (no router dep). Netlify rewrites /* → index.html,
@@ -3305,9 +2843,11 @@ function fbCapiEvent(eventName, eventId, customData) {
 const fbCapiPageView = eventId => fbCapiEvent("PageView", eventId);
 
 /* Internal SEO links between related tools */
-function RelatedLinks({ links }) {
+function RelatedLinks({ links: all }) {
   const nav = useNav();
-  if (!links || !links.length) return null;
+  /* Only link routes that exist (path part before ?/#), so no page ships a dead link. */
+  const links = (all || []).filter(l => ROUTES[String(l.path).split(/[?#]/)[0]]);
+  if (!links.length) return null;
   return (
     <div style={{ marginTop: 26, paddingTop: 18, borderTop: `1px solid ${T.borderSoft}`, position: "relative", zIndex: 1 }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 10 }}>Related tools</div>
@@ -3363,6 +2903,9 @@ export default function App() {
       { label: "Blueprint", icon: "🗺️", path: "/blueprint" },
       { label: "Sanchayapatra", icon: "🏛️", path: "/sanchayapatra" },
       { label: "Income Tax Calculator", icon: "🧾", path: "/income-tax" },
+    ] },
+    { heading: "Learn", items: [
+      { label: "Learn money basics", icon: "📚", path: "/learn" },
     ] },
     { heading: "Compare", items: [
       { label: "Compare Credit Cards", icon: "💳", path: "/compare/credit-cards" },
@@ -3440,7 +2983,14 @@ export default function App() {
       </div>
 
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 40px", position: "relative", zIndex: 1 }}>
-        {route.view === "income-tax" ? <IncomeTaxPage />
+        <Suspense fallback={<PageFallback />}>
+        {route.view === "learn" ? <LearnPage />
+          : route.view === "methodology" ? <MethodologyPage />
+          : route.view === "about" ? <AboutPage />
+          : route.view === "faq" ? <FaqHubPage />
+          : route.view === "guide" ? <GuidePage id={route.guide} />
+          : route.view === "tools" ? <ToolsPage />
+          : route.view === "income-tax" ? <IncomeTaxPage />
           : route.view === "contact" ? <ContactPage />
           : route.view === "dream-job" ? <DreamJobPage />
           : route.view === "sanchayapatra" ? <SanchayapatraPage />
@@ -3453,6 +3003,7 @@ export default function App() {
           : page === "borrow" ? <BorrowPage initialType={route.preset?.type} />
           : page === "blueprint" ? <BlueprintPage />
           : <InvestPage seoHead={null} />}
+        </Suspense>
       </div>
 
       <footer style={{ borderTop: `1px solid ${T.borderSoft}`, marginTop: 60, padding: "32px 20px 40px", textAlign: "center", position: "relative", zIndex: 1 }}>
@@ -3460,6 +3011,13 @@ export default function App() {
         <p style={{ fontSize: 12, color: T.faint, maxWidth: 540, margin: "0 auto 12px", lineHeight: 1.7 }}>
           FinDesh AI provides educational information on Bangladeshi financial products, not licensed investment advice. Rates verified {LAST_UPDATED} and change — always confirm with the institution before investing or borrowing.
         </p>
+        {/* Footer nav — only routes that exist are linked, so a partial deploy never ships a dead link. */}
+        <nav aria-label="Footer" style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "6px 16px", margin: "0 auto 14px", maxWidth: 560, fontSize: 12.5 }}>
+          {[["Learn", "/learn"], ["All tools", "/tools"], ["Methodology", "/methodology"], ["FAQ", "/faq"], ["About", "/about"]].filter(([, p]) => ROUTES[p]).map(([l, p]) => (
+            <a key={p} className="fd-link" href={p} onClick={e => { e.preventDefault(); navigate(p); }} style={{ color: "#8AC2FF", textDecoration: "none", fontWeight: 600 }}>{l}</a>
+          ))}
+          <a className="fd-link" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Data issue on FinDesh: " + routeKey)}`} onClick={() => taxTrack("data_issue_clicked", { from: "footer" })} style={{ color: "#8AC2FF", textDecoration: "none", fontWeight: 600 }}>Report a data issue</a>
+        </nav>
         <div style={{ fontSize: 12, color: T.faint, fontWeight: 500 }}>
           Built in Dhaka 🇧🇩 · <a className="fd-link" href="https://findeshai.com" style={{ color: T.accent, textDecoration: "none", fontWeight: 600 }}>findeshai.com</a>
           {" · "}
@@ -3488,3 +3046,15 @@ const inflationNote = { marginTop: 20, background: "rgba(255,180,84,0.07)", bord
 const stepDot = { width: 24, height: 24, flexShrink: 0, borderRadius: "50%", background: "rgba(79,158,255,0.16)", border: "1px solid rgba(79,158,255,0.42)", color: "#8AC2FF", fontSize: 12.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" };
 function chip(active) { return { flex: 1, minWidth: 64, padding: "10px 6px", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", border: `1px solid ${active ? "rgba(79,158,255,0.6)" : "rgba(148,180,255,0.14)"}`, background: active ? "rgba(79,158,255,0.16)" : "rgba(255,255,255,0.025)", color: active ? "#8AC2FF" : "#8A9BB8", borderRadius: 10, cursor: "pointer" }; }
 function riskBtn(active, c) { return { flex: 1, padding: "15px 6px", borderRadius: 14, cursor: "pointer", textAlign: "center", fontFamily: "inherit", border: active ? `1.5px solid ${c.border}` : "1.5px solid rgba(148,180,255,0.14)", background: active ? c.bg : "rgba(255,255,255,0.025)", boxShadow: active ? `0 0 24px ${c.color}22` : "none" }; }
+
+/* ---------- shared exports for code-split pages (src/pages/*) ----------
+   One list so it's obvious what lazy pages depend on. Lazy chunks import these
+   from the already-loaded main bundle; nothing here is duplicated. */
+export {
+  T, card, pill, h1, sub, gradText, cta, chip, lbl, bigInput, taka, inflationNote, errStyle, stepDot, inputHint,
+  FAQ, SectionHead, RelatedLinks, TabDisclaimer, UpdatedBadge, MetaPill, Tag, Callout, GuideHead, StatBox,
+  EMICalculator, CompareDisclaimer, useNav, taxTrack, fmt, fmtFull, calcEMI,
+  INFLATION, POLICY_RATE, LAST_UPDATED, INSTRUMENTS, SAVINGS, SANCHAYAPATRA_LIMITS,
+  CMP_UPDATED, CMP_LOANS, CMP_SAVINGS, CMP_CARDS, CMP_MUTUAL_FUNDS, MF_UPDATED, MF_SOURCE_URL, MF_SRC, MF_BENCH, MF_CATEGORIES,
+  GUIDE_CHECKOUT_URL, GUIDE_PRICE, GUIDE_GREEN, FIRST_JOB_CHECKOUT_URL, CONTACT_EMAIL, FY_2025_26, FY_2026_27, NBR_ERETURN_URL,
+};
