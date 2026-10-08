@@ -43,8 +43,8 @@ const Hero = ({ pillText, title, subText }) => (
 const CtaBox = ({ title, text, label, path }) => {
   const nav = useNav();
   return (
-    <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-      <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>{title}</h3>
+    <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+      <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>{title}</h3>
       <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>{text}</p>
       <button className="fd-cta" onClick={() => nav(path)} style={{ ...cta, width: "auto", padding: "14px 26px" }}>{label}</button>
     </div>
@@ -85,13 +85,13 @@ export function LoanComparePage() {
         <CompareTable page="loans" rows={rows} rowKey={l => l.__id} selection={selection}
           asOf={CMP_UPDATED} sourceNote="From each bank's published rate sheet; the date of each sheet is in the Source column."
           columns={[
-            { key: "bank", label: "Bank", minW: 130, render: l => <span style={{ fontWeight: 600, color: "#EAF1FC" }}>{l.bank}</span> },
+            { key: "bank", label: "Bank", minW: 130, render: l => <span style={{ fontWeight: 600, color: "var(--c-eaf1fc)" }}>{l.bank}</span> },
             { key: "rate", label: `${typeLabel} rate (p.a.)`, tipTitle: "Rate (p.a.)", tip: "The yearly interest rate band the bank publishes for this loan type, charged on a reducing balance. Bars use the midpoint of the band. Your own offer depends on income, employer and credit history.", minW: 170, num: l => l[MID[type]], best: "min", bar: true,
-              render: l => <><span style={{ color: "#fff", fontWeight: 700 }}>{l[type]}</span>{l.note && <div style={{ ...muted, whiteSpace: "normal", maxWidth: 230, marginLeft: "auto" }}>{l.note}</div>}</> },
+              render: l => <><span style={{ color: "var(--c-fff)", fontWeight: 700 }}>{l[type]}</span>{l.note && <div style={{ ...muted, whiteSpace: "normal", maxWidth: 230, marginLeft: "auto" }}>{l.note}</div>}</> },
             { key: "src", label: "Source", minW: 110, render: l => <span style={{ color: T.faint, fontSize: 11.5 }}>{l.src}</span> },
           ]} />
         <SidePicker items={LOANS} selection={selection} noun="bank" nameOf={l => l.bank} rowsSpec={[
-          ...LOAN_TYPES.map(([k, label]) => ({ label: label + " loan", num: l => l[MID[k]], best: "min", render: l => <span style={{ color: "#fff", fontWeight: 700 }}>{l[k]}</span> })),
+          ...LOAN_TYPES.map(([k, label]) => ({ label: label + " loan", num: l => l[MID[k]], best: "min", render: l => <span style={{ color: "var(--c-fff)", fontWeight: 700 }}>{l[k]}</span> })),
           { label: "Note", render: l => <span style={{ fontSize: 11.5, color: T.muted }}>{l.note || "—"}</span> },
           { label: "Source", render: l => <span style={{ fontSize: 11.5, color: T.faint }}>{l.src}</span> },
         ]} />
@@ -136,7 +136,7 @@ export function SavingsComparePage() {
             {top3.map(s => (
               /* basis 150 so two cards still fit side by side on a 375px phone */
               <div key={s.bank} className="fd-up" style={{ ...card, padding: "14px 15px", margin: 0, flex: "1 1 150px", minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#EAF1FC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 6 }}>{s.bank}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-eaf1fc)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 6 }}>{s.bank}</div>
                 {/* 20px: the widest string "3.00–4.00%" measured 128px at 20px in Inter 900, against
                     136px of usable card width on a 375px phone. Don't raise without re-measuring. */}
                 <div style={{ ...gradText, fontSize: 20, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.15, wordBreak: "break-word" }}>{s.rate}</div>
@@ -156,19 +156,19 @@ export function SavingsComparePage() {
         <CompareTable page="savings" rows={rows} rowKey={s => s.__id}
           asOf={CMP_UPDATED} sourceNote="From each bank's published deposit rate sheet; sheet dates are in the Source column."
           columns={[
-            { key: "bank", label: "Bank", minW: 130, render: s => <span style={{ fontWeight: 600, color: "#EAF1FC" }}>{s.bank}</span> },
+            { key: "bank", label: "Bank", minW: 130, render: s => <span style={{ fontWeight: 600, color: "var(--c-eaf1fc)" }}>{s.bank}</span> },
             { key: "rate", label: "Savings rate", tip: "The interest a regular savings account pays, tiered by how much you keep in it. We show the band the bank publishes; the bar uses the top of the band. Tap ⓘ for that bank's tier terms.", minW: 150,
               num: s => (s.rmid > 0 ? s.rmid : null), best: "max", bar: true,
               render: s => {
                 const open = openNote === s.__id;
                 return (
                   <>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: s.rmid < 0 ? T.faint : "#fff", fontWeight: 700 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: s.rmid < 0 ? T.faint : "var(--c-fff)", fontWeight: 700 }}>
                       {s.rate}
                       <button aria-label={`View terms for ${s.bank}`} aria-expanded={open} onClick={() => setOpenNote(open ? null : s.__id)}
-                        style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", border: `1px solid ${open ? "rgba(79,158,255,0.6)" : T.border}`, background: open ? T.accentSoft : "rgba(255,255,255,0.04)", color: open ? T.accent : T.faint, padding: 0, touchAction: "manipulation" }}>i</button>
+                        style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", border: `1px solid ${open ? "var(--c-79-158-255-6)" : T.border}`, background: open ? T.accentSoft : "var(--c-255-255-255-04)", color: open ? T.accent : T.faint, padding: 0, touchAction: "manipulation" }}>i</button>
                     </span>
-                    {open && <div className="fd-up" style={{ marginTop: 6, marginLeft: "auto", maxWidth: 230, background: T.glass, border: `1px solid ${T.border}`, borderRadius: 10, padding: "8px 10px", fontSize: 11, fontWeight: 500, color: "#C9D8F0", lineHeight: 1.5, whiteSpace: "normal", textAlign: "left" }}>{s.note}</div>}
+                    {open && <div className="fd-up" style={{ marginTop: 6, marginLeft: "auto", maxWidth: 230, background: T.glass, border: `1px solid ${T.border}`, borderRadius: 10, padding: "8px 10px", fontSize: 11, fontWeight: 500, color: "var(--c-c9d8f0)", lineHeight: 1.5, whiteSpace: "normal", textAlign: "left" }}>{s.note}</div>}
                   </>
                 );
               } },
@@ -177,9 +177,9 @@ export function SavingsComparePage() {
           ]} />
       </div>
       <div style={{ ...card, padding: "22px 20px", marginTop: 16 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>How BD savings interest works</h3>
-        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-          Bangladeshi savings accounts pay interest on a <b style={{ color: "#fff" }}>tiered, daily-balance</b> basis and usually credit it twice a year. Rates are low by design (0–4%) — well below the ~8.6% inflation rate — so a savings account is for liquidity and your emergency fund, <i>not</i> for growing wealth. For that, a DPS, FDR or Sanchayapatra pays far more. Banks marked "Islamic" run a separate Shariah (Mudaraba profit-sharing) savings product alongside the conventional one.
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-fff)" }}>How BD savings interest works</h3>
+        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: "var(--c-b8c7e0)" }}>
+          Bangladeshi savings accounts pay interest on a <b style={{ color: "var(--c-fff)" }}>tiered, daily-balance</b> basis and usually credit it twice a year. Rates are low by design (0–4%) — well below the ~8.6% inflation rate — so a savings account is for liquidity and your emergency fund, <i>not</i> for growing wealth. For that, a DPS, FDR or Sanchayapatra pays far more. Banks marked "Islamic" run a separate Shariah (Mudaraba profit-sharing) savings product alongside the conventional one.
         </p>
       </div>
       <FAQ items={SAVINGS_CMP_FAQ} />
@@ -230,17 +230,17 @@ export function CreditCardComparePage() {
         <CompareTable page="credit-cards" rows={rows} rowKey={c => c.__id} selection={selection}
           asOf={CMP_UPDATED} sourceNote="Fees and interest rates from each bank's published schedule of charges. Reward rates aren't published, so they show as “contact bank”."
           columns={[
-            { key: "card", label: "Card", minW: 140, render: c => <><span style={{ fontWeight: 700, color: "#EAF1FC" }}>{c.name}</span><div style={muted}>{c.bank}</div></> },
-            { key: "fee", label: "Annual fee", tip: "What the bank charges each year to keep the card, before any waiver. “Contact bank” means the fee isn't published online.", minW: 110, num: feeNum, best: "min", bar: true, render: c => <span style={{ color: feeNum(c) == null ? T.faint : "#fff", fontWeight: 700 }}>{c.fee}</span> },
-            { key: "apr", label: "APR", tipTitle: "APR (interest rate)", tip: "The yearly interest charged on any balance you don't pay off by the due date. Pay the full statement every month and you pay no interest.", minW: 90, num: aprNum, best: "min", bar: true, render: c => <span style={{ color: aprNum(c) == null ? T.muted : "#fff", fontWeight: 700 }}>{c.apr}</span> },
+            { key: "card", label: "Card", minW: 140, render: c => <><span style={{ fontWeight: 700, color: "var(--c-eaf1fc)" }}>{c.name}</span><div style={muted}>{c.bank}</div></> },
+            { key: "fee", label: "Annual fee", tip: "What the bank charges each year to keep the card, before any waiver. “Contact bank” means the fee isn't published online.", minW: 110, num: feeNum, best: "min", bar: true, render: c => <span style={{ color: feeNum(c) == null ? T.faint : "var(--c-fff)", fontWeight: 700 }}>{c.fee}</span> },
+            { key: "apr", label: "APR", tipTitle: "APR (interest rate)", tip: "The yearly interest charged on any balance you don't pay off by the due date. Pay the full statement every month and you pay no interest.", minW: 90, num: aprNum, best: "min", bar: true, render: c => <span style={{ color: aprNum(c) == null ? T.muted : "var(--c-fff)", fontWeight: 700 }}>{c.apr}</span> },
             { key: "network", label: "Network", minW: 120, render: c => <span style={{ fontSize: 11.5 }}>{c.network}</span> },
             { key: "benefit", label: "Headline benefit", minW: 190, render: c => <span style={{ fontSize: 11.5, whiteSpace: "normal", display: "block", maxWidth: 230, marginLeft: "auto" }}>{c.benefit}</span> },
           ]} />
         <SidePicker items={CARDS} selection={selection} noun="card" nameOf={c => c.name + " · " + c.bank} rowsSpec={[
           { label: "Bank", render: c => c.bank },
           { label: "Network", render: c => c.network },
-          { label: "Annual fee", num: feeNum, best: "min", render: c => <b style={{ color: "#fff" }}>{c.fee}</b> },
-          { label: "Interest (APR)", num: aprNum, best: "min", render: c => <b style={{ color: "#fff" }}>{c.apr}</b> },
+          { label: "Annual fee", num: feeNum, best: "min", render: c => <b style={{ color: "var(--c-fff)" }}>{c.fee}</b> },
+          { label: "Interest (APR)", num: aprNum, best: "min", render: c => <b style={{ color: "var(--c-fff)" }}>{c.apr}</b> },
           { label: "Headline benefit", render: c => <span style={{ fontSize: 11.5 }}>{c.benefit}</span> },
           { label: "Rewards", render: () => <span style={{ fontSize: 11.5, color: T.faint }}>Contact bank</span> },
         ]} />
@@ -307,14 +307,14 @@ export function MutualFundComparePage() {
         <div className="fd-up" style={pill}>📊 Compare Mutual Funds · মিউচুয়াল ফান্ড</div>
         <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(26px,5.5vw,40px)" }}>Compare mutual funds in <span style={gradText}>Bangladesh</span></h1>
         <p className="fd-up fd-up-2" style={sub}>
-          The 20 largest open-end funds by size, with their real NAV and published returns. These are <b style={{ color: "#fff" }}>market-linked, not guaranteed</b> — {losers2025} of these {CMP_MUTUAL_FUNDS.length} funds lost money in 2025. Past returns tell you how a fund has behaved, never what it will pay you.
+          The 20 largest open-end funds by size, with their real NAV and published returns. These are <b style={{ color: "var(--c-fff)" }}>market-linked, not guaranteed</b> — {losers2025} of these {CMP_MUTUAL_FUNDS.length} funds lost money in 2025. Past returns tell you how a fund has behaved, never what it will pay you.
         </p>
       </div>
 
       <div className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 16 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>New to this? What a mutual fund actually is</h3>
-        <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-          You and thousands of others put money into one pot. A professional manager invests that pot across shares, bonds and deposits, and you own <b style={{ color: "#fff" }}>units</b> of it. The unit price — the <b style={{ color: "#fff" }}>NAV</b> — moves up and down with whatever the fund owns.
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-fff)" }}>New to this? What a mutual fund actually is</h3>
+        <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.7, color: "var(--c-b8c7e0)" }}>
+          You and thousands of others put money into one pot. A professional manager invests that pot across shares, bonds and deposits, and you own <b style={{ color: "var(--c-fff)" }}>units</b> of it. The unit price — the <b style={{ color: "var(--c-fff)" }}>NAV</b> — moves up and down with whatever the fund owns.
         </p>
         <div style={{ display: "grid", gap: 9 }}>
           {[
@@ -325,17 +325,17 @@ export function MutualFundComparePage() {
           ].map(([t, d]) => (
             <div key={t} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
               <span style={{ color: T.accent, fontSize: 13, fontWeight: 900, lineHeight: 1.6, flexShrink: 0 }}>→</span>
-              <span style={{ fontSize: 13, lineHeight: 1.6, color: "#C9D8F0" }}><b style={{ color: "#fff" }}>{t}:</b> {d}</span>
+              <span style={{ fontSize: 13, lineHeight: 1.6, color: "var(--c-c9d8f0)" }}><b style={{ color: "var(--c-fff)" }}>{t}:</b> {d}</span>
             </div>
           ))}
         </div>
-        {has("/learn") && <button className="fd-chip" onClick={() => nav("/learn")} style={{ marginTop: 14, padding: "9px 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF", cursor: "pointer", fontFamily: "inherit" }}>Mutual funds explained, step by step →</button>}
+        {has("/learn") && <button className="fd-chip" onClick={() => nav("/learn")} style={{ marginTop: 14, padding: "9px 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)", cursor: "pointer", fontFamily: "inherit" }}>Mutual funds explained, step by step →</button>}
       </div>
 
       {/* The warning band: the line between this page and /compare/savings */}
       <div style={{ ...inflationNote, marginTop: 0, marginBottom: 16 }}>
         ⚠️ <b>Every number in this table is history, not a rate you will receive.</b> Unlike Sanchayapatra, DPS or FDR, a mutual fund promises nothing — your units can be worth less than you paid. Figures are NAV-based as published on {MF_UPDATED}.{" "}
-        <a href="#mf-calculator" onClick={e => { e.preventDefault(); document.getElementById("mf-calculator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{ color: "#FFCE8A", fontWeight: 700 }}>See what ৳1 lakh would have become ↓</a>
+        <a href="#mf-calculator" onClick={e => { e.preventDefault(); document.getElementById("mf-calculator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{ color: "var(--c-ffce8a)", fontWeight: 700 }}>See what ৳1 lakh would have become ↓</a>
       </div>
 
       <div style={{ ...card, padding: "20px 18px" }}>
@@ -355,18 +355,18 @@ export function MutualFundComparePage() {
           empty={'No funds match that combination — try clearing the Shariah filter or choosing "All".'}
           asOf={MF_UPDATED} sourceNote="LankaBangla Weekly Open End Mutual Fund Review (compiled from UCB Stock Brokerage)."
           columns={[
-            { key: "fund", label: "Fund", minW: 150, maxW: 180, render: f => <><span style={{ fontWeight: 600, color: "#EAF1FC" }}>{f.fund}</span><div style={muted}>{f.amc}</div></> },
+            { key: "fund", label: "Fund", minW: 150, maxW: 180, render: f => <><span style={{ fontWeight: 600, color: "var(--c-eaf1fc)" }}>{f.fund}</span><div style={muted}>{f.amc}</div></> },
             { key: "ytd", label: "2026 YTD", headNote: past, tipTitle: "2026 YTD", tip: retTip, minW: 95, num: f => f.ytd, bar: true, render: f => <span style={{ color: pctColor(f.ytd), fontWeight: 700 }}>{pct(f.ytd)}</span> },
             { key: "prev", label: "2025", headNote: past, tipTitle: "2025 return", tip: retTip, minW: 90, num: f => f.prev, bar: true, render: f => <span style={{ color: pctColor(f.prev), fontWeight: 700 }}>{pct(f.prev)}</span> },
             { key: "exit", label: "Exit load", tip: "A charge some funds take when you sell your units back, as a percentage. It comes off what you receive.", minW: 90, num: f => f.exit, best: "min", render: f => <span>{f.exitLoad}</span> },
-            { key: "aum", label: "Fund size", tipTitle: "Fund size (AUM)", tip: "Assets under management: the total money the fund manages. Bigger isn't automatically better, but very small funds can be more volatile.", minW: 100, num: f => f.aum, bar: true, render: f => <span style={{ color: "#C9D8F0", fontSize: 12.5 }}>{aum(f)}</span> },
-            { key: "nav", label: "NAV ৳", tipTitle: "NAV", tip: "Net Asset Value per unit: what one unit is worth. A higher NAV does not mean a better fund — funds start at different prices. Compare returns, not NAV levels.", minW: 80, render: f => <span style={{ color: "#fff", fontWeight: 700 }}>{f.nav.toFixed(2)}</span> },
-            { key: "cat", label: "Category", minW: 90, render: f => <span style={{ color: f.cat ? "#C9D8F0" : T.faint, fontSize: 12 }}>{f.cat || "Not stated"}</span> },
+            { key: "aum", label: "Fund size", tipTitle: "Fund size (AUM)", tip: "Assets under management: the total money the fund manages. Bigger isn't automatically better, but very small funds can be more volatile.", minW: 100, num: f => f.aum, bar: true, render: f => <span style={{ color: "var(--c-c9d8f0)", fontSize: 12.5 }}>{aum(f)}</span> },
+            { key: "nav", label: "NAV ৳", tipTitle: "NAV", tip: "Net Asset Value per unit: what one unit is worth. A higher NAV does not mean a better fund — funds start at different prices. Compare returns, not NAV levels.", minW: 80, render: f => <span style={{ color: "var(--c-fff)", fontWeight: 700 }}>{f.nav.toFixed(2)}</span> },
+            { key: "cat", label: "Category", minW: 90, render: f => <span style={{ color: f.cat ? "var(--c-c9d8f0)" : T.faint, fontSize: 12 }}>{f.cat || "Not stated"}</span> },
             { key: "shariah", label: "Shariah", minW: 80, render: f => (f.shariah ? <span style={{ color: T.green }}>☪ yes</span> : <span style={{ color: T.faint }}>—</span>) },
           ]} />
 
-        <div style={{ marginTop: 12, background: "rgba(255,180,84,0.07)", border: "1px solid rgba(255,180,84,0.28)", borderRadius: 12, padding: "12px 14px" }}>
-          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.65, color: "#FFCE8A" }}>
+        <div style={{ marginTop: 12, background: "var(--c-255-180-84-07)", border: "1px solid var(--c-255-180-84-28)", borderRadius: 12, padding: "12px 14px" }}>
+          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.65, color: "var(--c-ffce8a)" }}>
             <b style={{ color: T.amber }}>Reading these numbers honestly.</b> "2026 YTD" is this year so far and "2025" is that full calendar year — they are <b>not</b> annualised 1-year or 3-year returns, because no Bangladeshi source publishes those per fund. A fund can top one column and sit near the bottom of the other, which is exactly why one good year is a bad reason to buy. Over 2026 so far the DSEX index returned {MF_BENCH.dsexYtd}% and open-end funds averaged {MF_BENCH.mfYtd}%.
           </p>
         </div>
@@ -392,8 +392,8 @@ export function MutualFundComparePage() {
       <MFCalculator />
 
       <FAQ items={MF_FAQ} />
-      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Want a guaranteed return instead?</h3>
+      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>Want a guaranteed return instead?</h3>
         <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Sanchayapatra pays ~11.8–11.98% with a government guarantee, and a DPS auto-deducts monthly at up to ~11%. No market risk.</p>
         <button className="fd-cta" onClick={() => nav("/sanchayapatra")} style={{ ...cta, width: "auto", padding: "14px 26px" }}>See Sanchayapatra rates →</button>
       </div>

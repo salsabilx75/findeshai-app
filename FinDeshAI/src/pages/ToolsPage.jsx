@@ -51,14 +51,14 @@ export default function ToolsPage() {
         if (!items.length) return null;
         return (
           <section key={g.title} aria-label={g.title} style={{ marginBottom: 22 }}>
-            <h2 style={{ margin: "6px 2px 12px", fontSize: 17, fontWeight: 900, color: "#fff" }}>{g.title}</h2>
+            <h2 style={{ margin: "6px 2px 12px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>{g.title}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 10 }}>
               {items.map(([icon, name, path, line]) => (
                 <a key={path} href={path} className="fd-item" onClick={e => { e.preventDefault(); taxTrack("tools_hub_click", { to: path }); navTo(nav, path); }}
                   style={{ ...card, padding: "14px 16px", borderRadius: 16, textDecoration: "none", display: "flex", gap: 12, alignItems: "flex-start", boxShadow: "none" }}>
                   <span aria-hidden style={{ fontSize: 20, lineHeight: 1.2 }}>{icon}</span>
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: 14.5, fontWeight: 800, color: "#fff" }}>{name} <span style={{ color: T.accent }}>→</span></span>
+                    <span style={{ display: "block", fontSize: 14.5, fontWeight: 800, color: "var(--c-fff)" }}>{name} <span style={{ color: T.accent }}>→</span></span>
                     <span style={{ display: "block", fontSize: 12.5, color: T.muted, lineHeight: 1.5, marginTop: 3 }}>{line}</span>
                   </span>
                 </a>

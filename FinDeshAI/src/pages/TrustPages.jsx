@@ -24,18 +24,18 @@ const REVIEWED = "8 October 2026";
 
 /* ---------- shared bits ---------- */
 const H2 = ({ id, children }) => (
-  <h2 id={id} style={{ margin: "0 0 12px", fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "-0.015em", lineHeight: 1.25 }}>{children}</h2>
+  <h2 id={id} style={{ margin: "0 0 12px", fontSize: 19, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.015em", lineHeight: 1.25 }}>{children}</h2>
 );
 const P = ({ children, style }) => (
-  <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.7, color: "#C9D8F0", ...style }}>{children}</p>
+  <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.7, color: "var(--c-c9d8f0)", ...style }}>{children}</p>
 );
-const B = ({ children }) => <b style={{ color: "#fff" }}>{children}</b>;
+const B = ({ children }) => <b style={{ color: "var(--c-fff)" }}>{children}</b>;
 const Sec = ({ id, children }) => (
   <section id={id} aria-labelledby={id + "-h"} className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 16, scrollMarginTop: 170 }}>{children}</section>
 );
 const List = ({ items }) => (
   <ul style={{ margin: "0 0 12px", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-    {items.map((x, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.65, color: "#C9D8F0" }}>{x}</li>)}
+    {items.map((x, i) => <li key={i} style={{ fontSize: 14, lineHeight: 1.65, color: "var(--c-c9d8f0)" }}>{x}</li>)}
   </ul>
 );
 function Hero({ kicker, title, accent, lead, meta }) {
@@ -51,13 +51,13 @@ function Hero({ kicker, title, accent, lead, meta }) {
 function InLink({ to, children }) {
   const nav = useNav();
   if (!has(to)) return <>{children}</>;
-  return <a href={to} className="fd-link" onClick={e => { e.preventDefault(); navTo(nav, to); }} style={{ color: "#8AC2FF", fontWeight: 700, textDecoration: "none" }}>{children}</a>;
+  return <a href={to} className="fd-link" onClick={e => { e.preventDefault(); navTo(nav, to); }} style={{ color: "var(--c-8ac2ff)", fontWeight: 700, textDecoration: "none" }}>{children}</a>;
 }
 const mailIssue = (where) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Data issue on FinDesh: " + where)}`;
 function ReportIssue({ where }) {
   return (
     <a href={mailIssue(where)} onClick={() => taxTrack("data_issue_clicked", { from: where })}
-      style={{ display: "inline-block", marginTop: 4, padding: "10px 16px", fontSize: 13, fontWeight: 700, borderRadius: 11, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF", textDecoration: "none" }}>
+      style={{ display: "inline-block", marginTop: 4, padding: "10px 16px", fontSize: 13, fontWeight: 700, borderRadius: 11, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)", textDecoration: "none" }}>
       ✉ Report a data issue →
     </a>
   );
@@ -76,13 +76,13 @@ const OLDER_ROWS = [
 ].filter(r => /20(1\d|2[0-5])/.test(r.src || ""));
 
 const SOURCES = [
-  { what: "Sanchayapatra rates & purchase limits", src: <>Department of National Savings (<a href="https://nationalsavings.gov.bd" target="_blank" rel="noopener noreferrer" style={{ color: "#8AC2FF" }}>nationalsavings.gov.bd</a>), January 2026 rate revision</>, asOf: `Checked ${LAST_UPDATED}` },
+  { what: "Sanchayapatra rates & purchase limits", src: <>Department of National Savings (<a href="https://nationalsavings.gov.bd" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-8ac2ff)" }}>nationalsavings.gov.bd</a>), January 2026 rate revision</>, asOf: `Checked ${LAST_UPDATED}` },
   { what: "Bank DPS and FDR rates", src: "Each bank's own website and published deposit rate sheet", asOf: `Checked ${LAST_UPDATED}` },
   { what: "Wage Earner Development Bond, Treasury bonds & bills", src: "Bangladesh Bank", asOf: `Checked ${LAST_UPDATED}` },
   { what: "Loan rates (personal, home, car)", src: "Each bank's Declared Lending Rate sheet", asOf: `${CMP_UPDATED}; each row shows its sheet's date` },
   { what: "Savings-account rates", src: "Each bank's deposit rate sheet", asOf: `${CMP_UPDATED}; each row shows its sheet's date` },
   { what: "Credit card fees and interest", src: "Each bank's schedule of charges", asOf: `${CMP_UPDATED}; each row shows its sheet's date` },
-  { what: "Mutual funds (NAV, returns, size, loads, dividend)", src: <>LankaBangla Financial Portal, Weekly Open End Mutual Fund Review, compiled from UCB Stock Brokerage (<a href={MF_SOURCE_URL} target="_blank" rel="noopener noreferrer" style={{ color: "#8AC2FF" }}>source</a>)</>, asOf: MF_UPDATED },
+  { what: "Mutual funds (NAV, returns, size, loads, dividend)", src: <>LankaBangla Financial Portal, Weekly Open End Mutual Fund Review, compiled from UCB Stock Brokerage (<a href={MF_SOURCE_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-8ac2ff)" }}>source</a>)</>, asOf: MF_UPDATED },
   { what: "Income tax slabs, rebate and minimum tax", src: "Finance Act 2026, cross-checked against published tax summaries", asOf: `Checked ${LAST_UPDATED}` },
   { what: "Inflation", src: `An assumption of ~${INFLATION}% a year, based on reported early-2026 inflation (about 8.58% year-on-year in January 2026; 12-month average about 8.66%)`, asOf: "Early 2026" },
   { what: "Policy rate", src: `Bangladesh Bank repo rate, ${POLICY_RATE}%, held January–June 2026`, asOf: "June 2026" },
@@ -119,8 +119,8 @@ export function MethodologyPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {SOURCES.map((s, i) => (
             <div key={i} style={{ padding: "12px 0", borderBottom: i < SOURCES.length - 1 ? `1px solid ${T.borderSoft}` : "none" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{s.what}</div>
-              <div style={{ fontSize: 13, color: "#C9D8F0", lineHeight: 1.6, marginTop: 3 }}>{s.src}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--c-fff)" }}>{s.what}</div>
+              <div style={{ fontSize: 13, color: "var(--c-c9d8f0)", lineHeight: 1.6, marginTop: 3 }}>{s.src}</div>
               <div style={{ fontSize: 12, color: T.amber, fontWeight: 700, marginTop: 3 }}>{s.asOf}</div>
             </div>
           ))}
@@ -143,8 +143,8 @@ export function MethodologyPage() {
         <H2 id="calculators-h">How each calculator works</H2>
         {CALCS.map(c => (
           <div key={c.t} style={{ padding: "12px 0", borderBottom: `1px solid ${T.borderSoft}` }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: "#fff", marginBottom: 4 }}><InLink to={c.path}>{c.t}</InLink></div>
-            <div style={{ fontSize: 13.5, lineHeight: 1.65, color: "#C9D8F0" }}>{c.d}</div>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: "var(--c-fff)", marginBottom: 4 }}><InLink to={c.path}>{c.t}</InLink></div>
+            <div style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--c-c9d8f0)" }}>{c.d}</div>
           </div>
         ))}
       </Sec>
@@ -231,7 +231,7 @@ export function AboutPage() {
 
       <Sec id="contact">
         <H2 id="contact-h">Get in touch</H2>
-        <P>Questions, corrections or ideas: <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#8AC2FF", fontWeight: 700 }}>{CONTACT_EMAIL}</a>{has("/contact") && <> or the <InLink to="/contact">contact page</InLink></>}.</P>
+        <P>Questions, corrections or ideas: <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "var(--c-8ac2ff)", fontWeight: 700 }}>{CONTACT_EMAIL}</a>{has("/contact") && <> or the <InLink to="/contact">contact page</InLink></>}.</P>
         <ReportIssue where="/about" />
       </Sec>
 
@@ -266,15 +266,15 @@ function QA({ item, open, onToggle, idKey }) {
     <div style={{ background: T.glass, border: `1px solid ${open ? T.accentBorder : T.border}`, borderRadius: 14, backdropFilter: "blur(12px)" }}>
       <button aria-expanded={open} aria-controls={idKey} onClick={onToggle}
         style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1.45 }}>{item.q}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-fff)", lineHeight: 1.45 }}>{item.q}</span>
         <span aria-hidden style={{ color: T.accent, fontSize: 18, fontWeight: 700, flexShrink: 0 }}>{open ? "−" : "+"}</span>
       </button>
       {open && (
         <div id={idKey} style={{ padding: "0 16px 14px" }}>
-          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>{item.a}</p>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "var(--c-b8c7e0)" }}>{item.a}</p>
           {item.link && has(item.link) && (
             <a href={item.link} onClick={e => { e.preventDefault(); taxTrack("faq_link", { to: item.link }); navTo(nav, item.link); }}
-              style={{ display: "inline-block", marginTop: 8, fontSize: 12.5, fontWeight: 700, color: "#8AC2FF", textDecoration: "none" }}>
+              style={{ display: "inline-block", marginTop: 8, fontSize: 12.5, fontWeight: 700, color: "var(--c-8ac2ff)", textDecoration: "none" }}>
               {labelFor(item.link)} →
             </a>
           )}
@@ -316,12 +316,12 @@ export function FaqHubPage() {
 
       <div style={{ ...card, padding: "14px 14px", marginBottom: 16 }}>
         <input className="fd-input" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search — e.g. FDR tax" aria-label="Search the FAQ"
-          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 15, color: "#fff", border: `1.5px solid ${T.border}`, borderRadius: 12, outline: "none", background: "rgba(8,18,36,0.65)", fontFamily: "inherit" }} />
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 15, color: "var(--c-fff)", border: `1.5px solid ${T.border}`, borderRadius: 12, outline: "none", background: "var(--c-8-18-36-65)", fontFamily: "inherit" }} />
         {!dq && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
             {FAQ_CATEGORIES.map(c => (
               <button key={c.id} className="fd-chip" onClick={() => jumpTo(c.id)}
-                style={{ padding: "8px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.borderSoft}`, background: "rgba(255,255,255,0.03)", color: "#B8C7E0", cursor: "pointer", fontFamily: "inherit" }}>
+                style={{ padding: "8px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.borderSoft}`, background: "var(--c-255-255-255-03)", color: "var(--c-b8c7e0)", cursor: "pointer", fontFamily: "inherit" }}>
                 {c.title} <span style={{ color: T.faint }}>· {c.items.length}</span>
               </button>
             ))}
@@ -332,7 +332,7 @@ export function FaqHubPage() {
 
       {!dq && (
         <section aria-labelledby="start-h" style={{ marginBottom: 22 }}>
-          <h2 id="start-h" style={{ margin: "6px 2px 12px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Start with these</h2>
+          <h2 id="start-h" style={{ margin: "6px 2px 12px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>Start with these</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {FAQ_START.map((it, i) => <QA key={"s" + i} item={it} idKey={"faq-s" + i} open={open.has("s" + i)} onToggle={() => toggle("s" + i)} />)}
           </div>
@@ -341,7 +341,7 @@ export function FaqHubPage() {
 
       {(dq && !hits ? FAQ_CATEGORIES : cats).map(c => (
         <section key={c.id} id={c.id} aria-labelledby={c.id + "-h"} style={{ marginBottom: 22, scrollMarginTop: 170 }}>
-          <h2 id={c.id + "-h"} style={{ margin: "6px 2px 12px", fontSize: 17, fontWeight: 900, color: "#fff" }}>{c.title}</h2>
+          <h2 id={c.id + "-h"} style={{ margin: "6px 2px 12px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>{c.title}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {c.items.map((it, i) => {
               const k = c.id + i;

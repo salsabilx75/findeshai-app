@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, createContext, useContext, lazy, Suspense } from "react";
 import { SITE, ROUTES, canonicalFor, OG_IMAGE, CAREER_FAQ } from "./seo.js";
 import { TAX_FAQ } from "./content/taxFaq.js";
+import { THEME_CSS, alpha } from "./theme.js";
 
 /* Pages added after Oct 2026 are code-split: each loads as its own chunk the
    first time someone opens it, so the initial bundle (and LCP) doesn't grow
@@ -92,33 +93,36 @@ const LENDERS = [
 ];
 
 const RISK = {
-  low: { label: "Conservative", color: "#00D68F", bg: "rgba(0,214,143,0.10)", border: "rgba(0,214,143,0.35)", desc: "Protect my capital" },
-  medium: { label: "Balanced", color: "#FFB454", bg: "rgba(255,180,84,0.10)", border: "rgba(255,180,84,0.35)", desc: "Growth with some safety" },
-  high: { label: "Aggressive", color: "#FF6B6B", bg: "rgba(255,107,107,0.10)", border: "rgba(255,107,107,0.35)", desc: "Maximize my returns" },
+  low: { label: "Conservative", color: "var(--c-00d68f)", bg: "var(--c-0-214-143-1)", border: "var(--c-0-214-143-35)", desc: "Protect my capital" },
+  medium: { label: "Balanced", color: "var(--c-ffb454)", bg: "var(--c-255-180-84-1)", border: "var(--c-255-180-84-35)", desc: "Growth with some safety" },
+  high: { label: "Aggressive", color: "var(--c-ff6b6b)", bg: "var(--c-255-107-107-1)", border: "var(--c-255-107-107-35)", desc: "Maximize my returns" },
 };
 
 const ALLOCATION = {
-  low: [ { cat: "Sanchayapatra", pct: 45, color: "#4F9EFF" }, { cat: "FDR / DPS", pct: 30, color: "#00D68F" }, { cat: "iFarmer", pct: 15, color: "#FFB454" }, { cat: "Gold", pct: 10, color: "#E8C766" } ],
-  medium: [ { cat: "Sanchayapatra / Bonds", pct: 30, color: "#4F9EFF" }, { cat: "Mutual Funds", pct: 25, color: "#B07CFF" }, { cat: "Blue-Chip Shares", pct: 25, color: "#00D68F" }, { cat: "iFarmer / Gold", pct: 20, color: "#FFB454" } ],
-  high: [ { cat: "Growth Stocks", pct: 40, color: "#FF6B6B" }, { cat: "Blue-Chip Shares", pct: 30, color: "#00D68F" }, { cat: "Mutual Funds", pct: 20, color: "#B07CFF" }, { cat: "Safe (Bonds/FDR)", pct: 10, color: "#4F9EFF" } ],
+  low: [ { cat: "Sanchayapatra", pct: 45, color: "var(--c-4f9eff)" }, { cat: "FDR / DPS", pct: 30, color: "var(--c-00d68f)" }, { cat: "iFarmer", pct: 15, color: "var(--c-ffb454)" }, { cat: "Gold", pct: 10, color: "var(--c-e8c766)" } ],
+  medium: [ { cat: "Sanchayapatra / Bonds", pct: 30, color: "var(--c-4f9eff)" }, { cat: "Mutual Funds", pct: 25, color: "var(--c-b07cff)" }, { cat: "Blue-Chip Shares", pct: 25, color: "var(--c-00d68f)" }, { cat: "iFarmer / Gold", pct: 20, color: "var(--c-ffb454)" } ],
+  high: [ { cat: "Growth Stocks", pct: 40, color: "var(--c-ff6b6b)" }, { cat: "Blue-Chip Shares", pct: 30, color: "var(--c-00d68f)" }, { cat: "Mutual Funds", pct: 20, color: "var(--c-b07cff)" }, { cat: "Safe (Bonds/FDR)", pct: 10, color: "var(--c-4f9eff)" } ],
 };
 
 /* ---------------- THEME ---------------- */
+/* Colours are CSS custom properties (see src/theme.js): dark values on
+   :root, light overrides on [data-theme="light"]. Components keep using T and
+   switch theme without re-rendering. */
 const T = {
-  bg: "#04080F",
-  text: "#EAF1FC",
-  muted: "#8A9BB8",
-  faint: "#5C6E8C",
-  accent: "#4F9EFF",
-  accentSoft: "rgba(79,158,255,0.12)",
-  accentBorder: "rgba(79,158,255,0.28)",
-  green: "#00D68F",
-  amber: "#FFB454",
-  red: "#FF6B6B",
-  border: "rgba(148,180,255,0.12)",
-  borderSoft: "rgba(148,180,255,0.08)",
-  glass: "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
-  glassFlat: "rgba(255,255,255,0.03)",
+  bg: "var(--fd-bg)",
+  text: "var(--fd-text)",
+  muted: "var(--fd-muted)",
+  faint: "var(--fd-faint)",
+  accent: "var(--fd-accent)",
+  accentSoft: "var(--fd-accent-soft)",
+  accentBorder: "var(--fd-accent-border)",
+  green: "var(--fd-green)",
+  amber: "var(--fd-amber)",
+  red: "var(--fd-red)",
+  border: "var(--fd-border)",
+  borderSoft: "var(--fd-border-soft)",
+  glass: "var(--fd-glass)",
+  glassFlat: "var(--fd-glass-flat)",
 };
 
 function fmt(n) {
@@ -141,7 +145,7 @@ function calcEMI(P, annualPct, years) {
 /* ---------- Global CSS ---------- */
 const GLOBAL_CSS = `
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-::selection { background: rgba(79,158,255,0.35); }
+::selection { background: var(--c-79-158-255-35); }
 body { margin: 0; }
 
 /* Nav dropdown: the list is now taller than a short phone viewport, so it must
@@ -156,65 +160,106 @@ body { margin: 0; }
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(148,180,255,0.28) transparent;
+  scrollbar-color: var(--c-148-180-255-28) transparent;
 }
 .fd-menu::-webkit-scrollbar { width: 8px; }
 .fd-menu::-webkit-scrollbar-track { background: transparent; }
-.fd-menu::-webkit-scrollbar-thumb { background: rgba(148,180,255,0.28); border-radius: 8px; }
-.fd-menu::-webkit-scrollbar-thumb:hover { background: rgba(148,180,255,0.45); }
+.fd-menu::-webkit-scrollbar-thumb { background: var(--c-148-180-255-28); border-radius: 8px; }
+.fd-menu::-webkit-scrollbar-thumb:hover { background: var(--c-148-180-255-45); }
 @keyframes fdUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fdIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fdOrbA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-25px) scale(1.12); } }
 @keyframes fdOrbB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-35px,20px) scale(1.08); } }
-@keyframes fdPulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,214,143,0.5); } 50% { opacity: .75; box-shadow: 0 0 0 5px rgba(0,214,143,0); } }
+@keyframes fdPulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 var(--c-0-214-143-5); } 50% { opacity: .75; box-shadow: 0 0 0 5px var(--c-0-214-143-0); } }
 @keyframes fdSeg { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fdSpin { to { transform: rotate(360deg); } }
 .fd-up { animation: fdUp .55s cubic-bezier(.21,.8,.35,1) both; }
 .fd-up-1 { animation-delay: .06s; } .fd-up-2 { animation-delay: .12s; } .fd-up-3 { animation-delay: .18s; }
 .fd-item { transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease; touch-action: manipulation; }
-@media (hover: hover) { .fd-item:hover { transform: translateY(-3px); border-color: rgba(79,158,255,0.35) !important; box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(79,158,255,0.1); } }
+@media (hover: hover) { .fd-item:hover { transform: translateY(-3px); border-color: var(--c-79-158-255-35) !important; box-shadow: 0 14px 40px var(--c-0-0-0-45), 0 0 0 1px var(--c-79-158-255-1); } }
 .fd-cta { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
-.fd-cta:hover { filter: brightness(1.12); transform: translateY(-2px); box-shadow: 0 12px 36px rgba(79,158,255,0.42); }
+.fd-cta:hover { filter: brightness(1.12); transform: translateY(-2px); box-shadow: 0 12px 36px var(--c-79-158-255-42); }
 .fd-cta:active { transform: translateY(0) scale(.985); }
 .fd-chip { transition: border-color .15s ease, background .15s ease, color .15s ease, transform .15s ease; }
-.fd-chip:hover { border-color: rgba(79,158,255,0.5) !important; color: #EAF1FC !important; transform: translateY(-1px); }
+.fd-chip:hover { border-color: var(--c-79-158-255-5) !important; color: var(--c-eaf1fc) !important; transform: translateY(-1px); }
 .fd-input { transition: border-color .2s ease, box-shadow .2s ease; }
-.fd-input:focus { border-color: rgba(79,158,255,0.65) !important; box-shadow: 0 0 0 4px rgba(79,158,255,0.14); }
-.fd-input::placeholder { color: #3D4D68; }
+.fd-input:focus { border-color: var(--c-79-158-255-65) !important; box-shadow: 0 0 0 4px var(--c-79-158-255-14); }
+.fd-input::placeholder { color: var(--c-3d4d68); }
 .fd-tab { transition: color .18s ease, background .18s ease; touch-action: manipulation; }
-@media (hover: hover) { .fd-tab:hover { color: #C9D8F0 !important; } }
+@media (hover: hover) { .fd-tab:hover { color: var(--c-c9d8f0) !important; } }
 .fd-link { transition: opacity .15s ease; }
 .fd-link:hover { opacity: .75; }
 .fd-risk { transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
-.fd-risk:hover { transform: translateY(-2px); border-color: rgba(148,180,255,0.35) !important; }
+.fd-risk:hover { transform: translateY(-2px); border-color: var(--c-148-180-255-35) !important; }
 .fd-donut-seg { animation: fdSeg .8s ease both; }
-.fd-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(79,158,255,0.3); border-top-color: #4F9EFF; border-radius: 50%; animation: fdSpin .7s linear infinite; vertical-align: -2px; }
+.fd-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--c-79-158-255-3); border-top-color: var(--c-4f9eff); border-radius: 50%; animation: fdSpin .7s linear infinite; vertical-align: -2px; }
 .fd-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
-.fd-tbl th { text-align: right; padding: 7px 8px; color: #5C6E8C; font-weight: 700; letter-spacing: .04em; border-bottom: 1px solid rgba(148,180,255,0.12); }
+.fd-tbl th { text-align: right; padding: 7px 8px; color: var(--c-5c6e8c); font-weight: 700; letter-spacing: .04em; border-bottom: 1px solid var(--c-148-180-255-12); }
 .fd-tbl th:first-child, .fd-tbl td:first-child { text-align: left; }
-.fd-tbl td { text-align: right; padding: 7px 8px; color: #C9D8F0; border-bottom: 1px solid rgba(148,180,255,0.06); font-variant-numeric: tabular-nums; }
-::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #04080F; }
-::-webkit-scrollbar-thumb { background: #1B2B45; border-radius: 6px; }
+.fd-tbl td { text-align: right; padding: 7px 8px; color: var(--c-c9d8f0); border-bottom: 1px solid var(--c-148-180-255-06); font-variant-numeric: tabular-nums; }
+::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: var(--c-04080f); }
+::-webkit-scrollbar-thumb { background: var(--c-1b2b45); border-radius: 6px; }
 @media (prefers-reduced-motion: reduce) { .fd-up, .fd-donut-seg { animation: none; } }
+.fd-theme-btn:focus-visible, nav button:focus-visible { outline: 2px solid var(--fd-accent); outline-offset: 2px; }
+@media (hover: hover) { .fd-theme-btn:hover { border-color: var(--fd-accent-border) !important; } }
+/* Light theme only: form controls need a 3:1 border against white. */
+:root[data-theme="light"] .fd-input { border-color: #7B889C !important; }
+:root[data-theme="light"] .fd-input:focus { border-color: #1A56C4 !important; box-shadow: 0 0 0 4px rgba(26,86,196,0.16); }
+/* Print and saved PDFs are always light, whatever the screen theme. */
+@media print { :root { color-scheme: light; } body { background: #fff !important; } }
 @media (max-width: 520px) { .fd-hide-sm { display: none !important; } }
 `;
 
 /* ---------- Logo ---------- */
 function Logo({ size = 30 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+    <div className="fd-logo" style={{ display: "flex", alignItems: "center", gap: 9 }}>
       <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-        <rect x="9" y="30" width="6" height="9" rx="1.5" fill="#1e3a6e" />
-        <rect x="18" y="22" width="6" height="17" rx="1.5" fill="#2d5ba8" />
-        <rect x="27" y="14" width="6" height="25" rx="1.5" fill="#4f9eff" />
-        <path d="M34 13 L37.5 7 L41 13" stroke="#4f9eff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        <path d="M37.5 7 L37.5 20" stroke="#4f9eff" strokeWidth="1.9" strokeLinecap="round" />
+        <rect x="9" y="30" width="6" height="9" rx="1.5" fill="var(--c-1e3a6e)" />
+        <rect x="18" y="22" width="6" height="17" rx="1.5" fill="var(--c-2d5ba8)" />
+        <rect x="27" y="14" width="6" height="25" rx="1.5" fill="var(--fd-logo-fin)" />
+        <path d="M34 13 L37.5 7 L41 13" stroke="var(--fd-logo-fin)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M37.5 7 L37.5 20" stroke="var(--fd-logo-fin)" strokeWidth="1.9" strokeLinecap="round" />
       </svg>
       <div style={{ fontWeight: 800, fontSize: size * 0.5, letterSpacing: "-0.03em", lineHeight: 1 }}>
-        <span style={{ color: "#4f9eff" }}>Fin</span><span style={{ color: "#fff" }}>Desh</span>
-        <span style={{ fontSize: size * 0.26, color: "#4f9eff", background: "rgba(79,158,255,0.15)", border: "1px solid rgba(79,158,255,0.3)", borderRadius: 4, padding: "1px 4px", marginLeft: 4, verticalAlign: "middle", fontWeight: 700 }}>AI</span>
+        <span style={{ color: "var(--fd-logo-fin)" }}>Fin</span><span style={{ color: "var(--fd-logo-desh)" }}>Desh</span>
+        <span style={{ fontSize: size * 0.26, color: "var(--fd-logo-ai)", background: "var(--fd-logo-ai-bg)", border: "1px solid var(--fd-logo-ai-border)", borderRadius: 4, padding: "1px 4px", marginLeft: 4, verticalAlign: "middle", fontWeight: 700 }}>AI</span>
       </div>
     </div>
+  );
+}
+
+/* ---------- Theme toggle ----------
+   Dark is always the default. Light is opt-in and lasts for this browser
+   session only (sessionStorage "fd-theme"); index.html applies it before
+   first paint. Switching only flips data-theme on <html> — every colour is a
+   CSS variable — so nothing re-renders except this button. */
+function ThemeToggle() {
+  const [light, setLight] = useState(() => typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "light");
+  const flip = () => {
+    const next = !light;
+    document.documentElement.setAttribute("data-theme", next ? "light" : "dark");
+    try { if (next) sessionStorage.setItem("fd-theme", "light"); else sessionStorage.removeItem("fd-theme"); } catch (e) { /* storage blocked: this page only */ }
+    setLight(next);
+    try { (window.dataLayer = window.dataLayer || []).push({ event: "theme_toggle", value: next ? "light" : "dark" }); if (typeof window.gtag === "function") window.gtag("event", "theme_toggle", { value: next ? "light" : "dark" }); } catch (e) { /* no-op */ }
+  };
+  /* Printing always uses the light palette, then restores the screen theme. */
+  useEffect(() => {
+    const html = document.documentElement; let prev = null;
+    const before = () => { prev = html.getAttribute("data-theme"); html.setAttribute("data-theme", "light"); };
+    const after = () => { if (prev) html.setAttribute("data-theme", prev); };
+    window.addEventListener("beforeprint", before); window.addEventListener("afterprint", after);
+    return () => { window.removeEventListener("beforeprint", before); window.removeEventListener("afterprint", after); };
+  }, []);
+  return (
+    <button type="button" className="fd-theme-btn" onClick={flip} aria-pressed={light} aria-label={light ? "Switch to dark theme" : "Switch to light theme"} title={light ? "Dark theme" : "Light theme"}
+      style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 11, cursor: "pointer", border: `1px solid ${T.borderSoft}`, background: "var(--c-255-255-255-04)", color: "var(--c-c9d8f0)", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontFamily: "inherit" }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {light
+          ? <path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z" />
+          : <><circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" /></>}
+      </svg>
+    </button>
   );
 }
 
@@ -222,9 +267,9 @@ function Logo({ size = 30 }) {
 function Orbs() {
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-      <div style={{ position: "absolute", top: -180, left: "-12%", width: 520, height: 520, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,158,255,0.16), transparent 65%)", filter: "blur(50px)", animation: "fdOrbA 14s ease-in-out infinite" }} />
-      <div style={{ position: "absolute", top: 120, right: "-15%", width: 460, height: 460, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,214,143,0.10), transparent 65%)", filter: "blur(60px)", animation: "fdOrbB 18s ease-in-out infinite" }} />
-      <div style={{ position: "absolute", bottom: -220, left: "30%", width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, rgba(176,124,255,0.08), transparent 65%)", filter: "blur(70px)", animation: "fdOrbA 22s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", top: -180, left: "-12%", width: 520, height: 520, borderRadius: "50%", background: "radial-gradient(circle, var(--c-79-158-255-16), transparent 65%)", filter: "blur(50px)", animation: "fdOrbA 14s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", top: 120, right: "-15%", width: 460, height: 460, borderRadius: "50%", background: "radial-gradient(circle, var(--c-0-214-143-1), transparent 65%)", filter: "blur(60px)", animation: "fdOrbB 18s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", bottom: -220, left: "30%", width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, var(--c-176-124-255-08), transparent 65%)", filter: "blur(70px)", animation: "fdOrbA 22s ease-in-out infinite" }} />
     </div>
   );
 }
@@ -255,8 +300,8 @@ function Donut({ data, amount }) {
   return (
     <div style={{ display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <svg width="172" height="172" viewBox="0 0 160 160" style={{ filter: "drop-shadow(0 0 24px rgba(79,158,255,0.18))" }}>
-          <circle cx="80" cy="80" r={r} fill="none" stroke="rgba(148,180,255,0.07)" strokeWidth={stroke} />
+        <svg width="172" height="172" viewBox="0 0 160 160" style={{ filter: "drop-shadow(0 0 24px var(--c-79-158-255-18))" }}>
+          <circle cx="80" cy="80" r={r} fill="none" stroke="var(--c-148-180-255-07)" strokeWidth={stroke} />
           <g transform="rotate(-90 80 80)">
             {data.map((d, i) => {
               const dash = (d.pct / 100) * circ, off = (cum / 100) * circ; cum += d.pct;
@@ -264,15 +309,15 @@ function Donut({ data, amount }) {
             })}
           </g>
           <text x="80" y="73" textAnchor="middle" fontSize="10" fill={T.faint} fontWeight="700" letterSpacing="1.5">TOTAL</text>
-          <text x="80" y="93" textAnchor="middle" fontSize="16" fill="#fff" fontWeight="800">{fmt(amount)}</text>
+          <text x="80" y="93" textAnchor="middle" fontSize="16" fill="var(--c-fff)" fontWeight="800">{fmt(amount)}</text>
         </svg>
       </div>
       <div style={{ flex: 1, minWidth: 200 }}>
         {data.map((d, i) => (
           <div key={i} className={`fd-up fd-up-${Math.min(i, 3)}`} style={{ display: "flex", alignItems: "center", gap: 11, padding: "8px 0", borderBottom: i < data.length - 1 ? `1px solid ${T.borderSoft}` : "none" }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0, boxShadow: `0 0 10px ${d.color}55` }} />
-            <span style={{ fontSize: 13.5, color: "#C9D8F0", flex: 1, fontWeight: 500 }}>{d.cat}</span>
-            <span style={{ fontSize: 13.5, fontWeight: 800, color: "#fff" }}>{d.pct}%</span>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0, boxShadow: `0 0 10px ${alpha(d.color, "55")}` }} />
+            <span style={{ fontSize: 13.5, color: "var(--c-c9d8f0)", flex: 1, fontWeight: 500 }}>{d.cat}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 800, color: "var(--c-fff)" }}>{d.pct}%</span>
             <span style={{ fontSize: 12.5, color: T.muted, minWidth: 64, textAlign: "right", fontWeight: 600 }}>{fmt(amount * d.pct / 100)}</span>
           </div>
         ))}
@@ -283,15 +328,15 @@ function Donut({ data, amount }) {
 
 /* ---------- Small shared pieces ---------- */
 function Tag({ children, color = T.accent, bg = T.accentSoft }) {
-  return <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 20, background: bg, color, border: `1px solid ${color}33`, letterSpacing: ".01em" }}>{children}</span>;
+  return <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 20, background: bg, color, border: `1px solid ${alpha(color, "33")}`, letterSpacing: ".01em" }}>{children}</span>;
 }
 function MetaPill({ children }) {
-  return <span style={{ fontSize: 12, color: T.muted, fontWeight: 500, background: "rgba(148,180,255,0.06)", border: `1px solid ${T.borderSoft}`, borderRadius: 7, padding: "3px 9px" }}>{children}</span>;
+  return <span style={{ fontSize: 12, color: T.muted, fontWeight: 500, background: "var(--c-148-180-255-06)", border: `1px solid ${T.borderSoft}`, borderRadius: 7, padding: "3px 9px" }}>{children}</span>;
 }
 function UpdatedBadge() {
   return (
     <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-      <span style={{ fontSize: 11.5, fontWeight: 700, color: T.green, background: "rgba(0,214,143,0.08)", border: "1px solid rgba(0,214,143,0.3)", borderRadius: 20, padding: "5px 14px", letterSpacing: ".03em" }}>✓ Rates last updated: {LAST_UPDATED}</span>
+      <span style={{ fontSize: 11.5, fontWeight: 700, color: T.green, background: "var(--c-0-214-143-08)", border: "1px solid var(--c-0-214-143-3)", borderRadius: 20, padding: "5px 14px", letterSpacing: ".03em" }}>✓ Rates last updated: {LAST_UPDATED}</span>
     </div>
   );
 }
@@ -305,7 +350,7 @@ function TabDisclaimer() {
 function SectionHead({ title, hint }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#fff" }}>{title}</h3>
+      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--c-fff)" }}>{title}</h3>
       {hint && <span style={{ fontSize: 12.5, color: T.faint }}>{hint}</span>}
     </div>
   );
@@ -317,14 +362,14 @@ function SanchayapatraLimits() {
   return (
     <div className="fd-up" style={{ ...card, marginBottom: 24, padding: "22px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#fff" }}>🏛️ Sanchayapatra investment limits</h3>
-        <div style={{ display: "flex", background: "rgba(8,18,36,0.7)", border: `1px solid ${T.borderSoft}`, borderRadius: 10, padding: 3 }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--c-fff)" }}>🏛️ Sanchayapatra investment limits</h3>
+        <div style={{ display: "flex", background: "var(--c-8-18-36-7)", border: `1px solid ${T.borderSoft}`, borderRadius: 10, padding: 3 }}>
           {[["Individual", false], ["Joint", true]].map(([label, v]) => (
-            <button key={label} className="fd-tab" onClick={() => setJoint(v)} style={{ padding: "7px 16px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 700, fontFamily: "inherit", background: joint === v ? "linear-gradient(135deg, rgba(79,158,255,0.28), rgba(79,158,255,0.12))" : "transparent", color: joint === v ? "#fff" : T.muted, boxShadow: joint === v ? "inset 0 0 0 1px rgba(79,158,255,0.45)" : "none" }}>{label}</button>
+            <button key={label} className="fd-tab" onClick={() => setJoint(v)} style={{ padding: "7px 16px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12.5, fontWeight: 700, fontFamily: "inherit", background: joint === v ? "linear-gradient(135deg, var(--c-79-158-255-28), var(--c-79-158-255-12))" : "transparent", color: joint === v ? "var(--c-fff)" : T.muted, boxShadow: joint === v ? "inset 0 0 0 1px var(--c-79-158-255-45)" : "none" }}>{label}</button>
           ))}
         </div>
       </div>
-      <div style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "6px 10px" }}>
+      <div style={{ overflowX: "auto", background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "6px 10px" }}>
         <table className="fd-tbl">
           <thead><tr><th>Certificate</th><th>Minimum</th><th>{joint ? "Joint cap" : "Individual cap"}</th></tr></thead>
           <tbody>
@@ -334,7 +379,7 @@ function SanchayapatraLimits() {
                 <tr key={s.id}>
                   <td>{s.name} <span style={{ color: T.faint }}>· {s.bn}</span></td>
                   <td>{fmt(s.min)}</td>
-                  <td style={{ color: cap ? "#fff" : T.faint, fontWeight: 700 }}>{cap ? fmt(cap) : "Single-name only"}</td>
+                  <td style={{ color: cap ? "var(--c-fff)" : T.faint, fontWeight: 700 }}>{cap ? fmt(cap) : "Single-name only"}</td>
                 </tr>
               );
             })}
@@ -343,7 +388,7 @@ function SanchayapatraLimits() {
       </div>
       <div style={{ background: T.accentSoft, border: `1px solid ${T.accentBorder}`, borderRadius: 12, padding: "12px 14px", marginTop: 14 }}>
         <div style={{ fontSize: 10.5, fontWeight: 800, color: T.accent, letterSpacing: ".09em", marginBottom: 5 }}>COMBINED-PURCHASE RULE</div>
-        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#C9D8F0" }}>Buying more than one type? Your combined ceiling is the <b style={{ color: "#fff" }}>highest single limit</b> among the certificates you hold — not the sum. Example: 5-Year (৳30 Lakh) + Poribar (৳45 Lakh) together is capped at <b style={{ color: "#fff" }}>৳45 Lakh</b>, not ৳75 Lakh.</p>
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--c-c9d8f0)" }}>Buying more than one type? Your combined ceiling is the <b style={{ color: "var(--c-fff)" }}>highest single limit</b> among the certificates you hold — not the sum. Example: 5-Year (৳30 Lakh) + Poribar (৳45 Lakh) together is capped at <b style={{ color: "var(--c-fff)" }}>৳45 Lakh</b>, not ৳75 Lakh.</p>
       </div>
       <p style={{ margin: "10px 2px 0", fontSize: 11.5, color: T.faint, lineHeight: 1.6 }}>
         💡 Joint limits apply only to the 5-Year and 3-Monthly certificates; Poribar and Pensioner are single-name only. There is <b style={{ color: T.muted }}>no upper limit</b> for institutions, provident funds and approved superannuation/gratuity funds.
@@ -363,12 +408,12 @@ function InvestCard({ inst, amount, idx }) {
   const real = inst.noProjection ? null : (inst.rate - INFLATION).toFixed(1);
   return (
     <div className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} onClick={() => setOpen(o => !o)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 18, padding: "18px 20px", cursor: "pointer", backdropFilter: "blur(16px)", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: r.color, opacity: 0.85, boxShadow: `0 0 14px ${r.color}66` }} />
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: r.color, opacity: 0.85, boxShadow: `0 0 14px ${alpha(r.color, "66")}` }} />
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: r.bg, border: `1px solid ${r.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{inst.icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: 15.5, color: "#fff" }}>{inst.name}</span>
+            <span style={{ fontWeight: 700, fontSize: 15.5, color: "var(--c-fff)" }}>{inst.name}</span>
             <span style={{ fontSize: 12, color: T.faint }}>{inst.bn}</span>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
@@ -394,21 +439,21 @@ function InvestCard({ inst, amount, idx }) {
       </div>
       {open && (
         <div className="fd-up" style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSoft}` }}>
-          <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>{inst.blurb}</p>
+          <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.65, color: "var(--c-b8c7e0)" }}>{inst.blurb}</p>
           <div style={{ background: T.accentSoft, border: `1px solid ${T.accentBorder}`, borderRadius: 12, padding: "12px 14px", margin: "12px 0" }}>
             <div style={{ fontSize: 10.5, fontWeight: 800, color: T.accent, letterSpacing: ".09em", marginBottom: 5 }}>WHY THIS FITS YOU</div>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#C9D8F0" }}>{inst.why}</p>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--c-c9d8f0)" }}>{inst.why}</p>
           </div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 13 }}>
             {inst.tags.map(t => <Tag key={t} color={r.color} bg={r.bg}>{t}</Tag>)}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, fontSize: 12.5, color: T.muted }}>
-            <span>💵 Min: <b style={{ color: "#EAF1FC" }}>{fmt(inst.min)}</b></span>
+            <span>💵 Min: <b style={{ color: "var(--c-eaf1fc)" }}>{fmt(inst.min)}</b></span>
             {inst.noProjection
               ? <span>📉 Real return: <b style={{ color: T.amber }}>no promised rate</b> — depends on the year</span>
               : <span>📉 Real: <b style={{ color: real > 0 ? T.green : T.red }}>{real > 0 ? "+" : ""}{real}%</b> after inflation</span>}
-            {inst.max && <span>🔒 Max (individual): <b style={{ color: "#EAF1FC" }}>{fmt(inst.max)}</b></span>}
-            {inst.maxJoint && <span>👥 Max (joint): <b style={{ color: "#EAF1FC" }}>{fmt(inst.maxJoint)}</b></span>}
+            {inst.max && <span>🔒 Max (individual): <b style={{ color: "var(--c-eaf1fc)" }}>{fmt(inst.max)}</b></span>}
+            {inst.maxJoint && <span>👥 Max (joint): <b style={{ color: "var(--c-eaf1fc)" }}>{fmt(inst.maxJoint)}</b></span>}
             <span>🧾 {inst.taxNote}</span>
           </div>
           {inst.link && <a className="fd-link" href={inst.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-block", marginTop: 13, fontSize: 13, color: r.color, fontWeight: 700, textDecoration: "none" }}>Learn more →</a>}
@@ -427,12 +472,12 @@ function SavingsCard({ s, monthly, months, idx }) {
   const profit = fv - deposited;
   return (
     <div className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} onClick={() => setOpen(o => !o)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 18, padding: "18px 20px", cursor: "pointer", backdropFilter: "blur(16px)", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: T.accent, opacity: 0.85, boxShadow: `0 0 14px ${T.accent}66` }} />
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: T.accent, opacity: 0.85, boxShadow: `0 0 14px ${alpha(T.accent, "66")}` }} />
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{s.icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: 15.5, color: "#fff" }}>{s.name}</span>
+            <span style={{ fontWeight: 700, fontSize: 15.5, color: "var(--c-fff)" }}>{s.name}</span>
             <span style={{ fontSize: 12, color: T.faint }}>{s.bn}</span>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
@@ -447,28 +492,28 @@ function SavingsCard({ s, monthly, months, idx }) {
       </div>
       {open && (
         <div className="fd-up" style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSoft}` }}>
-          <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>{s.blurb}</p>
-          <div style={{ background: "rgba(8,18,36,0.6)", border: `1px solid ${T.border}`, borderRadius: 12, padding: "14px", margin: "12px 0" }}>
+          <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.65, color: "var(--c-b8c7e0)" }}>{s.blurb}</p>
+          <div style={{ background: "var(--c-8-18-36-6)", border: `1px solid ${T.border}`, borderRadius: 12, padding: "14px", margin: "12px 0" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 7 }}>
-              <span style={{ color: T.muted }}>You deposit</span><b style={{ color: "#EAF1FC" }}>{fmtFull(deposited)}</b>
+              <span style={{ color: T.muted }}>You deposit</span><b style={{ color: "var(--c-eaf1fc)" }}>{fmtFull(deposited)}</b>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 7 }}>
               <span style={{ color: T.muted }}>Profit earned</span><b style={{ color: T.green }}>+{fmtFull(profit)}</b>
             </div>
             <div style={{ height: 1, background: T.borderSoft, margin: "9px 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, alignItems: "baseline" }}>
-              <span style={{ fontWeight: 700, color: "#fff" }}>At maturity</span><b style={{ color: T.accent, fontSize: 16 }}>{fmtFull(fv)}</b>
+              <span style={{ fontWeight: 700, color: "var(--c-fff)" }}>At maturity</span><b style={{ color: T.accent, fontSize: 16 }}>{fmtFull(fv)}</b>
             </div>
           </div>
-          <div style={{ background: "rgba(255,180,84,0.08)", border: "1px solid rgba(255,180,84,0.25)", borderRadius: 12, padding: "10px 13px", marginBottom: 12 }}>
-            <span style={{ fontSize: 12.5, color: "#FFCE8A" }}>💡 {s.best}</span>
+          <div style={{ background: "var(--c-255-180-84-08)", border: "1px solid var(--c-255-180-84-25)", borderRadius: 12, padding: "10px 13px", marginBottom: 12 }}>
+            <span style={{ fontSize: 12.5, color: "var(--c-ffce8a)" }}>💡 {s.best}</span>
           </div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 11 }}>
             {s.tags.map(t => <Tag key={t}>{t}</Tag>)}
           </div>
           <div style={{ fontSize: 12.5, color: T.muted, lineHeight: 1.7 }}>
-            <div>🏦 Via: <b style={{ color: "#C9D8F0" }}>{s.partners}</b></div>
-            <div>📅 Terms: <b style={{ color: "#C9D8F0" }}>{s.terms}</b> · Min: <b style={{ color: "#C9D8F0" }}>{fmt(s.min)}/mo</b></div>
+            <div>🏦 Via: <b style={{ color: "var(--c-c9d8f0)" }}>{s.partners}</b></div>
+            <div>📅 Terms: <b style={{ color: "var(--c-c9d8f0)" }}>{s.terms}</b> · Min: <b style={{ color: "var(--c-c9d8f0)" }}>{fmt(s.min)}/mo</b></div>
           </div>
           {s.link && <a className="fd-link" href={s.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-block", marginTop: 13, fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: "none" }}>How to open →</a>}
         </div>
@@ -488,7 +533,7 @@ function StatStrip() {
     <div className="fd-up fd-up-2" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", margin: "26px 0 6px" }}>
       {stats.map((s, i) => (
         <div key={i} style={{ flex: "1 1 130px", maxWidth: 200, textAlign: "center", padding: "14px 10px", background: T.glassFlat, border: `1px solid ${T.borderSoft}`, borderRadius: 14, backdropFilter: "blur(12px)" }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>{s.v}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.02em" }}>{s.v}</div>
           <div style={{ fontSize: 11.5, color: T.muted, marginTop: 3, fontWeight: 500 }}>{s.l}</div>
         </div>
       ))}
@@ -600,8 +645,8 @@ function InvestPage({ seoHead, focus }) {
         <div style={{ display: "flex", gap: 10, marginBottom: 26 }}>
           {Object.entries(RISK).map(([k, c]) => (
             <button key={k} className="fd-risk" onClick={() => setRisk(k)} style={riskBtn(risk === k, c)}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: risk === k ? c.color : "#EAF1FC" }}>{c.label}</div>
-              <div style={{ fontSize: 11.5, color: risk === k ? c.color : T.muted, marginTop: 4, fontWeight: 500, opacity: risk === k ? 0.9 : 1 }}>{c.desc}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: risk === k ? c.color : "var(--c-eaf1fc)" }}>{c.label}</div>
+              <div style={{ fontSize: 11.5, color: risk === k ? c.color : T.muted, marginTop: 4, fontWeight: 500, opacity: risk === k ? "var(--fd-dim-9)" : 1 }}>{c.desc}</div>
             </button>
           ))}
         </div>
@@ -612,7 +657,7 @@ function InvestPage({ seoHead, focus }) {
       {submitted && (
         <div ref={ref} style={{ marginTop: 30 }}>
           <div className="fd-up" style={{ ...card, marginBottom: 24 }}>
-            <h3 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>Suggested allocation</h3>
+            <h3 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 800, color: "var(--c-fff)", letterSpacing: "-0.01em" }}>Suggested allocation</h3>
             <Donut data={ALLOCATION[risk]} amount={num} />
           </div>
 
@@ -624,10 +669,10 @@ function InvestPage({ seoHead, focus }) {
                the `submitted` block, so the page shows no sell until a plan
                exists. Same ৳100 product and event as the Blueprint page, with
                from:"invest" so conversions attribute per page. */}
-          <div className="fd-up" style={{ marginBottom: 24, background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(8,18,36,0.92))", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-            <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📘 The Bangladesh Money Playbook · ৳100</div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>You know <span style={gradText}>where</span> to invest. Now build the system around it.</h3>
-            <p style={{ margin: "0 auto 16px", fontSize: 13.5, color: "#B8C7E0", lineHeight: 1.7, maxWidth: 440 }}>
+          <div className="fd-up" style={{ marginBottom: 24, background: "linear-gradient(135deg, var(--c-74-222-128-12), var(--c-8-18-36-92))", border: "1px solid var(--c-74-222-128-3)", borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+            <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "var(--c-74-222-128-1)", border: "1px solid var(--c-74-222-128-32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📘 The Bangladesh Money Playbook · ৳100</div>
+            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.01em" }}>You know <span style={gradText}>where</span> to invest. Now build the system around it.</h3>
+            <p style={{ margin: "0 auto 16px", fontSize: 13.5, color: "var(--c-b8c7e0)", lineHeight: 1.7, maxWidth: 440 }}>
               A plan only works if the money reaches it every month. The 14-page playbook covers the spending split that survives a Bangladeshi salary, how to automate the transfers so investing happens without you, and the order to fill each account in.
             </p>
             <button className="fd-cta" onClick={() => { taxTrack("guide_checkout_clicked", { guide: "playbook", price: GUIDE_PRICE, currency: "BDT", from: "invest" }); window.open(GUIDE_CHECKOUT_URL, "_blank", "noopener,noreferrer"); }}
@@ -710,9 +755,9 @@ function SavingsPage({ seoHead, focus }) {
       <UpdatedBadge />
 
       <div className="fd-up fd-up-3" style={card}>
-        <div style={{ display: "flex", background: "rgba(8,18,36,0.7)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: 4, marginBottom: 24 }}>
+        <div style={{ display: "flex", background: "var(--c-8-18-36-7)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: 4, marginBottom: 24 }}>
           {[["monthly", "I can save monthly"], ["goal", "I have a goal"]].map(([k, label]) => (
-            <button key={k} className="fd-tab" onClick={() => { setMode(k); setSubmitted(false); }} style={{ flex: 1, padding: "11px", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13.5, fontWeight: 700, fontFamily: "inherit", background: mode === k ? "linear-gradient(135deg, rgba(79,158,255,0.25), rgba(79,158,255,0.12))" : "transparent", color: mode === k ? "#fff" : T.muted, boxShadow: mode === k ? "inset 0 0 0 1px rgba(79,158,255,0.4)" : "none" }}>{label}</button>
+            <button key={k} className="fd-tab" onClick={() => { setMode(k); setSubmitted(false); }} style={{ flex: 1, padding: "11px", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13.5, fontWeight: 700, fontFamily: "inherit", background: mode === k ? "linear-gradient(135deg, var(--c-79-158-255-25), var(--c-79-158-255-12))" : "transparent", color: mode === k ? "var(--c-fff)" : T.muted, boxShadow: mode === k ? "inset 0 0 0 1px var(--c-79-158-255-4)" : "none" }}>{label}</button>
           ))}
         </div>
 
@@ -763,9 +808,9 @@ function SavingsPage({ seoHead, focus }) {
       {submitted && (
         <div ref={ref} style={{ marginTop: 30 }}>
           {mode === "goal" && (
-            <div className="fd-up" style={{ background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "26px 22px", marginBottom: 24, textAlign: "center", backdropFilter: "blur(16px)", boxShadow: "0 0 60px rgba(79,158,255,0.12)" }}>
+            <div className="fd-up" style={{ background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "26px 22px", marginBottom: 24, textAlign: "center", backdropFilter: "blur(16px)", boxShadow: "0 0 60px var(--c-79-158-255-12)" }}>
               <div style={{ fontSize: 12, color: T.accent, fontWeight: 800, letterSpacing: ".08em", marginBottom: 10 }}>TO REACH {fmt(goalNum)} IN {years} YEAR{years > 1 ? "S" : ""}</div>
-              <div style={{ fontSize: 34, fontWeight: 900, color: "#fff", marginBottom: 5, letterSpacing: "-0.02em" }}>
+              <div style={{ fontSize: 34, fontWeight: 900, color: "var(--c-fff)", marginBottom: 5, letterSpacing: "-0.02em" }}>
                 <Counter value={requiredMonthly} /><span style={{ fontSize: 16, color: T.muted, fontWeight: 600 }}>/month</span>
               </div>
               <div style={{ fontSize: 13, color: T.muted }}>at a blended ~9.5% rate. Pick a plan below to lock it in.</div>
@@ -782,7 +827,7 @@ function SavingsPage({ seoHead, focus }) {
           <MutualFundUpsell monthly={effectiveMonthly} years={years} islamicOnly={islamicOnly} />
 
           <div className="fd-up" style={{ marginTop: 24, background: T.glass, borderRadius: 20, padding: "24px 20px", textAlign: "center", border: `1px solid ${T.border}`, backdropFilter: "blur(16px)" }}>
-            <h3 style={{ margin: "0 0 7px", fontSize: 16, fontWeight: 800, color: "#fff" }}>Got a lump sum sitting idle too?</h3>
+            <h3 style={{ margin: "0 0 7px", fontSize: 16, fontWeight: 800, color: "var(--c-fff)" }}>Got a lump sum sitting idle too?</h3>
             <p style={{ margin: "0 0 15px", fontSize: 13.5, color: T.muted }}>Saving monthly is step one. If you also have a lump sum, the Invest tool shows where to put it.</p>
             <span style={{ fontSize: 13.5, color: T.accent, fontWeight: 700 }}>→ Switch to the Invest tab above</span>
           </div>
@@ -804,9 +849,9 @@ function SavingsPage({ seoHead, focus }) {
 /* ============================================================
    BORROW PAGE — Part A: live EMI calculator · Part B: comparison
    ============================================================ */
-function StatBox({ label, value, color = "#fff", big = false }) {
+function StatBox({ label, value, color = "var(--c-fff)", big = false }) {
   return (
-    <div style={{ flex: "1 1 120px", background: "rgba(8,18,36,0.6)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "13px 12px", textAlign: "center" }}>
+    <div style={{ flex: "1 1 120px", background: "var(--c-8-18-36-6)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "13px 12px", textAlign: "center" }}>
       <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
       <div style={{ fontSize: big ? 24 : 16, fontWeight: 900, color, letterSpacing: "-0.02em" }}>{value}</div>
     </div>
@@ -961,9 +1006,9 @@ function EMICalculator() {
 
       {P > 0 && R > 0 && (
         <div className="fd-up">
-          <div style={{ background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 18, padding: "22px 20px", textAlign: "center", marginBottom: 14 }}>
+          <div style={{ background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 18, padding: "22px 20px", textAlign: "center", marginBottom: 14 }}>
             <div style={{ fontSize: 11, color: T.accent, fontWeight: 800, letterSpacing: ".09em", marginBottom: 8 }}>YOUR MONTHLY EMI</div>
-            <div style={{ fontSize: 38, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>
+            <div style={{ fontSize: 38, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.02em" }}>
               <Counter value={emiV} /><span style={{ fontSize: 16, color: T.muted, fontWeight: 600 }}>/month</span>
             </div>
           </div>
@@ -979,20 +1024,20 @@ function EMICalculator() {
             <span><span style={{ color: T.amber }}>■</span> Interest {fmt(totalInterest)}</span>
           </div>
           <div style={{ display: "flex", height: 14, borderRadius: 8, overflow: "hidden", border: `1px solid ${T.borderSoft}`, marginBottom: 18 }}>
-            <div style={{ width: `${principalShare}%`, background: "linear-gradient(90deg,#2563EB,#4F9EFF)", transition: "width .5s ease" }} />
-            <div style={{ width: `${100 - principalShare}%`, background: "linear-gradient(90deg,#B07C2E,#FFB454)", transition: "width .5s ease" }} />
+            <div style={{ width: `${principalShare}%`, background: "linear-gradient(90deg,var(--c-2563eb),var(--c-4f9eff))", transition: "width .5s ease" }} />
+            <div style={{ width: `${100 - principalShare}%`, background: "linear-gradient(90deg,var(--c-b07c2e),var(--c-ffb454))", transition: "width .5s ease" }} />
           </div>
 
           <button className="fd-chip" onClick={() => setShowTable(s => !s)} style={{ ...chip(showTable), width: "100%", marginBottom: showTable ? 12 : 18, padding: "11px" }}>
             {showTable ? "Hide" : "Show"} year-by-year breakdown {showTable ? "▲" : "▼"}
           </button>
           {showTable && (
-            <div className="fd-up" style={{ overflowX: "auto", marginBottom: 18, background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "6px 10px" }}>
+            <div className="fd-up" style={{ overflowX: "auto", marginBottom: 18, background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 13, padding: "6px 10px" }}>
               <table className="fd-tbl">
                 <thead><tr><th>Year</th><th>Principal paid</th><th>Interest paid</th><th>Balance left</th></tr></thead>
                 <tbody>
                   {schedule.map(rw => (
-                    <tr key={rw.y}><td>Year {rw.y}</td><td>{fmtFull(rw.pPaid)}</td><td style={{ color: "#FFCE8A" }}>{fmtFull(rw.iPaid)}</td><td>{fmtFull(rw.bal)}</td></tr>
+                    <tr key={rw.y}><td>Year {rw.y}</td><td>{fmtFull(rw.pPaid)}</td><td style={{ color: "var(--c-ffce8a)" }}>{fmtFull(rw.iPaid)}</td><td>{fmtFull(rw.bal)}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -1004,13 +1049,13 @@ function EMICalculator() {
           </button>
           <p style={{ margin: "0 0 16px", fontSize: 11.5, color: T.faint }}>EMI, total interest and the full year-by-year repayment schedule — useful to compare against what a bank quotes you.</p>
 
-          <button className="fd-cta" onClick={askAI} disabled={aiLoading} style={{ ...cta, background: "linear-gradient(135deg,#7C3AED,#4F9EFF)", opacity: aiLoading ? 0.7 : 1 }}>
+          <button className="fd-cta" onClick={askAI} disabled={aiLoading} style={{ ...cta, background: "linear-gradient(135deg,var(--c-7c3aed),var(--c-4f9eff))", opacity: aiLoading ? 0.7 : 1 }}>
             {aiLoading ? <>Thinking <span className="fd-spin" /></> : "🤖 Is this loan worth it? — Ask FinDesh AI"}
           </button>
           {ai && (
-            <div className="fd-up" style={{ marginTop: 14, background: "rgba(124,58,237,0.10)", border: "1px solid rgba(124,58,237,0.35)", borderRadius: 14, padding: "14px 16px" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: "#B89AFF", letterSpacing: ".09em", marginBottom: 6 }}>FINDESH AI INSIGHT</div>
-              <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "#D8CCF5", whiteSpace: "pre-wrap" }}>{ai}</p>
+            <div className="fd-up" style={{ marginTop: 14, background: "var(--c-124-58-237-1)", border: "1px solid var(--c-124-58-237-35)", borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--c-b89aff)", letterSpacing: ".09em", marginBottom: 6 }}>FINDESH AI INSIGHT</div>
+              <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "var(--c-d8ccf5)", whiteSpace: "pre-wrap" }}>{ai}</p>
             </div>
           )}
         </div>
@@ -1030,8 +1075,8 @@ function LenderCard({ l, type, idx }) {
         <div style={{ width: 46, height: 46, borderRadius: 13, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{l.icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 700, fontSize: 15.5, color: "#fff" }}>{l.name}</span>
-            {l.islamic && <Tag color={T.green} bg="rgba(0,214,143,0.10)">☪ Shariah</Tag>}
+            <span style={{ fontWeight: 700, fontSize: 15.5, color: "var(--c-fff)" }}>{l.name}</span>
+            {l.islamic && <Tag color={T.green} bg="var(--c-0-214-143-1)">☪ Shariah</Tag>}
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
             <span style={{ fontSize: 14, fontWeight: 800, color: l.islamic ? T.green : T.accent }}>{prod.label}</span>
@@ -1040,15 +1085,15 @@ function LenderCard({ l, type, idx }) {
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase" }}>max</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#C9D8F0" }}>{prod.max || "—"}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-c9d8f0)" }}>{prod.max || "—"}</div>
         </div>
       </div>
       {open && (
         <div className="fd-up" style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSoft}` }}>
-          <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>{l.note}</p>
+          <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.65, color: "var(--c-b8c7e0)" }}>{l.note}</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, fontSize: 12.5, color: T.muted, marginBottom: 12 }}>
-            <span>🧾 Fees: <b style={{ color: "#C9D8F0" }}>{l.fee}</b></span>
-            <span>✅ Eligibility: <b style={{ color: "#C9D8F0" }}>{l.elig}</b></span>
+            <span>🧾 Fees: <b style={{ color: "var(--c-c9d8f0)" }}>{l.fee}</b></span>
+            <span>✅ Eligibility: <b style={{ color: "var(--c-c9d8f0)" }}>{l.elig}</b></span>
             <span>📋 Rate band shown is indicative ({LAST_UPDATED}) — your offer depends on income, employer & credit history. Always get a formal rate letter.</span>
           </div>
           {l.link && <a className="fd-link" href={l.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-block", fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: "none" }}>Visit bank / apply →</a>}
@@ -1107,7 +1152,7 @@ function BorrowPage({ initialType }) {
    ============================================================ */
 function Callout({ icon = "💡", children, color = T.accent }) {
   return (
-    <div style={{ background: `${color}14`, border: `1px solid ${color}40`, borderRadius: 13, padding: "12px 15px", margin: "12px 0", fontSize: 13.5, lineHeight: 1.65, color: "#D6E2F5" }}>
+    <div style={{ background: alpha(color, "14"), border: `1px solid ${alpha(color, "40")}`, borderRadius: 13, padding: "12px 15px", margin: "12px 0", fontSize: 13.5, lineHeight: 1.65, color: "var(--c-d6e2f5)" }}>
       <span style={{ marginRight: 7 }}>{icon}</span>{children}
     </div>
   );
@@ -1116,7 +1161,7 @@ function GuideHead({ kicker, title }) {
   return (
     <div style={{ margin: "44px 0 20px" }}>
       <div style={{ fontSize: 11.5, fontWeight: 800, color: T.accent, letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 6 }}>{kicker}</div>
-      <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>{title}</h2>
+      <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.02em" }}>{title}</h2>
     </div>
   );
 }
@@ -1152,10 +1197,10 @@ function SalarySplitCalc() {
   const [sal, setSal] = useState("");
   const n = Number(String(sal).replace(/[^0-9]/g, ""));
   const rows = [
-    { label: "Fixed costs", hint: "rent, utilities, transport, groceries", pct: 55, color: "#4F9EFF" },
-    { label: "Savings + investments", hint: "DPS, Sanchayapatra, funds", pct: 20, color: "#00D68F" },
-    { label: "Guilt-free spending", hint: "eating out, gadgets, fun — no shame", pct: 20, color: "#B07CFF" },
-    { label: "Emergency top-up", hint: "until your fund hits 6 months", pct: 5, color: "#FFB454" },
+    { label: "Fixed costs", hint: "rent, utilities, transport, groceries", pct: 55, color: "var(--c-4f9eff)" },
+    { label: "Savings + investments", hint: "DPS, Sanchayapatra, funds", pct: 20, color: "var(--c-00d68f)" },
+    { label: "Guilt-free spending", hint: "eating out, gadgets, fun — no shame", pct: 20, color: "var(--c-b07cff)" },
+    { label: "Emergency top-up", hint: "until your fund hits 6 months", pct: 5, color: "var(--c-ffb454)" },
   ];
   return (
     <div style={{ ...card, padding: "22px 20px", margin: "18px 0" }}>
@@ -1173,8 +1218,8 @@ function SalarySplitCalc() {
           {rows.map(r => (
             <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 11, padding: "8px 0", borderBottom: `1px solid ${T.borderSoft}` }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: r.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 13.5, color: "#C9D8F0", flex: 1 }}>{r.label} <span style={{ color: T.faint, fontSize: 11.5 }}>· {r.hint}</span></span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{r.pct}%</span>
+              <span style={{ fontSize: 13.5, color: "var(--c-c9d8f0)", flex: 1 }}>{r.label} <span style={{ color: T.faint, fontSize: 11.5 }}>· {r.hint}</span></span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-fff)" }}>{r.pct}%</span>
               <span style={{ fontSize: 13, color: r.color, minWidth: 78, textAlign: "right", fontWeight: 700 }}>{fmtFull(n * r.pct / 100)}</span>
             </div>
           ))}
@@ -1197,9 +1242,9 @@ function InflationCheck() {
       <label style={lbl}>Your current return (% / year)</label>
       <input className="fd-input" value={r} onChange={e => setR(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="e.g. 5 for a savings account" style={{ ...bigInput, fontSize: 20, padding: "14px 16px" }} />
       {r !== "" && (
-        <div className="fd-up" style={{ marginTop: 14, background: pass ? "rgba(0,214,143,0.10)" : "rgba(255,107,107,0.10)", border: `1px solid ${pass ? "rgba(0,214,143,0.4)" : "rgba(255,107,107,0.4)"}`, borderRadius: 14, padding: "16px", textAlign: "center" }}>
+        <div className="fd-up" style={{ marginTop: 14, background: pass ? "var(--c-0-214-143-1)" : "var(--c-255-107-107-1)", border: `1px solid ${pass ? "var(--c-0-214-143-4)" : "var(--c-255-107-107-4)"}`, borderRadius: 14, padding: "16px", textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: pass ? T.green : T.red, letterSpacing: "-0.02em" }}>{pass ? "✓ PASS" : "✗ FAIL"} · {real > 0 ? "+" : ""}{real.toFixed(1)}% real return</div>
-          <p style={{ margin: "8px 0 0", fontSize: 13, color: "#C9D8F0", lineHeight: 1.6 }}>
+          <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--c-c9d8f0)", lineHeight: 1.6 }}>
             {pass
               ? `After ~${INFLATION}% inflation your money is genuinely growing. Keep going — and check the Invest tab to push it further.`
               : `After ~${INFLATION}% inflation your money is losing purchasing power every single month. ${n <= 5 ? "A typical savings account does exactly this — " : ""}Move it: even a 3-month Sanchayapatra pays ~11.8%.`}
@@ -1218,7 +1263,7 @@ function InflationCheck() {
    in view-source, which let anyone skip paying). Fixed price ৳100. */
 const GUIDE_CHECKOUT_URL = "https://www.supportkori.com/findeshai/extras/the-bangladesh-money-playbook-build-your-rich-life-on-any-salary-fbxn";
 const GUIDE_PRICE = 100;
-const GUIDE_GREEN = "#4ADE80";
+const GUIDE_GREEN = "var(--c-4ade80)";
 
 const FIRST_JOB_CHECKOUT_URL = "https://www.supportkori.com/findeshai/extras/the-first-job-money-guide-8wzu";
 
@@ -1310,9 +1355,9 @@ function GuideOffer({ initialGuide }) {
                    ellipsis is a graceful fallback instead of text bleeding out. */
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 textAlign: "center", touchAction: "manipulation",
-                border: `1px solid ${on ? "rgba(79,158,255,0.6)" : T.border}`,
-                background: on ? "rgba(79,158,255,0.16)" : "rgba(255,255,255,0.025)",
-                color: on ? "#8AC2FF" : T.muted,
+                border: `1px solid ${on ? "var(--c-79-158-255-6)" : T.border}`,
+                background: on ? "var(--c-79-158-255-16)" : "var(--c-255-255-255-025)",
+                color: on ? "var(--c-8ac2ff)" : T.muted,
               }}>
               {g.tabLabel}
             </button>
@@ -1334,24 +1379,24 @@ function GuideOffer({ initialGuide }) {
               className={on ? "fd-up" : undefined}
               style={{ gridArea: "1 / 1", visibility: on ? "visible" : "hidden", pointerEvents: on ? "auto" : "none" }}>
 
-              <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>{g.badge}</div>
-              <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.12 }}>{g.headLead}<span style={gradText}>{g.headAccent}</span>{g.headTail}</h2>
-              <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>{g.intro}</p>
+              <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: GUIDE_GREEN, background: "var(--c-74-222-128-1)", border: "1px solid var(--c-74-222-128-32)", borderRadius: 20, padding: "5px 14px", marginBottom: 14, letterSpacing: ".02em" }}>{g.badge}</div>
+              <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.02em", lineHeight: 1.12 }}>{g.headLead}<span style={gradText}>{g.headAccent}</span>{g.headTail}</h2>
+              <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.7, color: "var(--c-b8c7e0)" }}>{g.intro}</p>
 
               {/* What's inside */}
               <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22 }}>
                 {g.includes.map(item => (
                   <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span style={{ color: GUIDE_GREEN, fontSize: 14, fontWeight: 900, lineHeight: 1.5, flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: 13.5, color: "#D6E2F5", lineHeight: 1.55 }}>{item}</span>
+                    <span style={{ fontSize: 13.5, color: "var(--c-d6e2f5)", lineHeight: 1.55 }}>{item}</span>
                   </div>
                 ))}
               </div>
 
               {/* Price + CTA */}
-              <div style={{ background: "rgba(79,158,255,0.06)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 18px 16px" }}>
+              <div style={{ background: "var(--c-79-158-255-06)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 18px 16px" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 10, marginBottom: 4 }}>
-                  <span style={{ fontSize: 42, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>৳{g.price}</span>
+                  <span style={{ fontSize: 42, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.03em", lineHeight: 1 }}>৳{g.price}</span>
                   <span style={{ fontSize: 13.5, color: T.muted, fontWeight: 600 }}>one-time</span>
                 </div>
                 <p style={{ margin: "0 0 16px", fontSize: 12.5, color: T.faint, textAlign: "center" }}>{g.priceCaption}</p>
@@ -1460,11 +1505,11 @@ function DreamJobPage() {
 
       {/* ---- Hook / agitate ---- */}
       <div className="fd-up fd-up-3" style={{ ...card, padding: "26px 22px" }}>
-        <p style={{ margin: "0 0 14px", fontSize: 15, lineHeight: 1.75, color: "#C9D8F0" }}>
+        <p style={{ margin: "0 0 14px", fontSize: 15, lineHeight: 1.75, color: "var(--c-c9d8f0)" }}>
           You've been at the same desk for three years. The increment came through at the usual few percent, roughly matching inflation, and you said thank you. Someone who joined after you is now on more, and you found out by accident. You've thought about leaving, opened bdjobs at midnight, and closed it again — because you don't actually know what you're worth, and asking feels like something people here don't do.
         </p>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.75, color: "#C9D8F0" }}>
-          None of that is a character flaw. It's what happens when <b style={{ color: "#fff" }}>pay is set once at hiring</b>, salary is a private subject, and most hiring runs through people who already know each other. The system isn't built to tell you your market rate. So you have to go and find it.
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.75, color: "var(--c-c9d8f0)" }}>
+          None of that is a character flaw. It's what happens when <b style={{ color: "var(--c-fff)" }}>pay is set once at hiring</b>, salary is a private subject, and most hiring runs through people who already know each other. The system isn't built to tell you your market rate. So you have to go and find it.
         </p>
       </div>
 
@@ -1473,7 +1518,7 @@ function DreamJobPage() {
         {CAREER_STATS.map(s => (
           <div key={s.l} className="fd-up" style={{ ...card, padding: "14px 15px", margin: 0, flex: "1 1 150px", minWidth: 0 }}>
             <div style={{ ...gradText, fontSize: 21, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.15 }}>{s.n}</div>
-            <div style={{ fontSize: 12, color: "#C9D8F0", fontWeight: 600, marginTop: 4, lineHeight: 1.4 }}>{s.l}</div>
+            <div style={{ fontSize: 12, color: "var(--c-c9d8f0)", fontWeight: 600, marginTop: 4, lineHeight: 1.4 }}>{s.l}</div>
             <div style={{ fontSize: 10, color: T.faint, marginTop: 3 }}>{s.s}</div>
           </div>
         ))}
@@ -1484,14 +1529,14 @@ function DreamJobPage() {
 
       {/* ---- Self-check ---- */}
       <div className="fd-up" style={{ ...card, padding: "24px 20px", marginBottom: 16 }}>
-        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>Where are you stuck?</h2>
+        <h2 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.01em" }}>Where are you stuck?</h2>
         <p style={{ margin: "0 0 16px", fontSize: 13, color: T.muted }}>Tick what's true. Nothing is stored or sent anywhere.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {CHECKS.map((c, i) => {
             const on = checked.includes(i);
             return (
               <button key={c} onClick={() => toggle(i)} className="fd-chip"
-                style={{ display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left", padding: "11px 13px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, border: `1px solid ${on ? "rgba(79,158,255,0.5)" : T.borderSoft}`, background: on ? T.accentSoft : "rgba(255,255,255,0.025)", color: on ? "#EAF1FC" : "#8A9BB8", touchAction: "manipulation" }}>
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left", padding: "11px 13px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit", fontSize: 13.5, fontWeight: 500, lineHeight: 1.5, border: `1px solid ${on ? "var(--c-79-158-255-5)" : T.borderSoft}`, background: on ? T.accentSoft : "var(--c-255-255-255-025)", color: on ? "var(--c-eaf1fc)" : "var(--c-8a9bb8)", touchAction: "manipulation" }}>
                 <span style={{ flexShrink: 0, color: on ? T.accent : T.faint, fontWeight: 900 }}>{on ? "✓" : "○"}</span>
                 <span>{c}</span>
               </button>
@@ -1499,8 +1544,8 @@ function DreamJobPage() {
           })}
         </div>
         {checked.length > 0 && (
-          <div className="fd-up" style={{ marginTop: 14, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.28)", borderRadius: 12, padding: "13px 15px" }}>
-            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "#D6E2F5" }}>
+          <div className="fd-up" style={{ marginTop: 14, background: "var(--c-74-222-128-08)", border: "1px solid var(--c-74-222-128-28)", borderRadius: 12, padding: "13px 15px" }}>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "var(--c-d6e2f5)" }}>
               {checked.length >= 4
                 ? <>You ticked <b style={{ color: GUIDE_GREEN }}>{checked.length} of 6</b> — which is completely normal, and it means there's a lot of room here. Every one of those maps to a step below. Start with step 1: you can't fix any of the others until you know your number.</>
                 : <>You ticked <b style={{ color: GUIDE_GREEN }}>{checked.length} of 6</b>. Work through the matching steps below — the ones you didn't tick, skip.</>}
@@ -1510,12 +1555,12 @@ function DreamJobPage() {
       </div>
 
       {/* ---- The "after" ---- */}
-      <div className="fd-up" style={{ background: "linear-gradient(135deg, rgba(79,158,255,0.14), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", marginBottom: 20 }}>
+      <div className="fd-up" style={{ background: "linear-gradient(135deg, var(--c-79-158-255-14), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 10 }}>What changes</div>
-        <p style={{ margin: "0 0 12px", fontSize: 15, lineHeight: 1.75, color: "#EAF1FC" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 15, lineHeight: 1.75, color: "var(--c-eaf1fc)" }}>
           Six months from now, you know your market band to within a few thousand taka. When a recruiter asks your expectation, you give a range without your stomach dropping. You have three people outside your company who'd take your call. And when the offer comes, you ask for more — once, politely, with evidence — and it isn't a scene.
         </p>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.75, color: "#C9D8F0" }}>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.75, color: "var(--c-c9d8f0)" }}>
           The raise, whenever it lands, already has somewhere to go. That's the difference between earning more and simply spending more.
         </p>
       </div>
@@ -1530,11 +1575,11 @@ function DreamJobPage() {
               <span style={{ fontSize: 11, fontWeight: 900, color: T.accent, letterSpacing: ".1em" }}>STEP {s.n}</span>
               <span style={{ fontSize: 17 }}>{s.icon}</span>
             </div>
-            <h3 style={{ margin: "0 0 9px", fontSize: 17, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em", lineHeight: 1.25 }}>{s.t}</h3>
-            <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.72, color: "#B8C7E0" }}>{s.b}</p>
-            <div style={{ background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 10, padding: "10px 12px" }}>
+            <h3 style={{ margin: "0 0 9px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.01em", lineHeight: 1.25 }}>{s.t}</h3>
+            <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.72, color: "var(--c-b8c7e0)" }}>{s.b}</p>
+            <div style={{ background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 10, padding: "10px 12px" }}>
               <span style={{ fontSize: 10.5, fontWeight: 800, color: T.faint, letterSpacing: ".07em", textTransform: "uppercase" }}>You end up with</span>
-              <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.55, color: "#C9D8F0" }}>{s.out}</p>
+              <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.55, color: "var(--c-c9d8f0)" }}>{s.out}</p>
             </div>
           </div>
         ))}
@@ -1542,14 +1587,14 @@ function DreamJobPage() {
 
       {/* ---- Bridge to the tools ---- */}
       <div className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "#fff" }}>Now put a number on it</h3>
-        <p style={{ margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-fff)" }}>Now put a number on it</h3>
+        <p style={{ margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.7, color: "var(--c-b8c7e0)" }}>
           Say step 1 tells you you're ৳10,000/month below market. That gap isn't ৳10,000 — it's ৳1,20,000 a year, and considerably more once it compounds in a DPS or Sanchayapatra. Run it through the planners and see what the raise you haven't asked for yet would actually become.
         </p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[["Save planner", "/save"], ["Invest planner", "/invest"], ["Income tax calculator", "/income-tax"]].map(([label, path]) => (
             <button key={path} className="fd-chip" onClick={() => nav(path)}
-              style={{ padding: "9px 15px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF", cursor: "pointer", fontFamily: "inherit", touchAction: "manipulation" }}>
+              style={{ padding: "9px 15px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)", cursor: "pointer", fontFamily: "inherit", touchAction: "manipulation" }}>
               {label} →
             </button>
           ))}
@@ -1559,10 +1604,10 @@ function DreamJobPage() {
       <FAQ items={CAREER_FAQ.map(f => ({ q: f.q, a: f.a }))} />
 
       {/* ---- CTA: the one thing FinDesh can actually deliver today ---- */}
-      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(8,18,36,0.92))", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 20, padding: "26px 22px", textAlign: "center" }}>
-        <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "rgba(74,222,128,0.10)", border: "1px solid rgba(74,222,128,0.32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📗 The First Job Money Guide · ৳100</div>
-        <h3 style={{ margin: "0 0 10px", fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>Got the offer? Don't sign it blind.</h3>
-        <p style={{ margin: "0 auto 16px", fontSize: 14, color: "#B8C7E0", lineHeight: 1.7, maxWidth: 460 }}>
+      <div className="fd-up" style={{ marginTop: 26, background: "linear-gradient(135deg, var(--c-74-222-128-12), var(--c-8-18-36-92))", border: "1px solid var(--c-74-222-128-3)", borderRadius: 20, padding: "26px 22px", textAlign: "center" }}>
+        <div style={{ display: "inline-block", fontSize: 11.5, fontWeight: 800, color: GUIDE_GREEN, background: "var(--c-74-222-128-1)", border: "1px solid var(--c-74-222-128-32)", borderRadius: 20, padding: "5px 14px", marginBottom: 12 }}>📗 The First Job Money Guide · ৳100</div>
+        <h3 style={{ margin: "0 0 10px", fontSize: 19, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.01em" }}>Got the offer? Don't sign it blind.</h3>
+        <p style={{ margin: "0 auto 16px", fontSize: 14, color: "var(--c-b8c7e0)", lineHeight: 1.7, maxWidth: 460 }}>
           The guide covers the part this page stops at: how to negotiate the offer itself, and how to read the PF, gratuity and basic-versus-gross terms in a Bangladeshi offer letter — the clauses that quietly decide what you actually take home.
         </p>
         <button className="fd-cta" onClick={() => { taxTrack("guide_checkout_clicked", { guide: "first-job", price: 100, currency: "BDT", from: "dream-job" }); window.open(FIRST_JOB_CHECKOUT_URL, "_blank", "noopener,noreferrer"); }}
@@ -1624,7 +1669,7 @@ function ContactPage() {
           <div style={{ fontSize: 11, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 10 }}>Email us</div>
 
           <a href={CONTACT_MAILTO} onClick={() => taxTrack("contact_email_clicked")}
-            style={{ display: "inline-block", fontSize: "clamp(17px,4.4vw,22px)", fontWeight: 800, color: "#fff", textDecoration: "none", letterSpacing: "-0.01em", wordBreak: "break-word", marginBottom: 6 }}>
+            style={{ display: "inline-block", fontSize: "clamp(17px,4.4vw,22px)", fontWeight: 800, color: "var(--c-fff)", textDecoration: "none", letterSpacing: "-0.01em", wordBreak: "break-word", marginBottom: 6 }}>
             {CONTACT_EMAIL}
           </a>
           <p style={{ margin: "0 0 20px", fontSize: 12.5, color: T.faint }}>We usually reply within 1–2 working days.</p>
@@ -1635,7 +1680,7 @@ function ContactPage() {
           </a>
 
           <button className="fd-chip" onClick={copyEmail}
-            style={{ width: "100%", padding: "11px", fontSize: 13, fontWeight: 600, borderRadius: 12, border: `1px solid ${T.border}`, background: "rgba(255,255,255,0.04)", color: copied ? T.green : "#C9D8F0", cursor: "pointer", touchAction: "manipulation" }}>
+            style={{ width: "100%", padding: "11px", fontSize: 13, fontWeight: 600, borderRadius: 12, border: `1px solid ${T.border}`, background: "var(--c-255-255-255-04)", color: copied ? T.green : "var(--c-c9d8f0)", cursor: "pointer", touchAction: "manipulation" }}>
             {copied ? "✓ Email copied" : "Copy email address"}
           </button>
 
@@ -1645,7 +1690,7 @@ function ContactPage() {
               {CONTACT_SOCIALS.map(s => (
                 <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" className="fd-chip"
                   onClick={() => taxTrack("contact_social_clicked", { network: s.label.toLowerCase() })}
-                  style={{ textDecoration: "none", padding: "9px 16px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF" }}>
+                  style={{ textDecoration: "none", padding: "9px 16px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)" }}>
                   {s.icon} {s.label} →
                 </a>
               ))}
@@ -1681,8 +1726,8 @@ function BlueprintPage() {
 
       <GuideHead kicker="The plan" title="The BD Conscious Spending Plan" />
       <div style={{ ...card, padding: "26px 22px" }}>
-        <p style={{ margin: "0 0 6px", fontSize: 14, lineHeight: 1.75, color: "#B8C7E0" }}>
-          Budgets fail because they're all restriction. A conscious spending plan flips it: decide your splits once, automate them, then spend the rest <b style={{ color: "#fff" }}>without guilt</b>. For a Dhaka salaried professional, start here and tune:
+        <p style={{ margin: "0 0 6px", fontSize: 14, lineHeight: 1.75, color: "var(--c-b8c7e0)" }}>
+          Budgets fail because they're all restriction. A conscious spending plan flips it: decide your splits once, automate them, then spend the rest <b style={{ color: "var(--c-fff)" }}>without guilt</b>. For a Dhaka salaried professional, start here and tune:
         </p>
         <SalarySplitCalc />
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: T.muted }}>
@@ -1692,7 +1737,7 @@ function BlueprintPage() {
 
       <GuideHead kicker="Safety net first" title="How big should your emergency fund be?" />
       <div style={{ ...card, padding: "24px 22px" }}>
-        <p style={{ margin: "0 0 4px", fontSize: 14, lineHeight: 1.75, color: "#B8C7E0" }}>
+        <p style={{ margin: "0 0 4px", fontSize: 14, lineHeight: 1.75, color: "var(--c-b8c7e0)" }}>
           Before any investing, park 3–6 months of expenses somewhere liquid you never touch — a high-rate savings account or a 3-month auto-renewing FDR at a strong bank. This is what stops a job loss or hospital bill from becoming a 14% personal loan.
         </p>
         <EmergencyCalc />
@@ -1701,8 +1746,8 @@ function BlueprintPage() {
       <GuideHead kicker="Check yourself" title="Is your money actually growing?" />
       <InflationCheck />
 
-      <div className="fd-up" style={{ marginTop: 24, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "26px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 900, color: "#fff" }}>Ready to put it to work?</h3>
+      <div className="fd-up" style={{ marginTop: 24, background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "26px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 900, color: "var(--c-fff)" }}>Ready to put it to work?</h3>
         <p style={{ margin: "0 0 4px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Use the <b style={{ color: T.accent }}>Save</b> tab to set up your DPS, the <b style={{ color: T.accent }}>Invest</b> tab for a lump sum, and run any loan through <b style={{ color: T.accent }}>Borrow</b> before you sign.</p>
       </div>
       <RelatedLinks links={[
@@ -1754,7 +1799,7 @@ function SanchayapatraCalc() {
       </div>
       {num > 0 && (
         <div className="fd-up">
-          <div style={{ background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "20px", textAlign: "center", marginBottom: 12 }}>
+          <div style={{ background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "20px", textAlign: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 11, color: T.accent, fontWeight: 800, letterSpacing: ".09em", marginBottom: 7 }}>EST. PROFIT · ~1 YEAR AT {cert.rateLabel}</div>
             <div style={{ fontSize: 32, fontWeight: 900, color: T.green }}>+<Counter value={annual} /></div>
           </div>
@@ -1790,10 +1835,10 @@ function SanchayapatraPage() {
           <div key={c.id} className={`fd-item fd-up fd-up-${Math.min(idx, 3)}`} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: T.green, opacity: 0.85 }} />
             <div style={{ display: "flex", gap: 13, alignItems: "flex-start" }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(0,214,143,0.10)", border: "1px solid rgba(0,214,143,0.30)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{c.icon}</div>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: "var(--c-0-214-143-1)", border: "1px solid var(--c-0-214-143-3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{c.icon}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>{c.name}</span>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "var(--c-fff)" }}>{c.name}</span>
                   <span style={{ fontSize: 12, color: T.faint }}>{c.bn}</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: T.muted, marginTop: 5, lineHeight: 1.6 }}>Min {fmt(c.min)} · {c.horizon} · cap {c.max ? fmt(c.max) : "—"}{c.maxJoint ? ` (৳${c.maxJoint / 100000} Lakh joint)` : ""}</div>
@@ -1807,17 +1852,17 @@ function SanchayapatraPage() {
       <SanchayapatraLimits />
 
       <div style={{ ...card, padding: "24px 22px", marginBottom: 24 }}>
-        <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 800, color: "#fff" }}>Investing jointly</h3>
-        <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.7, color: "#B8C7E0" }}>
-          For the <b style={{ color: "#fff" }}>5-Year Bangladesh</b> and <b style={{ color: "#fff" }}>3-Monthly Profit</b> certificates, two people can invest jointly — and the ceiling doubles to <b style={{ color: "#fff" }}>৳60 Lakh</b> versus ৳30 Lakh individually. It's a common way for couples or a parent and adult child to park more in the safest instrument in the country.
+        <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 800, color: "var(--c-fff)" }}>Investing jointly</h3>
+        <p style={{ margin: "0 0 10px", fontSize: 13.5, lineHeight: 1.7, color: "var(--c-b8c7e0)" }}>
+          For the <b style={{ color: "var(--c-fff)" }}>5-Year Bangladesh</b> and <b style={{ color: "var(--c-fff)" }}>3-Monthly Profit</b> certificates, two people can invest jointly — and the ceiling doubles to <b style={{ color: "var(--c-fff)" }}>৳60 Lakh</b> versus ৳30 Lakh individually. It's a common way for couples or a parent and adult child to park more in the safest instrument in the country.
         </p>
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: T.muted }}>
-          <b style={{ color: "#C9D8F0" }}>Poribar</b> and <b style={{ color: "#C9D8F0" }}>Pensioner</b> are single-name only — no joint option. And if you buy more than one type, your combined ceiling is the <b style={{ color: "#C9D8F0" }}>highest single limit</b> among them, not the sum. Institutions, provident funds and approved gratuity/superannuation funds have no upper limit at all.
+          <b style={{ color: "var(--c-c9d8f0)" }}>Poribar</b> and <b style={{ color: "var(--c-c9d8f0)" }}>Pensioner</b> are single-name only — no joint option. And if you buy more than one type, your combined ceiling is the <b style={{ color: "var(--c-c9d8f0)" }}>highest single limit</b> among them, not the sum. Institutions, provident funds and approved gratuity/superannuation funds have no upper limit at all.
         </p>
       </div>
 
-      <div className="fd-up" style={{ marginTop: 4, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Want it weighed against everything else?</h3>
+      <div className="fd-up" style={{ marginTop: 4, background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>Want it weighed against everything else?</h3>
         <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Sanchayapatra is the anchor — but the right mix depends on your amount and risk. Build a full plan in the Invest tool.</p>
         <button className="fd-cta" onClick={() => nav("/invest")} style={{ ...cta, width: "auto", padding: "14px 28px" }}>Open the Invest planner →</button>
       </div>
@@ -2116,8 +2161,8 @@ const incomeBucket = t => t < 400000 ? "<4L" : t < 700000 ? "4-7L" : t < 1100000
 function TaxLine({ label, value, sign = "", strong, color, note }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "7px 0", borderBottom: `1px solid ${T.borderSoft}` }}>
-      <span style={{ fontSize: 13, color: strong ? "#fff" : T.muted, fontWeight: strong ? 700 : 500 }}>{label}{note && <span style={{ color: T.faint, fontWeight: 400 }}> · {note}</span>}</span>
-      <span style={{ fontSize: strong ? 15 : 13.5, fontWeight: strong ? 800 : 600, color: color || (strong ? "#fff" : "#C9D8F0"), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{sign}{fmtFull(value)}</span>
+      <span style={{ fontSize: 13, color: strong ? "var(--c-fff)" : T.muted, fontWeight: strong ? 700 : 500 }}>{label}{note && <span style={{ color: T.faint, fontWeight: 400 }}> · {note}</span>}</span>
+      <span style={{ fontSize: strong ? 15 : 13.5, fontWeight: strong ? 800 : 600, color: color || (strong ? "var(--c-fff)" : "var(--c-c9d8f0)"), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{sign}{fmtFull(value)}</span>
     </div>
   );
 }
@@ -2286,12 +2331,12 @@ function IncomeTaxPage() {
   const eduChip = <button className="fd-chip" onClick={scrollToCalc} style={{ ...chip(false), marginTop: 12, padding: "8px 14px", fontSize: 12.5 }}>Try it with your numbers →</button>;
   const EDU = [
     { icon: "🪪", t: "Who needs to file", b: <>You must file a return if your income crosses the tax-free limit — or, regardless of income, if you fall in a mandatory-filing category: you hold a TIN and run a business, own a car, own a flat/land in a city corporation area, are a government employee, hold a credit card, are a member of a club, or are a professional (doctor, lawyer, engineer). When in doubt, having a TIN usually means you should file, even a zero return. (Full list: NBR.)</> },
-    { icon: "🗓️", t: "FY 2025-26 vs FY 2026-27 — why your payslip may differ", b: <>These are two different rule sets, and mixing them is the #1 reason a calculator disagrees with your employer's tax sheet. <b style={{ color: "#fff" }}>FY 2025-26</b> (the return you file by 30 Nov 2026): tax-free ৳3,75,000, rebate <b style={{ color: T.green }}>15%</b> of investment, ceiling ৳10 Lakh. <b style={{ color: "#fff" }}>FY 2026-27</b>: tax-free ৳4,00,000, rebate cut to <b style={{ color: T.amber }}>10%</b>, ceiling ৳7.5 Lakh. Same salary, different tax. Use the year selector above.</> },
-    { icon: "📐", t: "Tax slabs — a worked example", b: <>Say you earn <b style={{ color: "#fff" }}>৳8 Lakh</b>/year (general) in {RULES.label}. Standard deduction = ⅓ = {fmt(266667)}, so taxable income ≈ {fmt(533333)}. The first {fmt(RULES.thresholds.general)} is tax-free; the remaining {fmt(Math.max(533333 - RULES.thresholds.general, 0))} is taxed at 10% = about {fmt(Math.max(533333 - RULES.thresholds.general, 0) * 0.1)}. After the ৳5,000 minimum-tax check, that's your slab tax before any rebate. Every taka you invest in eligible instruments then chips away at it.</> },
-    { icon: "🎁", t: "The investment rebate — most under-used tool", b: <>In {RULES.label} you get back <b style={{ color: T.green }}>{RULES.rebate.rate * 100}%</b> of what you invest in eligible instruments (Sanchayapatra, DPS, listed mutual funds, life insurance) — but capped at <b>3% of your taxable income</b> and <b>{fmt(RULES.rebate.absolute_cap)}</b>. Rule of thumb: investing about <b style={{ color: "#fff" }}>{Math.round(3 / (RULES.rebate.rate * 100) * 100)}% of your taxable income</b> hits the maximum rebate. Beyond that, extra investment is great for your goals but earns no more tax back.</> },
-    { icon: "🔒", t: "Minimum tax", b: <>If your income crosses the threshold, there's a floor: <b style={{ color: "#fff" }}>৳5,000</b> minimum tax (৳1,000 for a first-time filer under ৳4.5 Lakh). This is why a big rebate can take your slab tax to zero but you may still owe the ৳5,000 floor. That ৳5,000 applies in Dhaka and Chattogram city corporations — elsewhere it's ৳4,000 or ৳3,000. Below the threshold, though, there's no tax and no minimum.</> },
+    { icon: "🗓️", t: "FY 2025-26 vs FY 2026-27 — why your payslip may differ", b: <>These are two different rule sets, and mixing them is the #1 reason a calculator disagrees with your employer's tax sheet. <b style={{ color: "var(--c-fff)" }}>FY 2025-26</b> (the return you file by 30 Nov 2026): tax-free ৳3,75,000, rebate <b style={{ color: T.green }}>15%</b> of investment, ceiling ৳10 Lakh. <b style={{ color: "var(--c-fff)" }}>FY 2026-27</b>: tax-free ৳4,00,000, rebate cut to <b style={{ color: T.amber }}>10%</b>, ceiling ৳7.5 Lakh. Same salary, different tax. Use the year selector above.</> },
+    { icon: "📐", t: "Tax slabs — a worked example", b: <>Say you earn <b style={{ color: "var(--c-fff)" }}>৳8 Lakh</b>/year (general) in {RULES.label}. Standard deduction = ⅓ = {fmt(266667)}, so taxable income ≈ {fmt(533333)}. The first {fmt(RULES.thresholds.general)} is tax-free; the remaining {fmt(Math.max(533333 - RULES.thresholds.general, 0))} is taxed at 10% = about {fmt(Math.max(533333 - RULES.thresholds.general, 0) * 0.1)}. After the ৳5,000 minimum-tax check, that's your slab tax before any rebate. Every taka you invest in eligible instruments then chips away at it.</> },
+    { icon: "🎁", t: "The investment rebate — most under-used tool", b: <>In {RULES.label} you get back <b style={{ color: T.green }}>{RULES.rebate.rate * 100}%</b> of what you invest in eligible instruments (Sanchayapatra, DPS, listed mutual funds, life insurance) — but capped at <b>3% of your taxable income</b> and <b>{fmt(RULES.rebate.absolute_cap)}</b>. Rule of thumb: investing about <b style={{ color: "var(--c-fff)" }}>{Math.round(3 / (RULES.rebate.rate * 100) * 100)}% of your taxable income</b> hits the maximum rebate. Beyond that, extra investment is great for your goals but earns no more tax back.</> },
+    { icon: "🔒", t: "Minimum tax", b: <>If your income crosses the threshold, there's a floor: <b style={{ color: "var(--c-fff)" }}>৳5,000</b> minimum tax (৳1,000 for a first-time filer under ৳4.5 Lakh). This is why a big rebate can take your slab tax to zero but you may still owe the ৳5,000 floor. That ৳5,000 applies in Dhaka and Chattogram city corporations — elsewhere it's ৳4,000 or ৳3,000. Below the threshold, though, there's no tax and no minimum.</> },
     { icon: "📅", t: "Filing incentives & penalties", table: [["Jul 1 – Sep 30", "5% rebate on tax (max ৳25,000)", T.green], ["Oct 1 – Dec 31", "No rebate, no penalty", T.muted], ["Jan 1 – Mar 31", "+2% additional tax (min ৳3,000)", T.amber], ["Apr 1 – Jun 30", "+5% additional tax (min ৳5,000)", T.red]] },
-    { icon: "📄", t: "Documents you'll need", b: <>Keep these ready before you file: your <b style={{ color: "#fff" }}>TIN certificate</b>, salary certificate, bank statements, investment proofs (DPS/Sanchayapatra/insurance receipts), TDS certificates from your employer, and property or vehicle papers if they apply. Having them organised turns filing into a 20-minute job.</> },
+    { icon: "📄", t: "Documents you'll need", b: <>Keep these ready before you file: your <b style={{ color: "var(--c-fff)" }}>TIN certificate</b>, salary certificate, bank statements, investment proofs (DPS/Sanchayapatra/insurance receipts), TDS certificates from your employer, and property or vehicle papers if they apply. Having them organised turns filing into a 20-minute job.</> },
   ];
 
 
@@ -2300,7 +2345,7 @@ function IncomeTaxPage() {
       <div style={{ textAlign: "center", padding: "44px 0 20px" }}>
         <div className="fd-up" style={pill}>🧾 Income Tax · আয়কর</div>
         <h1 className="fd-up fd-up-1" style={{ ...h1, fontSize: "clamp(28px,6vw,44px)" }}>Bangladesh income tax, made <span style={gradText}>simple</span></h1>
-        <p className="fd-up fd-up-2" style={sub}>Free calculator for <b style={{ color: "#fff" }}>both</b> FY 2025-26 (the return you file this year) and FY 2026-27 — plus a rebate optimiser that shows exactly how much Sanchayapatra or DPS could cut your tax.</p>
+        <p className="fd-up fd-up-2" style={sub}>Free calculator for <b style={{ color: "var(--c-fff)" }}>both</b> FY 2025-26 (the return you file this year) and FY 2026-27 — plus a rebate optimiser that shows exactly how much Sanchayapatra or DPS could cut your tax.</p>
       </div>
       <UpdatedBadge />
 
@@ -2316,7 +2361,7 @@ function IncomeTaxPage() {
               <button key={y} className="fd-chip" onClick={() => { setFy(y); taxTrack("tax_fy_changed", { fy: y }); }}
                 style={{ ...chip(on), flex: 1, padding: "12px 8px", textAlign: "center", lineHeight: 1.35, touchAction: "manipulation" }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{R.label}</span>
-                <span style={{ display: "block", fontSize: 10.5, opacity: .8, fontWeight: 600 }}>{y === DEFAULT_FY ? "File now ✓" : R.filedIn.replace("Filed ", "")}</span>
+                <span style={{ display: "block", fontSize: 10.5, opacity: "var(--fd-dim-8)", fontWeight: 600 }}>{y === DEFAULT_FY ? "File now ✓" : R.filedIn.replace("Filed ", "")}</span>
               </button>
             );
           })}
@@ -2386,7 +2431,7 @@ function IncomeTaxPage() {
             ) : (
               <>
                 <div style={{ fontSize: "clamp(30px,8vw,44px)", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1 }}><span style={gradText}>{fmtFull(r.net)}</span></div>
-                <div style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>{r.balance > 0 ? <>Balance to pay after TDS: <b style={{ color: "#fff" }}>{fmtFull(r.balance)}</b></> : r.refund > 0 ? <>Refundable / adjustable: <b style={{ color: T.green }}>{fmtFull(r.refund)}</b></> : "Fully covered by your TDS 🎉"}</div>
+                <div style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>{r.balance > 0 ? <>Balance to pay after TDS: <b style={{ color: "var(--c-fff)" }}>{fmtFull(r.balance)}</b></> : r.refund > 0 ? <>Refundable / adjustable: <b style={{ color: T.green }}>{fmtFull(r.refund)}</b></> : "Fully covered by your TDS 🎉"}</div>
               </>
             )}
           </div>
@@ -2402,22 +2447,22 @@ function IncomeTaxPage() {
               {r.minTaxApplied && <TaxLine label="Minimum tax floor" value={r.minTax} note="rebate can't go below this" color={T.amber} />}
               <TaxLine label="Net tax payable" value={r.net} strong />
               {r.tds > 0 && <TaxLine label="Less: TDS already paid" value={r.tds} sign="− " color={T.green} />}
-              <TaxLine label={r.refund > 0 ? "Refund / adjustable" : "Balance to pay"} value={r.refund > 0 ? r.refund : r.balance} strong color={r.refund > 0 ? T.green : "#fff"} />
+              <TaxLine label={r.refund > 0 ? "Refund / adjustable" : "Balance to pay"} value={r.refund > 0 ? r.refund : r.balance} strong color={r.refund > 0 ? T.green : "var(--c-fff)"} />
             </div>
           )}
 
           {/* ---- Rebate optimiser ---- */}
           {!r.belowThreshold && (
-            <div className="fd-up" style={{ ...card, marginBottom: 16, borderColor: r.rebateState === "A" ? "rgba(0,214,143,0.4)" : r.rebateState === "C" ? "rgba(255,180,84,0.4)" : T.border, background: r.rebateState === "A" ? "linear-gradient(135deg, rgba(0,214,143,0.10), rgba(8,18,36,0.9))" : T.glass }}>
+            <div className="fd-up" style={{ ...card, marginBottom: 16, borderColor: r.rebateState === "A" ? "var(--c-0-214-143-4)" : r.rebateState === "C" ? "var(--c-255-180-84-4)" : T.border, background: r.rebateState === "A" ? "linear-gradient(135deg, var(--c-0-214-143-1), var(--c-8-18-36-9))" : T.glass }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: r.rebateState === "A" ? T.green : T.accent, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>💡 Rebate optimiser</div>
               {r.rebateUseless ? (
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "#EAF1FC" }}>Your income is above the tax-free limit, so the <b style={{ color: "#fff" }}>{fmtFull(r.minTax)} minimum tax</b> for filers applies — a rebate can't reduce it further this year. Investing is still worthwhile for your goals; it just won't cut this bill.</p>
+                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "var(--c-eaf1fc)" }}>Your income is above the tax-free limit, so the <b style={{ color: "var(--c-fff)" }}>{fmtFull(r.minTax)} minimum tax</b> for filers applies — a rebate can't reduce it further this year. Investing is still worthwhile for your goals; it just won't cut this bill.</p>
               ) : r.rebateState === "A" ? (
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "#EAF1FC" }}>You could save up to <b style={{ color: T.green }}>{fmtFull(r.additionalTaxSaved)}</b> more in tax this year. Invest about <b style={{ color: "#fff" }}>{fmtFull(r.investmentGap)}</b> more in eligible instruments (Sanchayapatra, DPS, listed mutual funds, life insurance) before 30 June to reach your maximum rebate of {fmt(Math.min(0.03 * r.taxable, 750000))}.</p>
+                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "var(--c-eaf1fc)" }}>You could save up to <b style={{ color: T.green }}>{fmtFull(r.additionalTaxSaved)}</b> more in tax this year. Invest about <b style={{ color: "var(--c-fff)" }}>{fmtFull(r.investmentGap)}</b> more in eligible instruments (Sanchayapatra, DPS, listed mutual funds, life insurance) before 30 June to reach your maximum rebate of {fmt(Math.min(0.03 * r.taxable, 750000))}.</p>
               ) : r.rebateState === "C" ? (
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "#EAF1FC" }}>You've invested more than you need to for the rebate (your optimum was about <b style={{ color: "#fff" }}>{fmtFull(r.optimumInvestment)}</b>). Extra investment is still great for your goals — it just doesn't cut any more tax.</p>
+                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "var(--c-eaf1fc)" }}>You've invested more than you need to for the rebate (your optimum was about <b style={{ color: "var(--c-fff)" }}>{fmtFull(r.optimumInvestment)}</b>). Extra investment is still great for your goals — it just doesn't cut any more tax.</p>
               ) : (
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "#EAF1FC" }}>You're getting essentially the maximum rebate you're eligible for. Nicely optimised. 👏</p>
+                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: "var(--c-eaf1fc)" }}>You're getting essentially the maximum rebate you're eligible for. Nicely optimised. 👏</p>
               )}
             </div>
           )}
@@ -2433,7 +2478,7 @@ function IncomeTaxPage() {
                 <div key={d.k} className={`fd-item fd-up fd-up-${Math.min(i, 3)}`} onClick={() => deep(d.k, d.path)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "16px 17px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: T.green, opacity: 0.85 }} />
                   <div style={{ fontSize: 20, marginBottom: 6, pointerEvents: "none" }}>{d.icon}</div>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, color: "#fff", marginBottom: 4, pointerEvents: "none" }}>{d.t}</div>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: "var(--c-fff)", marginBottom: 4, pointerEvents: "none" }}>{d.t}</div>
                   <div style={{ fontSize: 12.5, color: T.muted, lineHeight: 1.5, marginBottom: 8, pointerEvents: "none" }}>{d.d}</div>
                   <div style={{ fontSize: 12.5, color: T.accent, fontWeight: 700, pointerEvents: "none" }}>{d.cta}</div>
                 </div>
@@ -2451,10 +2496,10 @@ function IncomeTaxPage() {
           {/* ---- Optional AI explainer ---- */}
           {!r.belowThreshold && (
             <div style={{ marginTop: 6 }}>
-              <button className="fd-cta" onClick={askAI} disabled={aiLoading} style={{ ...cta, background: "linear-gradient(135deg,#7C3AED,#4F9EFF)", opacity: aiLoading ? 0.7 : 1, touchAction: "manipulation" }}>{aiLoading ? <>Thinking <span className="fd-spin" /></> : "🤖 Explain my result in plain Bangla-English"}</button>
+              <button className="fd-cta" onClick={askAI} disabled={aiLoading} style={{ ...cta, background: "linear-gradient(135deg,var(--c-7c3aed),var(--c-4f9eff))", opacity: aiLoading ? 0.7 : 1, touchAction: "manipulation" }}>{aiLoading ? <>Thinking <span className="fd-spin" /></> : "🤖 Explain my result in plain Bangla-English"}</button>
               {ai && (
-                <div className="fd-up" style={{ marginTop: 12, background: "rgba(124,58,237,0.10)", border: "1px solid rgba(124,58,237,0.35)", borderRadius: 14, padding: "14px 16px" }}>
-                  <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "#D8CCF5", whiteSpace: "pre-wrap" }}>{ai}</p>
+                <div className="fd-up" style={{ marginTop: 12, background: "var(--c-124-58-237-1)", border: "1px solid var(--c-124-58-237-35)", borderRadius: 14, padding: "14px 16px" }}>
+                  <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: "var(--c-d8ccf5)", whiteSpace: "pre-wrap" }}>{ai}</p>
                   <div style={{ fontSize: 10.5, color: T.faint, marginTop: 8 }}>Explained by AI · check with a pro before filing.</div>
                 </div>
               )}
@@ -2470,11 +2515,11 @@ function IncomeTaxPage() {
         {EDU.map((e, i) => (
           <div key={i} className="fd-item" style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: T.accent, opacity: 0.85 }} />
-            <div style={{ fontSize: 15.5, fontWeight: 800, color: "#fff", marginBottom: 8 }}><span style={{ marginRight: 8 }}>{e.icon}</span>{e.t}</div>
-            {e.b && <div style={{ fontSize: 13.5, color: "#B8C7E0", lineHeight: 1.7 }}>{e.b}</div>}
+            <div style={{ fontSize: 15.5, fontWeight: 800, color: "var(--c-fff)", marginBottom: 8 }}><span style={{ marginRight: 8 }}>{e.icon}</span>{e.t}</div>
+            {e.b && <div style={{ fontSize: 13.5, color: "var(--c-b8c7e0)", lineHeight: 1.7 }}>{e.b}</div>}
             {e.table && (
               <div style={{ overflowX: "auto", marginTop: 4 }}>
-                <table className="fd-tbl"><tbody>{e.table.map((row, ri) => (<tr key={ri}><td style={{ fontWeight: 600, color: "#EAF1FC" }}>{row[0]}</td><td style={{ color: row[2], textAlign: "left" }}>{row[1]}</td></tr>))}</tbody></table>
+                <table className="fd-tbl"><tbody>{e.table.map((row, ri) => (<tr key={ri}><td style={{ fontWeight: 600, color: "var(--c-eaf1fc)" }}>{row[0]}</td><td style={{ color: row[2], textAlign: "left" }}>{row[1]}</td></tr>))}</tbody></table>
               </div>
             )}
             {eduChip}
@@ -2487,14 +2532,14 @@ function IncomeTaxPage() {
 
       {/* ---------- Where to file (NBR only) ---------- */}
       <div className="fd-up" style={{ ...card, marginTop: 16, textAlign: "center", padding: "22px 20px" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 800, color: "#fff" }}>Ready to file?</h3>
+        <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 800, color: "var(--c-fff)" }}>Ready to file?</h3>
         <p style={{ margin: "0 auto 14px", maxWidth: 460, fontSize: 13.5, color: T.muted, lineHeight: 1.6 }}>Filing happens on the government's own e-Return system, run by the National Board of Revenue. FinDesh doesn't file for you — we're here to help you understand and plan.</p>
         <a href={NBR_ERETURN_URL} target="_blank" rel="noreferrer" onClick={nbrClick} className="fd-cta" style={{ ...cta, display: "inline-block", width: "auto", padding: "13px 24px", textDecoration: "none" }}>Go to the NBR e-Return portal →</a>
       </div>
 
       {/* ---------- CTA ---------- */}
-      <div className="fd-up" style={{ marginTop: 24, background: "linear-gradient(135deg, rgba(79,158,255,0.16), rgba(8,18,36,0.9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#fff" }}>Want a full money plan around this?</h3>
+      <div className="fd-up" style={{ marginTop: 24, background: "linear-gradient(135deg, var(--c-79-158-255-16), var(--c-8-18-36-9))", border: `1px solid ${T.accentBorder}`, borderRadius: 20, padding: "24px 22px", textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "var(--c-fff)" }}>Want a full money plan around this?</h3>
         <p style={{ margin: "0 0 14px", fontSize: 13.5, color: T.muted, lineHeight: 1.65 }}>Tax is one piece. The Blueprint ties your saving, investing and rebate strategy together.</p>
         <button className="fd-cta" onClick={() => deep("blueprint", "/blueprint")} style={{ ...cta, width: "auto", padding: "14px 26px", touchAction: "manipulation" }}>Open the Money Blueprint →</button>
       </div>
@@ -2576,10 +2621,10 @@ function FAQ({ items }) {
         {items.map((it, i) => (
           <div key={i} className="fd-item" onClick={() => setOpen(open === i ? -1 : i)} style={{ background: T.glass, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", cursor: "pointer", backdropFilter: "blur(12px)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, pointerEvents: "none" }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{it.q}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-fff)" }}>{it.q}</span>
               <span style={{ color: T.accent, fontSize: 18, fontWeight: 700, flexShrink: 0 }}>{open === i ? "−" : "+"}</span>
             </div>
-            {open === i && <p className="fd-up" style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0", pointerEvents: "none" }}>{it.a}</p>}
+            {open === i && <p className="fd-up" style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "var(--c-b8c7e0)", pointerEvents: "none" }}>{it.a}</p>}
           </div>
         ))}
       </div>
@@ -2675,10 +2720,10 @@ function MutualFundUpsell({ monthly, years, islamicOnly }) {
   const pct = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
 
   return (
-    <div className="fd-up" style={{ marginTop: 24, background: "rgba(255,180,84,0.06)", border: "1px solid rgba(255,180,84,0.26)", borderRadius: 20, padding: "22px 20px" }}>
+    <div className="fd-up" style={{ marginTop: 24, background: "var(--c-255-180-84-06)", border: "1px solid var(--c-255-180-84-26)", borderRadius: 20, padding: "22px 20px" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: T.amber, letterSpacing: ".09em", textTransform: "uppercase", marginBottom: 6 }}>Want to aim higher? (not guaranteed)</div>
-      <p style={{ margin: "0 0 4px", fontSize: 13.5, lineHeight: 1.7, color: "#FFCE8A" }}>
-        Everything above pays a <b style={{ color: "#fff" }}>contracted rate</b> — you know the maturity figure before you start. Mutual funds don't work that way: no promised rate, and your units can be worth less than you paid. Over a long horizon they can beat a DPS, and in a bad year they lose money.
+      <p style={{ margin: "0 0 4px", fontSize: 13.5, lineHeight: 1.7, color: "var(--c-ffce8a)" }}>
+        Everything above pays a <b style={{ color: "var(--c-fff)" }}>contracted rate</b> — you know the maturity figure before you start. Mutual funds don't work that way: no promised rate, and your units can be worth less than you paid. Over a long horizon they can beat a DPS, and in a bad year they lose money.
       </p>
       <p style={{ margin: "0 0 16px", fontSize: 12, color: T.faint }}>
         {islamicOnly ? "Shariah-registered funds, largest first" : "The three largest open-end funds by size"} · published returns as of {MF_UPDATED}
@@ -2686,9 +2731,9 @@ function MutualFundUpsell({ monthly, years, islamicOnly }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
         {picks.map(f => (
-          <div key={f.fund} style={{ background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div key={f.fund} style={{ background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 150px", minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#EAF1FC" }}>{f.fund} {f.shariah && <span style={{ color: T.green, fontSize: 11 }}>☪</span>}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--c-eaf1fc)" }}>{f.fund} {f.shariah && <span style={{ color: T.green, fontSize: 11 }}>☪</span>}</div>
               <div style={{ fontSize: 10.5, color: T.faint, marginTop: 2 }}>{f.amc} · ৳{(f.aum / 1000).toFixed(1)} bn fund</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -2699,14 +2744,14 @@ function MutualFundUpsell({ monthly, years, islamicOnly }) {
         ))}
       </div>
 
-      <div style={{ background: "rgba(8,18,36,0.4)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
-        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.65, color: "#C9D8F0" }}>
-          At {fmt(monthly)}/month for {years} year{years > 1 ? "s" : ""} you'd put in <b style={{ color: "#fff" }}>{fmtFull(contributed)}</b> of your own money.
+      <div style={{ background: "var(--c-8-18-36-4)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
+        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.65, color: "var(--c-c9d8f0)" }}>
+          At {fmt(monthly)}/month for {years} year{years > 1 ? "s" : ""} you'd put in <b style={{ color: "var(--c-fff)" }}>{fmtFull(contributed)}</b> of your own money.
           {" "}<b style={{ color: T.amber }}>We don't show a projected maturity value for funds</b> — unlike a DPS there's no rate to project from, and two published periods isn't enough history to forecast honestly. Compare the funds and decide for yourself.
         </p>
       </div>
 
-      <button className="fd-cta" onClick={() => nav("/compare/mutual-funds")} style={{ ...cta, background: "rgba(255,255,255,0.05)", border: `1px solid ${T.accentBorder}`, boxShadow: "none", color: "#C9D8F0", margin: 0, touchAction: "manipulation" }}>
+      <button className="fd-cta" onClick={() => nav("/compare/mutual-funds")} style={{ ...cta, background: "var(--c-255-255-255-05)", border: `1px solid ${T.accentBorder}`, boxShadow: "none", color: "var(--c-c9d8f0)", margin: 0, touchAction: "manipulation" }}>
         Compare all 20 mutual funds →
       </button>
       <p style={{ margin: "10px 2px 0", fontSize: 11, color: T.faint, lineHeight: 1.55 }}>
@@ -2854,7 +2899,7 @@ function RelatedLinks({ links: all }) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {links.map(l => (
           <a key={l.path} href={l.path} className="fd-chip" onClick={e => { e.preventDefault(); nav(l.path); }}
-            style={{ textDecoration: "none", padding: "9px 14px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF" }}>
+            style={{ textDecoration: "none", padding: "9px 14px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)" }}>
             {l.label} →
           </a>
         ))}
@@ -2923,38 +2968,41 @@ export default function App() {
 
   return (
     <NavCtx.Provider value={navigate}>
-    <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse 80% 50% at 50% -10%, #0B1E3D 0%, ${T.bg} 55%)`, fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", color: T.text, position: "relative" }}>
-      <style>{GLOBAL_CSS}</style>
+    <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse 80% 50% at 50% -10%, var(--c-0b1e3d) 0%, ${T.bg} 55%)`, fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", color: T.text, position: "relative" }}>
+      <style>{THEME_CSS + GLOBAL_CSS}</style>
       <Orbs />
 
-      <nav style={{ background: "rgba(4,8,15,0.75)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", height: 62, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px 0 22px", position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${T.borderSoft}` }}>
+      <nav style={{ background: "var(--c-4-8-15-75)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", height: 62, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px 0 22px", position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${T.borderSoft}` }}>
         <a href="/" onClick={e => { e.preventDefault(); go("/"); }} style={{ textDecoration: "none" }}><Logo size={30} /></a>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <span className="fd-hide-sm" style={{ color: T.muted, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 7 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, animation: "fdPulse 2.2s ease-in-out infinite" }} /> Live BD rates · {LAST_UPDATED}
           </span>
-          <button aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)} style={{ width: 40, height: 40, borderRadius: 11, cursor: "pointer", border: `1px solid ${menuOpen ? T.accentBorder : T.borderSoft}`, background: menuOpen ? T.accentSoft : "rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit" }}>
-            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "#C9D8F0", transition: "transform .2s", transform: menuOpen ? "translateY(6px) rotate(45deg)" : "none" }} />
-            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "#C9D8F0", opacity: menuOpen ? 0 : 1, transition: "opacity .15s" }} />
-            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "#C9D8F0", transition: "transform .2s", transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ThemeToggle />
+          <button aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)} style={{ width: 40, height: 40, borderRadius: 11, cursor: "pointer", border: `1px solid ${menuOpen ? T.accentBorder : T.borderSoft}`, background: menuOpen ? T.accentSoft : "var(--c-255-255-255-04)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit" }}>
+            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "var(--c-c9d8f0)", transition: "transform .2s", transform: menuOpen ? "translateY(6px) rotate(45deg)" : "none" }} />
+            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "var(--c-c9d8f0)", opacity: menuOpen ? 0 : 1, transition: "opacity .15s" }} />
+            <span style={{ width: 17, height: 2, borderRadius: 2, background: menuOpen ? T.accent : "var(--c-c9d8f0)", transition: "transform .2s", transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none" }} />
           </button>
+          </div>
         </div>
       </nav>
 
       {menuOpen && (
         <>
-          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(2,5,11,0.5)", backdropFilter: "blur(2px)" }} />
-          <div className="fd-up fd-menu" style={{ position: "fixed", top: 70, right: 14, zIndex: 60, width: 268, maxWidth: "calc(100vw - 28px)", background: "rgba(8,14,26,0.98)", border: `1px solid ${T.border}`, borderRadius: 16, padding: "10px", boxShadow: "0 24px 70px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)" }}>
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 55, background: "var(--c-2-5-11-5)", backdropFilter: "blur(2px)" }} />
+          <div className="fd-up fd-menu" style={{ position: "fixed", top: 70, right: 14, zIndex: 60, width: 268, maxWidth: "calc(100vw - 28px)", background: "var(--c-8-14-26-98)", border: `1px solid ${T.border}`, borderRadius: 16, padding: "10px", boxShadow: "0 24px 70px var(--c-0-0-0-6)", backdropFilter: "blur(20px)" }}>
             {menuGroups.map((grp, gi) => (
               <div key={gi} style={{ marginTop: gi ? 8 : 0 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", padding: "8px 10px 6px" }}>{grp.heading}</div>
                 {grp.items.map(it => {
                   const active = resolveRoute(it.path) === routeKey;
                   return (
-                    <a key={it.path} href={it.path} onClick={e => { e.preventDefault(); go(it.path); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 10px", borderRadius: 10, textDecoration: "none", background: active ? T.accentSoft : "transparent", color: active ? "#fff" : "#C9D8F0", fontSize: 14, fontWeight: 600, touchAction: "manipulation" }}>
+                    <a key={it.path} href={it.path} onClick={e => { e.preventDefault(); go(it.path); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 10px", borderRadius: 10, textDecoration: "none", background: active ? T.accentSoft : "transparent", color: active ? "var(--c-fff)" : "var(--c-c9d8f0)", fontSize: 14, fontWeight: 600, touchAction: "manipulation" }}>
                       <span style={{ fontSize: 16, pointerEvents: "none" }}>{it.icon}</span>
                       <span style={{ flex: 1, pointerEvents: "none" }}>{it.label}</span>
-                      {it.soon && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, background: "rgba(255,180,84,0.12)", border: "1px solid rgba(255,180,84,0.3)", borderRadius: 20, padding: "2px 7px", letterSpacing: ".04em", pointerEvents: "none" }}>SOON</span>}
+                      {it.soon && <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, background: "var(--c-255-180-84-12)", border: "1px solid var(--c-255-180-84-3)", borderRadius: 20, padding: "2px 7px", letterSpacing: ".04em", pointerEvents: "none" }}>SOON</span>}
                     </a>
                   );
                 })}
@@ -2964,14 +3012,14 @@ export default function App() {
         </>
       )}
 
-      <div style={{ position: "sticky", top: 62, zIndex: 40, background: "rgba(4,8,15,0.7)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${T.borderSoft}`, padding: "10px 12px" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: 4 }}>
+      <div style={{ position: "sticky", top: 62, zIndex: 40, background: "var(--c-4-8-15-7)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${T.borderSoft}`, padding: "10px 12px" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", gap: 4, background: "var(--c-255-255-255-04)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: 4 }}>
           {tabs.map(t => (
             <button key={t.id} className="fd-tab" onClick={() => navigate(TAB_PATH[t.id])} style={{
               flex: 1, padding: "9px 4px", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
-              background: page === t.id ? "linear-gradient(135deg, rgba(79,158,255,0.28), rgba(79,158,255,0.12))" : "transparent",
-              color: page === t.id ? "#fff" : T.muted, fontWeight: page === t.id ? 800 : 600, fontSize: 12.5,
-              boxShadow: page === t.id ? "inset 0 0 0 1px rgba(79,158,255,0.45), 0 4px 16px rgba(79,158,255,0.15)" : "none",
+              background: page === t.id ? "linear-gradient(135deg, var(--c-79-158-255-28), var(--c-79-158-255-12))" : "transparent",
+              color: page === t.id ? "var(--c-fff)" : T.muted, fontWeight: page === t.id ? 800 : 600, fontSize: 12.5,
+              boxShadow: page === t.id ? "inset 0 0 0 1px var(--c-79-158-255-45), 0 4px 16px var(--c-79-158-255-15)" : "none",
               display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
               touchAction: "manipulation",
             }}>
@@ -3014,9 +3062,9 @@ export default function App() {
         {/* Footer nav — only routes that exist are linked, so a partial deploy never ships a dead link. */}
         <nav aria-label="Footer" style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "6px 16px", margin: "0 auto 14px", maxWidth: 560, fontSize: 12.5 }}>
           {[["Learn", "/learn"], ["All tools", "/tools"], ["Methodology", "/methodology"], ["FAQ", "/faq"], ["About", "/about"]].filter(([, p]) => ROUTES[p]).map(([l, p]) => (
-            <a key={p} className="fd-link" href={p} onClick={e => { e.preventDefault(); navigate(p); }} style={{ color: "#8AC2FF", textDecoration: "none", fontWeight: 600 }}>{l}</a>
+            <a key={p} className="fd-link" href={p} onClick={e => { e.preventDefault(); navigate(p); }} style={{ color: "var(--c-8ac2ff)", textDecoration: "none", fontWeight: 600 }}>{l}</a>
           ))}
-          <a className="fd-link" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Data issue on FinDesh: " + routeKey)}`} onClick={() => taxTrack("data_issue_clicked", { from: "footer" })} style={{ color: "#8AC2FF", textDecoration: "none", fontWeight: 600 }}>Report a data issue</a>
+          <a className="fd-link" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Data issue on FinDesh: " + routeKey)}`} onClick={() => taxTrack("data_issue_clicked", { from: "footer" })} style={{ color: "var(--c-8ac2ff)", textDecoration: "none", fontWeight: 600 }}>Report a data issue</a>
         </nav>
         <div style={{ fontSize: 12, color: T.faint, fontWeight: 500 }}>
           Built in Dhaka 🇧🇩 · <a className="fd-link" href="https://findeshai.com" style={{ color: T.accent, textDecoration: "none", fontWeight: 600 }}>findeshai.com</a>
@@ -3031,21 +3079,21 @@ export default function App() {
 }
 
 /* ---------- shared styles (dark) ---------- */
-const gradText = { background: "linear-gradient(95deg, #4F9EFF 10%, #8AC2FF 60%, #00D68F 110%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" };
-const pill = { fontSize: 12, fontWeight: 700, color: "#8AC2FF", background: "rgba(79,158,255,0.10)", border: "1px solid rgba(79,158,255,0.30)", borderRadius: 20, padding: "6px 16px", marginBottom: 20, letterSpacing: ".02em", display: "inline-block", backdropFilter: "blur(10px)" };
-const h1 = { fontSize: "clamp(30px,6.5vw,48px)", fontWeight: 900, margin: "0 0 14px", lineHeight: 1.08, letterSpacing: "-0.035em", color: "#fff" };
-const sub = { fontSize: 16, color: "#8A9BB8", margin: "0 auto", maxWidth: 500, lineHeight: 1.6 };
-const card = { background: T.glass, borderRadius: 22, padding: "28px 24px", border: `1px solid ${T.border}`, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 20px 60px rgba(0,0,0,0.35)", position: "relative", zIndex: 1 };
-const lbl = { display: "block", fontWeight: 700, fontSize: 11.5, letterSpacing: ".08em", color: "#8A9BB8", marginBottom: 10, textTransform: "uppercase" };
-const taka = { position: "absolute", left: 18, top: "50%", transform: "translateY(-50%)", fontSize: 22, color: "#5C6E8C", fontWeight: 600, zIndex: 1 };
-const bigInput = { width: "100%", boxSizing: "border-box", padding: "17px 16px 17px 44px", fontSize: 24, fontWeight: 800, color: "#fff", border: "1.5px solid rgba(148,180,255,0.18)", borderRadius: 14, outline: "none", background: "rgba(8,18,36,0.65)", fontFamily: "inherit", caretColor: "#4F9EFF" };
-const inputHint = { position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", fontSize: 14, fontWeight: 700, color: "#4F9EFF" };
-const errStyle = { color: "#FF6B6B", fontSize: 13, margin: "0 0 14px", fontWeight: 600 };
-const cta = { width: "100%", padding: "17px", fontSize: 16, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, #4F9EFF, #2563EB)", border: "none", borderRadius: 14, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em", boxShadow: "0 8px 28px rgba(79,158,255,0.3)" };
-const inflationNote = { marginTop: 20, background: "rgba(255,180,84,0.07)", border: "1px solid rgba(255,180,84,0.22)", borderRadius: 13, padding: "13px 15px", fontSize: 12.5, color: "#FFCE8A", lineHeight: 1.6, position: "relative", zIndex: 1 };
-const stepDot = { width: 24, height: 24, flexShrink: 0, borderRadius: "50%", background: "rgba(79,158,255,0.16)", border: "1px solid rgba(79,158,255,0.42)", color: "#8AC2FF", fontSize: 12.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" };
-function chip(active) { return { flex: 1, minWidth: 64, padding: "10px 6px", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", border: `1px solid ${active ? "rgba(79,158,255,0.6)" : "rgba(148,180,255,0.14)"}`, background: active ? "rgba(79,158,255,0.16)" : "rgba(255,255,255,0.025)", color: active ? "#8AC2FF" : "#8A9BB8", borderRadius: 10, cursor: "pointer" }; }
-function riskBtn(active, c) { return { flex: 1, padding: "15px 6px", borderRadius: 14, cursor: "pointer", textAlign: "center", fontFamily: "inherit", border: active ? `1.5px solid ${c.border}` : "1.5px solid rgba(148,180,255,0.14)", background: active ? c.bg : "rgba(255,255,255,0.025)", boxShadow: active ? `0 0 24px ${c.color}22` : "none" }; }
+const gradText = { background: "var(--fd-grad-text)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" };
+const pill = { fontSize: 12, fontWeight: 700, color: "var(--c-8ac2ff)", background: "var(--c-79-158-255-1)", border: "1px solid var(--c-79-158-255-3)", borderRadius: 20, padding: "6px 16px", marginBottom: 20, letterSpacing: ".02em", display: "inline-block", backdropFilter: "blur(10px)" };
+const h1 = { fontSize: "clamp(30px,6.5vw,48px)", fontWeight: 900, margin: "0 0 14px", lineHeight: 1.08, letterSpacing: "-0.035em", color: "var(--c-fff)" };
+const sub = { fontSize: 16, color: "var(--c-8a9bb8)", margin: "0 auto", maxWidth: 500, lineHeight: 1.6 };
+const card = { background: T.glass, borderRadius: 22, padding: "28px 24px", border: `1px solid ${T.border}`, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "var(--fd-card-shadow)", position: "relative", zIndex: 1 };
+const lbl = { display: "block", fontWeight: 700, fontSize: 11.5, letterSpacing: ".08em", color: "var(--c-8a9bb8)", marginBottom: 10, textTransform: "uppercase" };
+const taka = { position: "absolute", left: 18, top: "50%", transform: "translateY(-50%)", fontSize: 22, color: "var(--c-5c6e8c)", fontWeight: 600, zIndex: 1 };
+const bigInput = { width: "100%", boxSizing: "border-box", padding: "17px 16px 17px 44px", fontSize: 24, fontWeight: 800, color: "var(--c-fff)", border: "1.5px solid var(--c-148-180-255-18)", borderRadius: 14, outline: "none", background: "var(--c-8-18-36-65)", fontFamily: "inherit", caretColor: "var(--c-4f9eff)" };
+const inputHint = { position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", fontSize: 14, fontWeight: 700, color: "var(--c-4f9eff)" };
+const errStyle = { color: "var(--c-ff6b6b)", fontSize: 13, margin: "0 0 14px", fontWeight: 600 };
+const cta = { width: "100%", padding: "17px", fontSize: 16, fontWeight: 800, color: "var(--fd-on-accent)", background: "linear-gradient(135deg, var(--c-4f9eff), var(--c-2563eb))", border: "none", borderRadius: 14, cursor: "pointer", fontFamily: "inherit", letterSpacing: "-0.01em", boxShadow: "0 8px 28px var(--c-79-158-255-3)" };
+const inflationNote = { marginTop: 20, background: "var(--c-255-180-84-07)", border: "1px solid var(--c-255-180-84-22)", borderRadius: 13, padding: "13px 15px", fontSize: 12.5, color: "var(--c-ffce8a)", lineHeight: 1.6, position: "relative", zIndex: 1 };
+const stepDot = { width: 24, height: 24, flexShrink: 0, borderRadius: "50%", background: "var(--c-79-158-255-16)", border: "1px solid var(--c-79-158-255-42)", color: "var(--c-8ac2ff)", fontSize: 12.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" };
+function chip(active) { return { flex: 1, minWidth: 64, padding: "10px 6px", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", border: `1px solid ${active ? "var(--c-79-158-255-6)" : "var(--c-148-180-255-14)"}`, background: active ? "var(--c-79-158-255-16)" : "var(--c-255-255-255-025)", color: active ? "var(--c-8ac2ff)" : "var(--c-8a9bb8)", borderRadius: 10, cursor: "pointer" }; }
+function riskBtn(active, c) { return { flex: 1, padding: "15px 6px", borderRadius: 14, cursor: "pointer", textAlign: "center", fontFamily: "inherit", border: active ? `1.5px solid ${c.border}` : "1.5px solid var(--c-148-180-255-14)", background: active ? c.bg : "var(--c-255-255-255-025)", boxShadow: active ? `0 0 24px ${alpha(c.color, "22")}` : "none" }; }
 
 /* ---------- shared exports for code-split pages (src/pages/*) ----------
    One list so it's obvious what lazy pages depend on. Lazy chunks import these

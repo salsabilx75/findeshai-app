@@ -43,14 +43,14 @@ const NAV_EXAMPLE = {
 };
 
 /* ---------- building blocks ---------- */
-const P = ({ children }) => <p style={{ margin: "0 0 12px", fontSize: 14.5, lineHeight: 1.75, color: "#B8C7E0" }}>{children}</p>;
-const B = ({ children }) => <b style={{ color: "#fff" }}>{children}</b>;
-const H2 = ({ children }) => <h2 style={{ margin: "0 0 12px", fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "-0.015em", lineHeight: 1.25 }}>{children}</h2>;
+const P = ({ children }) => <p style={{ margin: "0 0 12px", fontSize: 14.5, lineHeight: 1.75, color: "var(--c-b8c7e0)" }}>{children}</p>;
+const B = ({ children }) => <b style={{ color: "var(--c-fff)" }}>{children}</b>;
+const H2 = ({ children }) => <h2 style={{ margin: "0 0 12px", fontSize: 19, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.015em", lineHeight: 1.25 }}>{children}</h2>;
 const Sec = ({ children }) => <section className="fd-up" style={{ ...card, padding: "22px 20px", marginBottom: 16 }}>{children}</section>;
 const NotAdvice = () => <p style={{ margin: "12px 0 0", fontSize: 11.5, color: T.faint, fontStyle: "italic" }}>General information, not tax or investment advice.</p>;
 const List = ({ items }) => (
   <ul style={{ margin: "0 0 12px", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-    {items.map((x, i) => <li key={i} style={{ fontSize: 14.5, lineHeight: 1.7, color: "#B8C7E0" }}>{x}</li>)}
+    {items.map((x, i) => <li key={i} style={{ fontSize: 14.5, lineHeight: 1.7, color: "var(--c-b8c7e0)" }}>{x}</li>)}
   </ul>
 );
 
@@ -63,13 +63,13 @@ function MiniTable({ head, rows, note }) {
     check(); window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-  const pin = { position: "sticky", left: 0, zIndex: 1, background: "#0A1628", boxShadow: "6px 0 8px -6px rgba(0,0,0,0.6)" };
+  const pin = { position: "sticky", left: 0, zIndex: 1, background: "var(--c-0a1628)", boxShadow: "6px 0 8px -6px var(--c-0-0-0-6)" };
   return (
     <div style={{ margin: "6px 0 12px" }}>
-      <div ref={ref} style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12 }}>
+      <div ref={ref} style={{ overflowX: "auto", background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12 }}>
         <table className="fd-tbl" style={{ minWidth: 440 }}>
           <thead><tr>{head.map((h, j) => <th key={j} style={j === 0 ? { ...pin, paddingLeft: 12 } : undefined}>{h}</th>)}</tr></thead>
-          <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} style={j === 0 ? { ...pin, paddingLeft: 12, color: "#EAF1FC", fontWeight: 600, whiteSpace: "normal", minWidth: 120 } : undefined}>{c}</td>)}</tr>)}</tbody>
+          <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} style={j === 0 ? { ...pin, paddingLeft: 12, color: "var(--c-eaf1fc)", fontWeight: 600, whiteSpace: "normal", minWidth: 120 } : undefined}>{c}</td>)}</tr>)}</tbody>
         </table>
       </div>
       {overflows && <p style={{ margin: "5px 2px 0", fontSize: 11, color: T.accent, fontWeight: 600 }}>Swipe the table sideways for more columns →</p>}
@@ -90,7 +90,7 @@ function ToolCta({ label, path, guide }) {
   };
   return (
     <a href={path} onClick={go}
-      style={{ display: "inline-block", marginTop: 6, padding: "11px 16px", fontSize: 13.5, fontWeight: 800, borderRadius: 12, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF", textDecoration: "none" }}>
+      style={{ display: "inline-block", marginTop: 6, padding: "11px 16px", fontSize: 13.5, fontWeight: 800, borderRadius: 12, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)", textDecoration: "none" }}>
       ▶ {label} →
     </a>
   );
@@ -98,7 +98,7 @@ function ToolCta({ label, path, guide }) {
 function InLink({ to, children }) {
   const nav = useNav();
   if (!has(to)) return <>{children}</>;
-  return <a href={to} onClick={e => { e.preventDefault(); navTo(nav, to); }} style={{ color: "#8AC2FF", fontWeight: 700, textDecoration: "none" }}>{children}</a>;
+  return <a href={to} onClick={e => { e.preventDefault(); navTo(nav, to); }} style={{ color: "var(--c-8ac2ff)", fontWeight: 700, textDecoration: "none" }}>{children}</a>;
 }
 
 function GuideShell({ id, kicker, title, accent, lead, asOf, answer, children, faq, tool, related }) {
@@ -113,7 +113,7 @@ function GuideShell({ id, kicker, title, accent, lead, asOf, answer, children, f
 
       <div className="fd-up" style={{ ...card, padding: "18px 20px", marginBottom: 16, borderColor: T.accentBorder }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: ".09em", marginBottom: 8 }}>THE SHORT ANSWER</div>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: "#EAF1FC" }}>{answer}</p>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: "var(--c-eaf1fc)" }}>{answer}</p>
         {tool && <div style={{ marginTop: 10 }}><ToolCta label={tool[0]} path={tool[1]} guide={id} /></div>}
       </div>
 
@@ -315,7 +315,7 @@ function EmergencyGuide() {
     const months = n => (s > 0 ? Math.ceil(e * n / s) : null);
     return { e, s, t3: e * 3, t6: e * 6, t12: e * 12, m3: months(3), m6: months(6), topUp: e * 6 * INFLATION / 100 };
   }, [dExp, dSave]);
-  const box = { flex: "1 1 118px", background: "rgba(8,18,36,0.55)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 12px" };
+  const box = { flex: "1 1 118px", background: "var(--c-8-18-36-55)", border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "12px 12px" };
   return (
     <GuideShell id="emergency-fund-dhaka" kicker="📘 Guide · Saving"
       title="How much emergency fund" accent="do you need in Dhaka?"
@@ -350,9 +350,9 @@ function EmergencyGuide() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <div style={box}><div style={{ fontSize: 11, color: T.faint, fontWeight: 700 }}>3 MONTHS · MINIMUM</div><div style={{ fontSize: 18, fontWeight: 900, color: T.amber }}>{fmt(r.t3)}</div>{r.m3 && <div style={{ fontSize: 11.5, color: T.muted }}>~{r.m3} months to build</div>}</div>
               <div style={box}><div style={{ fontSize: 11, color: T.faint, fontWeight: 700 }}>6 MONTHS · TARGET</div><div style={{ fontSize: 18, fontWeight: 900, color: T.green }}>{fmt(r.t6)}</div>{r.m6 && <div style={{ fontSize: 11.5, color: T.muted }}>~{r.m6} months to build</div>}</div>
-              <div style={box}><div style={{ fontSize: 11, color: T.faint, fontWeight: 700 }}>12 MONTHS · IRREGULAR INCOME</div><div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>{fmt(r.t12)}</div></div>
+              <div style={box}><div style={{ fontSize: 11, color: T.faint, fontWeight: 700 }}>12 MONTHS · IRREGULAR INCOME</div><div style={{ fontSize: 18, fontWeight: 900, color: "var(--c-fff)" }}>{fmt(r.t12)}</div></div>
             </div>
-            <p style={{ margin: "12px 0 0", fontSize: 12.5, color: T.muted, lineHeight: 1.6 }}>If prices rise about {INFLATION}% a year (FinDesh's inflation assumption), a six-month fund needs roughly <b style={{ color: "#fff" }}>{fmt(r.topUp)}</b> more next year to cover the same costs.</p>
+            <p style={{ margin: "12px 0 0", fontSize: 12.5, color: T.muted, lineHeight: 1.6 }}>If prices rise about {INFLATION}% a year (FinDesh's inflation assumption), a six-month fund needs roughly <b style={{ color: "var(--c-fff)" }}>{fmt(r.topUp)}</b> more next year to cover the same costs.</p>
           </div>
         )}
       </section>

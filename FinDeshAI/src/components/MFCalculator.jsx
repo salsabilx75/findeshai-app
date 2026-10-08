@@ -39,7 +39,7 @@ const median = arr => { const a = [...arr].sort((x, y) => x - y), m = Math.floor
 function RateInput({ value, onChange, label }) {
   return (
     <input className="fd-input" value={value} onChange={e => onChange(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" aria-label={label + " rate % per year"}
-      style={{ width: 64, padding: "6px 8px", fontSize: 13, fontWeight: 700, color: "#fff", textAlign: "right", border: "1px solid rgba(148,180,255,0.22)", borderRadius: 8, background: "rgba(8,18,36,0.7)", fontFamily: "inherit", outline: "none" }} />
+      style={{ width: 64, padding: "6px 8px", fontSize: 13, fontWeight: 700, color: "var(--c-fff)", textAlign: "right", border: "1px solid var(--c-148-180-255-22)", borderRadius: 8, background: "var(--c-8-18-36-7)", fontFamily: "inherit", outline: "none" }} />
   );
 }
 
@@ -80,8 +80,8 @@ export default function MFCalculator() {
   return (
     <section id="mf-calculator" aria-labelledby="mf-calc-h" className="fd-up" style={{ ...card, padding: "22px 18px", marginTop: 18, scrollMarginTop: 170 }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: T.amber, letterSpacing: ".09em", marginBottom: 6 }}>🧮 PAST-RETURN CALCULATOR · NOT A FORECAST</div>
-      <h2 id="mf-calc-h" style={{ margin: "0 0 6px", fontSize: 19, fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>What would ৳X have become?</h2>
-      <p style={{ margin: "0 0 16px", fontSize: 13.5, lineHeight: 1.65, color: "#B8C7E0" }}>Replays each fund's published return for one fixed period, next to what guaranteed options would have paid over the same days. It tells you how wide the range was — not what happens next.</p>
+      <h2 id="mf-calc-h" style={{ margin: "0 0 6px", fontSize: 19, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.01em" }}>What would ৳X have become?</h2>
+      <p style={{ margin: "0 0 16px", fontSize: 13.5, lineHeight: 1.65, color: "var(--c-b8c7e0)" }}>Replays each fund's published return for one fixed period, next to what guaranteed options would have paid over the same days. It tells you how wide the range was — not what happens next.</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
         <div>
@@ -92,7 +92,7 @@ export default function MFCalculator() {
         <div>
           <label style={lbl} htmlFor="mfc-fund">Fund</label>
           <select id="mfc-fund" className="fd-input" value={fundId} onChange={e => setFundId(e.target.value)}
-            style={{ width: "100%", padding: "13px 12px", fontSize: 14, fontWeight: 600, color: "#fff", border: "1.5px solid rgba(148,180,255,0.18)", borderRadius: 14, background: "rgba(8,18,36,0.85)", fontFamily: "inherit" }}>
+            style={{ width: "100%", padding: "13px 12px", fontSize: 14, fontWeight: 600, color: "var(--c-fff)", border: "1.5px solid var(--c-148-180-255-18)", borderRadius: 14, background: "var(--c-8-18-36-85)", fontFamily: "inherit" }}>
             <option value="all">All 20 funds — show the range</option>
             {[...FUNDS].sort((a, b) => a.fund.localeCompare(b.fund)).map(f => <option key={f.id} value={f.id}>{f.fund}</option>)}
           </select>
@@ -104,7 +104,7 @@ export default function MFCalculator() {
           <button key={id} role="radio" aria-checked={periodId === id} className="fd-chip" onClick={() => setPeriodId(id)}
             style={{ ...chip(periodId === id), padding: "10px 8px", textAlign: "center", lineHeight: 1.3, touchAction: "manipulation" }}>
             <span style={{ display: "block", fontWeight: 800 }}>{p.label}</span>
-            <span style={{ display: "block", fontSize: 10.5, opacity: .8 }}>{p.sub}</span>
+            <span style={{ display: "block", fontSize: 10.5, opacity: "var(--fd-dim-8)" }}>{p.sub}</span>
           </button>
         ))}
       </div>
@@ -113,29 +113,29 @@ export default function MFCalculator() {
         <>
           {/* --- headline: chosen fund, or the range --- */}
           {r.one ? (
-            <div style={{ marginTop: 16, background: "rgba(8,18,36,0.55)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "14px 16px" }}>
+            <div style={{ marginTop: 16, background: "var(--c-8-18-36-55)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: "14px 16px" }}>
               <div style={{ fontSize: 12, color: T.muted, marginBottom: 6 }}>{r.one.fund} · {P.label.toLowerCase()}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 22px", alignItems: "baseline" }}>
-                <span style={{ fontSize: 13, color: T.faint }}>Invested <b style={{ color: "#C9D8F0" }}>{takaSigned(r.amount)}</b></span>
-                <span style={{ fontSize: 13, color: T.faint }}>Worth {P.endLabel} <b style={{ color: "#fff", fontSize: 18 }}>{takaSigned(r.one.value)}</b></span>
+                <span style={{ fontSize: 13, color: T.faint }}>Invested <b style={{ color: "var(--c-c9d8f0)" }}>{takaSigned(r.amount)}</b></span>
+                <span style={{ fontSize: 13, color: T.faint }}>Worth {P.endLabel} <b style={{ color: "var(--c-fff)", fontSize: 18 }}>{takaSigned(r.one.value)}</b></span>
                 <span style={{ fontSize: 15, fontWeight: 800, color: col(r.one.ret) }}>{takaSigned(r.one.gain, true)} ({pctS(r.one.ret)})</span>
               </div>
               {parseFloat(r.one.exitLoad) > 0 && <p style={{ margin: "8px 0 0", fontSize: 11.5, color: T.faint }}>This fund's exit load in the snapshot is {r.one.exitLoad}: selling would return roughly that share less than the value shown. Not deducted above.</p>}
             </div>
           ) : (
-            <div style={{ marginTop: 16, background: "rgba(255,180,84,0.06)", border: "1px solid rgba(255,180,84,0.26)", borderRadius: 14, padding: "12px 14px", fontSize: 13, lineHeight: 1.6, color: "#FFCE8A" }}>
-              Over {P.label.toLowerCase()}, the same {takaSigned(r.amount)} ended anywhere from <b style={{ color: "#fff" }}>{takaSigned(r.amount * (1 + r.worst / 100))}</b> to <b style={{ color: "#fff" }}>{takaSigned(r.amount * (1 + r.best / 100))}</b> depending on the fund{r.losers ? <> — and <b style={{ color: "#fff" }}>{r.losers} of the 20 lost money</b></> : null}.
+            <div style={{ marginTop: 16, background: "var(--c-255-180-84-06)", border: "1px solid var(--c-255-180-84-26)", borderRadius: 14, padding: "12px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--c-ffce8a)" }}>
+              Over {P.label.toLowerCase()}, the same {takaSigned(r.amount)} ended anywhere from <b style={{ color: "var(--c-fff)" }}>{takaSigned(r.amount * (1 + r.worst / 100))}</b> to <b style={{ color: "var(--c-fff)" }}>{takaSigned(r.amount * (1 + r.best / 100))}</b> depending on the fund{r.losers ? <> — and <b style={{ color: "var(--c-fff)" }}>{r.losers} of the 20 lost money</b></> : null}.
             </div>
           )}
 
           {/* --- side by side: funds vs guaranteed options, same days --- */}
-          <h3 style={{ margin: "20px 0 4px", fontSize: 14, fontWeight: 800, color: "#fff" }}>Same {takaSigned(r.amount)}, same {P.days} days</h3>
+          <h3 style={{ margin: "20px 0 4px", fontSize: 14, fontWeight: 800, color: "var(--c-fff)" }}>Same {takaSigned(r.amount)}, same {P.days} days</h3>
           <p style={{ margin: "0 0 6px", fontSize: 11.5, color: T.faint }}>Edit any rate. Deposit figures are simple interest, pro-rated, before tax.{periodId === "y2025" && <> <b style={{ color: T.amber }}>These defaults are {LAST_UPDATED} rates — FinDesh doesn't hold verified 2025 rates, so change them if you know what you were offered.</b></>}</p>
           <div>
             {fundRows.map(f => (
               <div key={f.name} style={rowStyle}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#EAF1FC" }}>{f.name} <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, letterSpacing: ".04em" }}>PAST PERF.</span></div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--c-eaf1fc)" }}>{f.name} <span style={{ fontSize: 9.5, fontWeight: 800, color: T.amber, letterSpacing: ".04em" }}>PAST PERF.</span></div>
                   <div style={{ fontSize: 11, color: T.faint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.sub} · {pctS(f.ret)}</div>
                 </div>
                 <b style={{ fontSize: 14, color: col(f.ret), whiteSpace: "nowrap" }}>{takaSigned(r.amount * f.ret / 100, true)}</b>
@@ -144,7 +144,7 @@ export default function MFCalculator() {
             {r.deposits.map(d => (
               <div key={d.k} style={rowStyle}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#EAF1FC", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--c-eaf1fc)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     {d.name}
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11.5, color: T.muted, fontWeight: 600 }}>
                       <RateInput value={rates[d.k]} label={d.name} onChange={v => setRates(s => ({ ...s, [d.k]: v }))} />% / yr
@@ -166,18 +166,18 @@ export default function MFCalculator() {
 
           {/* --- ranked table of all 20 --- */}
           <details style={{ marginTop: 14 }} open={!r.one}>
-            <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#8AC2FF", padding: "6px 0" }}>All 20 funds ranked for this period</summary>
-            <div style={{ overflowX: "auto", marginTop: 8, background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12 }}>
+            <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "var(--c-8ac2ff)", padding: "6px 0" }}>All 20 funds ranked for this period</summary>
+            <div style={{ overflowX: "auto", marginTop: 8, background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12 }}>
               <table className="fd-tbl" style={{ minWidth: 470 }}>
                 <thead><tr><th style={{ paddingLeft: 12 }}>#&nbsp; Fund</th><th>Return</th><th>Worth {P.endLabel}</th><th>Gain / loss</th></tr></thead>
                 <tbody>
                   {r.ranked.map((f, i) => {
                     const mine = r.one && f.id === r.one.id;
                     return (
-                      <tr key={f.id} style={mine ? { background: "rgba(79,158,255,0.10)" } : undefined}>
-                        <td style={{ paddingLeft: 12, whiteSpace: "normal", minWidth: 170 }}><span style={{ color: T.faint, marginRight: 6 }}>{i + 1}</span><span style={{ color: "#EAF1FC", fontWeight: mine ? 800 : 600 }}>{f.fund}</span></td>
+                      <tr key={f.id} style={mine ? { background: "var(--c-79-158-255-1)" } : undefined}>
+                        <td style={{ paddingLeft: 12, whiteSpace: "normal", minWidth: 170 }}><span style={{ color: T.faint, marginRight: 6 }}>{i + 1}</span><span style={{ color: "var(--c-eaf1fc)", fontWeight: mine ? 800 : 600 }}>{f.fund}</span></td>
                         <td style={{ color: col(f.ret), fontWeight: 700 }}>{pctS(f.ret)}</td>
-                        <td style={{ color: "#C9D8F0" }}>{takaSigned(f.value)}</td>
+                        <td style={{ color: "var(--c-c9d8f0)" }}>{takaSigned(f.value)}</td>
                         <td style={{ color: col(f.ret), fontWeight: 700 }}>{takaSigned(f.gain, true)}</td>
                       </tr>
                     );
@@ -189,10 +189,10 @@ export default function MFCalculator() {
         </>
       )}
 
-      <div style={{ marginTop: 16, background: "rgba(8,18,36,0.5)", border: `1px solid ${T.border}`, borderRadius: 12, padding: "12px 14px" }}>
-        <p style={{ margin: "0 0 6px", fontSize: 12, lineHeight: 1.6, color: "#C9D8F0" }}><b style={{ color: "#fff" }}>What this is:</b> each fund's published NAV-based return for one fixed period, applied to your amount as if you'd invested on the first day.</p>
-        <p style={{ margin: "0 0 6px", fontSize: 12, lineHeight: 1.6, color: "#C9D8F0" }}><b style={{ color: "#fff" }}>What it isn't:</b> a forecast, a 1-year or 3-year return, or advice. A fund's next period can look nothing like these.</p>
-        <p style={{ margin: "0 0 6px", fontSize: 12, lineHeight: 1.6, color: "#C9D8F0" }}><b style={{ color: "#fff" }}>Not included:</b> entry and exit loads, tax, fees, and dividends paid out — the source doesn't state whether its returns include them, and gives no payout dates, so we don't model reinvestment.</p>
+      <div style={{ marginTop: 16, background: "var(--c-8-18-36-5)", border: `1px solid ${T.border}`, borderRadius: 12, padding: "12px 14px" }}>
+        <p style={{ margin: "0 0 6px", fontSize: 12, lineHeight: 1.6, color: "var(--c-c9d8f0)" }}><b style={{ color: "var(--c-fff)" }}>What this is:</b> each fund's published NAV-based return for one fixed period, applied to your amount as if you'd invested on the first day.</p>
+        <p style={{ margin: "0 0 6px", fontSize: 12, lineHeight: 1.6, color: "var(--c-c9d8f0)" }}><b style={{ color: "var(--c-fff)" }}>What it isn't:</b> a forecast, a 1-year or 3-year return, or advice. A fund's next period can look nothing like these.</p>
+        <p style={{ margin: "0 0 6px", fontSize: 12, lineHeight: 1.6, color: "var(--c-c9d8f0)" }}><b style={{ color: "var(--c-fff)" }}>Not included:</b> entry and exit loads, tax, fees, and dividends paid out — the source doesn't state whether its returns include them, and gives no payout dates, so we don't model reinvestment.</p>
         <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.6, color: T.faint }}>Source: LankaBangla Weekly Open End Mutual Fund Review (compiled from UCB Stock Brokerage), {MF_UPDATED} — <a href={MF_SOURCE_URL} target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: "none" }}>view ↗</a>. Deposit defaults: Sanchayapatra {SP5.rate}% (5-year, Jan 2026 revision); FDR {FDR.rate}%, FinDesh's mid estimate within the {FDR.rateLabel} listed for strong banks; DPS {DPS_DEFAULT}%, the average of the DPS rates listed in FinDesh, rounded ({LAST_UPDATED}).</p>
       </div>
     </section>

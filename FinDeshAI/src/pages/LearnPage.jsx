@@ -55,7 +55,7 @@ function TryIt({ label, path, section }) {
   };
   return (
     <button className="fd-chip" onClick={go}
-      style={{ marginTop: 14, padding: "10px 16px", fontSize: 13, fontWeight: 700, borderRadius: 11, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "#8AC2FF", cursor: "pointer", fontFamily: "inherit", touchAction: "manipulation" }}>
+      style={{ marginTop: 14, padding: "10px 16px", fontSize: 13, fontWeight: 700, borderRadius: 11, border: `1px solid ${T.accentBorder}`, background: T.accentSoft, color: "var(--c-8ac2ff)", cursor: "pointer", fontFamily: "inherit", touchAction: "manipulation" }}>
       ▶ Try it: {label} →
     </button>
   );
@@ -63,8 +63,8 @@ function TryIt({ label, path, section }) {
 function NotAdvice() {
   return <p style={{ margin: "12px 0 0", fontSize: 11.5, color: T.faint, fontStyle: "italic" }}>General information, not tax or investment advice.</p>;
 }
-const P = ({ children }) => <p style={{ margin: "0 0 12px", fontSize: 14.5, lineHeight: 1.75, color: "#B8C7E0" }}>{children}</p>;
-const B = ({ children }) => <b style={{ color: "#fff" }}>{children}</b>;
+const P = ({ children }) => <p style={{ margin: "0 0 12px", fontSize: 14.5, lineHeight: 1.75, color: "var(--c-b8c7e0)" }}>{children}</p>;
+const B = ({ children }) => <b style={{ color: "var(--c-fff)" }}>{children}</b>;
 
 function MiniTable({ head, rows, note }) {
   /* First column pinned (Deep Navy, opaque) so row labels stay visible while the
@@ -77,13 +77,13 @@ function MiniTable({ head, rows, note }) {
     check(); window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-  const pin = { position: "sticky", left: 0, zIndex: 1, background: "#0A1628", boxShadow: "6px 0 8px -6px rgba(0,0,0,0.6)" };
+  const pin = { position: "sticky", left: 0, zIndex: 1, background: "var(--c-0a1628)", boxShadow: "6px 0 8px -6px var(--c-0-0-0-6)" };
   return (
     <div style={{ margin: "6px 0 4px" }}>
-      <div ref={ref} style={{ overflowX: "auto", background: "rgba(8,18,36,0.5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12 }}>
+      <div ref={ref} style={{ overflowX: "auto", background: "var(--c-8-18-36-5)", border: `1px solid ${T.borderSoft}`, borderRadius: 12 }}>
         <table className="fd-tbl" style={{ minWidth: 440 }}>
           <thead><tr>{head.map((h, j) => <th key={h} style={j === 0 ? { ...pin, paddingLeft: 12 } : undefined}>{h}</th>)}</tr></thead>
-          <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} style={j === 0 ? { ...pin, paddingLeft: 12, color: "#EAF1FC", fontWeight: 600 } : undefined}>{c}</td>)}</tr>)}</tbody>
+          <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} style={j === 0 ? { ...pin, paddingLeft: 12, color: "var(--c-eaf1fc)", fontWeight: 600 } : undefined}>{c}</td>)}</tr>)}</tbody>
         </table>
       </div>
       {overflows && <p style={{ margin: "5px 2px 0", fontSize: 11, color: T.accent, fontWeight: 600 }}>Swipe the table sideways for more columns →</p>}
@@ -116,7 +116,7 @@ function CompoundCalc() {
   const max = Math.max(...r.yearly, 1);
   const inStyle = { ...bigInput, fontSize: 18, padding: "12px 14px 12px 36px" };
   return (
-    <div style={{ background: "rgba(8,18,36,0.55)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 16px", margin: "8px 0 4px" }}>
+    <div style={{ background: "var(--c-8-18-36-55)", border: `1px solid ${T.accentBorder}`, borderRadius: 16, padding: "18px 16px", margin: "8px 0 4px" }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: ".09em", marginBottom: 12 }}>📈 COMPOUNDING CALCULATOR</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
         <div>
@@ -138,10 +138,10 @@ function CompoundCalc() {
       <input type="range" min={1} max={30} value={years} onChange={e => setYears(+e.target.value)} aria-label="Years" style={{ width: "100%", accentColor: T.accent }} />
 
       <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 70, margin: "14px 0 6px" }} aria-hidden="true">
-        {r.yearly.map((v, i) => <div key={i} style={{ flex: 1, height: `${Math.max(3, (v / max) * 100)}%`, background: `linear-gradient(180deg, ${T.accent}, rgba(79,158,255,0.25))`, borderRadius: "3px 3px 0 0" }} />)}
+        {r.yearly.map((v, i) => <div key={i} style={{ flex: 1, height: `${Math.max(3, (v / max) * 100)}%`, background: `linear-gradient(180deg, ${T.accent}, var(--c-79-158-255-25))`, borderRadius: "3px 3px 0 0" }} />)}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))", gap: 10, marginTop: 8 }}>
-        {[["After " + years + " yrs", fmtFull(r.bal), "#fff"], ["You put in", fmtFull(r.contributed), "#C9D8F0"], ["Growth", fmtFull(r.growth), T.green], ["In today's money*", fmtFull(r.real), T.amber]].map(([l, v, c]) => (
+        {[["After " + years + " yrs", fmtFull(r.bal), "var(--c-fff)"], ["You put in", fmtFull(r.contributed), "var(--c-c9d8f0)"], ["Growth", fmtFull(r.growth), T.green], ["In today's money*", fmtFull(r.real), T.amber]].map(([l, v, c]) => (
           <div key={l} style={{ background: T.glassFlat, border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "10px 12px" }}>
             <div style={{ fontSize: 10.5, color: T.faint, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase" }}>{l}</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: c, marginTop: 3, wordBreak: "break-word" }}>{v}</div>
@@ -218,10 +218,10 @@ function Glossary() {
         {list.map(([en, bn, d]) => (
           <div key={en} style={{ background: T.glassFlat, border: `1px solid ${T.borderSoft}`, borderRadius: 12, padding: "11px 13px" }}>
             <dt style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 10px" }}>
-              <b style={{ color: "#fff", fontSize: 14 }}>{en}</b>
-              <span lang="bn" style={{ color: "#8AC2FF", fontSize: 13.5 }}>{bn}</span>
+              <b style={{ color: "var(--c-fff)", fontSize: 14 }}>{en}</b>
+              <span lang="bn" style={{ color: "var(--c-8ac2ff)", fontSize: 13.5 }}>{bn}</span>
             </dt>
-            <dd style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.6, color: "#B8C7E0" }}>{d}</dd>
+            <dd style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.6, color: "var(--c-b8c7e0)" }}>{d}</dd>
           </div>
         ))}
         {list.length === 0 && <p style={{ fontSize: 13, color: T.faint }}>No term matches “{q}”.</p>}
@@ -319,7 +319,7 @@ function buildSections(homeEmi) {
     </>, tryIt: ["the earn-more playbook", "/find-your-dream-job"] },
 
     { id: "order", t: "What to do first", bn: "অগ্রাধিকার", advice: true, body: <>
-      <ol style={{ margin: "0 0 12px", paddingLeft: 20, color: "#B8C7E0", fontSize: 14.5, lineHeight: 1.8 }}>
+      <ol style={{ margin: "0 0 12px", paddingLeft: 20, color: "var(--c-b8c7e0)", fontSize: 14.5, lineHeight: 1.8 }}>
         <li><B>Emergency fund</B> — three months first, then build to six.</li>
         <li><B>Clear expensive debt</B> — credit card balances ({APR_MIN}–{APR_MAX}% a year) and unsecured personal loans before investing.</li>
         <li><B>Automate saving</B> — a DPS or regular Sanchayapatra purchase on payday, so it happens without willpower.</li>
@@ -330,7 +330,7 @@ function buildSections(homeEmi) {
     </>, tryIt: ["the Money Blueprint", "/blueprint"] },
 
     { id: "mistakes", t: "Common mistakes and scams", bn: "ভুল ও প্রতারণা", body: <>
-      <ul style={{ margin: "0 0 12px", paddingLeft: 20, color: "#B8C7E0", fontSize: 14.5, lineHeight: 1.8 }}>
+      <ul style={{ margin: "0 0 12px", paddingLeft: 20, color: "var(--c-b8c7e0)", fontSize: 14.5, lineHeight: 1.8 }}>
         <li>Keeping long-term savings in a savings account at {SAV_MIN}–{SAV_MAX}% while prices rise around {INFLATION}%.</li>
         <li>Chasing an unusually high deposit rate from a weak bank instead of a slightly lower one from a strong bank.</li>
         <li>Buying a fund because of one great year — the 2026 leaders and the 2025 leaders are not the same funds.</li>
@@ -365,8 +365,8 @@ function Toc({ sections, active, wide }) {
       {items.map(([id, t, bn]) => (
         <li key={id}>
           <a href={"#" + id} onClick={e => go(e, id)} aria-current={active === id ? "true" : undefined}
-            style={{ display: "block", padding: "7px 10px", borderRadius: 8, textDecoration: "none", fontSize: 13, lineHeight: 1.35, fontWeight: active === id ? 700 : 500, color: active === id ? "#fff" : "#8A9BB8", background: active === id ? T.accentSoft : "transparent", borderLeft: `2px solid ${active === id ? T.accent : "transparent"}` }}>
-            {t}{bn && <span lang="bn" style={{ display: "block", fontSize: 11.5, color: active === id ? "#8AC2FF" : T.faint, fontWeight: 500 }}>{bn}</span>}
+            style={{ display: "block", padding: "7px 10px", borderRadius: 8, textDecoration: "none", fontSize: 13, lineHeight: 1.35, fontWeight: active === id ? 700 : 500, color: active === id ? "var(--c-fff)" : "var(--c-8a9bb8)", background: active === id ? T.accentSoft : "transparent", borderLeft: `2px solid ${active === id ? T.accent : "transparent"}` }}>
+            {t}{bn && <span lang="bn" style={{ display: "block", fontSize: 11.5, color: active === id ? "var(--c-8ac2ff)" : T.faint, fontWeight: 500 }}>{bn}</span>}
           </a>
         </li>
       ))}
@@ -375,7 +375,7 @@ function Toc({ sections, active, wide }) {
   if (wide) {
     /* Wide screens: fixed rail to the left of the 760px content column. */
     return (
-      <nav aria-label="On this page" style={{ position: "fixed", top: 168, left: "max(12px, calc(50% - 380px - 252px))", width: 232, maxHeight: "calc(100vh - 190px)", overflowY: "auto", zIndex: 30, background: "rgba(8,14,26,0.6)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: 8, backdropFilter: "blur(14px)" }} className="fd-menu">
+      <nav aria-label="On this page" style={{ position: "fixed", top: 168, left: "max(12px, calc(50% - 380px - 252px))", width: 232, maxHeight: "calc(100vh - 190px)", overflowY: "auto", zIndex: 30, background: "var(--c-8-14-26-6)", border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: 8, backdropFilter: "blur(14px)" }} className="fd-menu">
         <div style={{ fontSize: 10.5, fontWeight: 800, color: T.faint, letterSpacing: ".09em", textTransform: "uppercase", padding: "6px 10px" }}>On this page</div>
         {list}
       </nav>
@@ -387,13 +387,13 @@ function Toc({ sections, active, wide }) {
     <nav aria-label="On this page" style={{ position: "sticky", top: 148, zIndex: 30, margin: "0 -4px 18px" }}>
       {/* The list floats (absolute) so opening/closing it never moves the page. */}
       <button onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="learn-toc"
-        style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", borderRadius: 12, border: `1px solid ${T.border}`, background: "rgba(8,14,26,0.96)", color: "#C9D8F0", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(14px)", touchAction: "manipulation" }}>
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", borderRadius: 12, border: `1px solid ${T.border}`, background: "var(--c-8-14-26-96)", color: "var(--c-c9d8f0)", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(14px)", touchAction: "manipulation" }}>
         <span style={{ color: T.faint, fontWeight: 600, flexShrink: 0 }}>On this page:</span>
-        <span style={{ flex: 1, minWidth: 0, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#fff" }}>{current ? current[1] : "Contents"}</span>
+        <span style={{ flex: 1, minWidth: 0, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--c-fff)" }}>{current ? current[1] : "Contents"}</span>
         <span style={{ fontSize: 10 }}>{open ? "▲" : "▼"}</span>
       </button>
       {open && (
-        <div id="learn-toc" className="fd-menu" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, maxHeight: "calc(100dvh - 230px)", overflowY: "auto", background: "#0A1220", border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: "0 18px 50px rgba(0,0,0,0.55)" }}>{list}</div>
+        <div id="learn-toc" className="fd-menu" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, maxHeight: "calc(100dvh - 230px)", overflowY: "auto", background: "var(--c-0a1220)", border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: "0 18px 50px var(--c-0-0-0-55)" }}>{list}</div>
       )}
     </nav>
   );
@@ -449,8 +449,8 @@ export default function LearnPage() {
 
       {sections.map(s => (
         <section key={s.id} id={s.id} aria-labelledby={s.id + "-h"} className="fd-up" style={{ ...card, padding: "24px 20px", ...secStyle }}>
-          <h2 id={s.id + "-h"} style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 900, color: "#fff", letterSpacing: "-0.015em", lineHeight: 1.25 }}>
-            {s.t}{s.bn && <span lang="bn" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#8AC2FF", marginTop: 3, letterSpacing: 0 }}>{s.bn}</span>}
+          <h2 id={s.id + "-h"} style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 900, color: "var(--c-fff)", letterSpacing: "-0.015em", lineHeight: 1.25 }}>
+            {s.t}{s.bn && <span lang="bn" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--c-8ac2ff)", marginTop: 3, letterSpacing: 0 }}>{s.bn}</span>}
           </h2>
           {s.body}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -466,7 +466,7 @@ export default function LearnPage() {
       </div>
 
       <div style={{ ...inflationNote, marginTop: 22 }}>
-        Everything here is general information about Bangladeshi financial products, not tax or investment advice. Figures are dated where they appear and change over time — confirm with the institution before you commit money.{has("/methodology") && <> See <a href="/methodology" onClick={e => { e.preventDefault(); nav("/methodology"); }} style={{ color: "#FFCE8A", fontWeight: 700 }}>how FinDesh compiles its figures</a>.</>}
+        Everything here is general information about Bangladeshi financial products, not tax or investment advice. Figures are dated where they appear and change over time — confirm with the institution before you commit money.{has("/methodology") && <> See <a href="/methodology" onClick={e => { e.preventDefault(); nav("/methodology"); }} style={{ color: "var(--c-ffce8a)", fontWeight: 700 }}>how FinDesh compiles its figures</a>.</>}
       </div>
 
       <RelatedLinks links={[
